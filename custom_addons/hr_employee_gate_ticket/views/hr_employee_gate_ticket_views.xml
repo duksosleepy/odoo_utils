@@ -41,10 +41,10 @@
                     <group string="Approvers">
                         <group>
                             <field name="approver_id"/>
-                            <field name="second_approver_id" groups="hr_attendance.group_hr_attendance_user"/>
+                            <field name="second_approver_id"/>
                         </group>
                         <group>
-                            <field name="third_approver_id" groups="hr_attendance.group_hr_attendance_user"/>
+                            <field name="third_approver_id"/>
                         </group>
                     </group>
                 </sheet>
