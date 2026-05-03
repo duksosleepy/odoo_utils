@@ -53,6 +53,7 @@ class HrEmployeeGateTicket(models.Model):
             ('share', '=', False),
             ('all_group_ids', 'in', self.env.ref('hr_attendance.group_hr_attendance_user').id),
         ],
+        default=lambda self: self._get_auto_second_approver(),
         tracking=True,
         help='User who will do the second approval',
     )
@@ -63,6 +64,7 @@ class HrEmployeeGateTicket(models.Model):
             ('share', '=', False),
             ('all_group_ids', 'in', self.env.ref('hr_attendance.group_hr_attendance_user').id),
         ],
+        default=lambda self: self._get_auto_third_approver(),
         tracking=True,
         help='User who will do the third approval',
     )
@@ -286,6 +288,16 @@ class HrEmployeeGateTicket(models.Model):
     def create(self, vals_list):
         auto_second_approver = self._get_auto_second_approver()
         auto_approver = self._get_auto_third_approver()
+        if not auto_second_approver:
+            _logger.warning(
+                'hr_employee_gate_ticket: auto second approver not found for barcode=%s',
+                self._AUTO_SECOND_APPROVER_BADGE,
+            )
+        if not auto_approver:
+            _logger.warning(
+                'hr_employee_gate_ticket: auto third approver not found for barcode=%s',
+                self._AUTO_THIRD_APPROVER_BADGE,
+            )
         for vals in vals_list:
             if vals.get('name', _('New')) == _('New'):
                 vals['name'] = self.env['ir.sequence'].next_by_code('hr.employee.gate.ticket') or _('New')
