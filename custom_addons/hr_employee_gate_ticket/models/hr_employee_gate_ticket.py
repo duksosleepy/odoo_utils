@@ -50,6 +50,7 @@ class HrEmployeeGateTicket(models.Model):
         'res.users',
         string='Second Approver',
         domain=lambda self: [('id', 'in', self._get_attendance_officer_user_ids())],
+        default=lambda self: self._get_auto_second_approver(),
         tracking=True,
         help='User who will do the second approval',
     )
@@ -79,6 +80,7 @@ class HrEmployeeGateTicket(models.Model):
         string='Company',
         default=lambda self: self.env.company,
     )
+    _AUTO_SECOND_APPROVER_BADGE = '041713543858'
     _AUTO_THIRD_APPROVER_BADGE = '041838157770'
 
     def _get_attendance_officer_user_ids(self):
@@ -95,6 +97,16 @@ class HrEmployeeGateTicket(models.Model):
             [
                 ('id', 'in', self._get_attendance_officer_user_ids()),
                 ('employee_id.barcode', '=', self._AUTO_THIRD_APPROVER_BADGE),
+            ],
+            limit=1,
+        )
+        return user if user else False
+
+    def _get_auto_second_approver(self):
+        user = self.env['res.users'].sudo().search(
+            [
+                ('id', 'in', self._get_attendance_officer_user_ids()),
+                ('employee_id.barcode', '=', self._AUTO_SECOND_APPROVER_BADGE),
             ],
             limit=1,
         )
@@ -123,8 +135,11 @@ class HrEmployeeGateTicket(models.Model):
 
     @api.onchange('employee_id')
     def _onchange_employee_id_autofill_third_approver(self):
+        auto_second_approver = self._get_auto_second_approver()
         auto_approver = self._get_auto_third_approver()
         for ticket in self:
+            if auto_second_approver:
+                ticket.second_approver_id = auto_second_approver
             if auto_approver:
                 ticket.third_approver_id = auto_approver
 
@@ -274,10 +289,13 @@ class HrEmployeeGateTicket(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        auto_second_approver = self._get_auto_second_approver()
         auto_approver = self._get_auto_third_approver()
         for vals in vals_list:
             if vals.get('name', _('New')) == _('New'):
                 vals['name'] = self.env['ir.sequence'].next_by_code('hr.employee.gate.ticket') or _('New')
+            if auto_second_approver and not vals.get('second_approver_id'):
+                vals['second_approver_id'] = auto_second_approver.id
             if auto_approver and not vals.get('third_approver_id'):
                 vals['third_approver_id'] = auto_approver.id
         tickets = super().create(vals_list)
@@ -287,10 +305,15 @@ class HrEmployeeGateTicket(models.Model):
         return tickets
 
     def write(self, vals):
-        if 'employee_id' in vals and 'third_approver_id' not in vals:
+        if 'employee_id' in vals and ('second_approver_id' not in vals or 'third_approver_id' not in vals):
+            auto_second_approver = self._get_auto_second_approver()
             auto_approver = self._get_auto_third_approver()
-            if auto_approver:
-                vals = dict(vals, third_approver_id=auto_approver.id)
+            new_vals = dict(vals)
+            if auto_second_approver and 'second_approver_id' not in vals:
+                new_vals['second_approver_id'] = auto_second_approver.id
+            if auto_approver and 'third_approver_id' not in vals:
+                new_vals['third_approver_id'] = auto_approver.id
+            vals = new_vals
         result = super().write(vals)
         if any(
             field in vals
