@@ -51,9 +51,8 @@ class HrEmployeeGateTicket(models.Model):
         string='Second Approver',
         domain=lambda self: [
             ('share', '=', False),
-            ('all_group_ids', 'in', self.env.ref('hr_attendance.group_hr_attendance_user').id),
+            ('group_ids', 'in', [self.env.ref('hr_attendance.group_hr_attendance_user').id]),
         ],
-        default=lambda self: self._get_auto_second_approver(),
         tracking=True,
         help='User who will do the second approval',
     )
@@ -62,9 +61,8 @@ class HrEmployeeGateTicket(models.Model):
         string='Third Approver',
         domain=lambda self: [
             ('share', '=', False),
-            ('all_group_ids', 'in', self.env.ref('hr_attendance.group_hr_attendance_user').id),
+            ('group_ids', 'in', [self.env.ref('hr_attendance.group_hr_attendance_user').id]),
         ],
-        default=lambda self: self._get_auto_third_approver(),
         tracking=True,
         help='User who will do the third approval',
     )
@@ -86,59 +84,26 @@ class HrEmployeeGateTicket(models.Model):
         string='Company',
         default=lambda self: self.env.company,
     )
-    _AUTO_SECOND_APPROVER_BADGE = '041713543858'
     _AUTO_THIRD_APPROVER_BADGE = '041838157770'
 
-    def _get_attendance_officer_group_id(self):
-        return self.env.ref('hr_attendance.group_hr_attendance_user').id
-
-    def _get_attendance_officer_user_ids(self):
+    def _get_auto_third_approver(self):
         attendance_officer_group = self.env.ref('hr_attendance.group_hr_attendance_user')
-        return self.env['res.users'].sudo().search(
+        user = self.env['res.users'].sudo().search(
             [
                 ('share', '=', False),
-                ('all_group_ids', 'in', attendance_officer_group.id),
-            ]
-        ).ids
-
-    def _get_user_by_employee_barcode(self, barcode):
-        return self.env['res.users'].sudo().search(
-            [
-                ('share', '=', False),
-                ('all_group_ids', 'in', self._get_attendance_officer_group_id()),
-                ('employee_ids.barcode', '=', barcode),
+                ('groups_id', 'in', attendance_officer_group.id),
+                ('employee_id.barcode', '=', self._AUTO_THIRD_APPROVER_BADGE),
             ],
             limit=1,
         )
-
-    def _get_auto_third_approver(self):
-        user = self._get_user_by_employee_barcode(self._AUTO_THIRD_APPROVER_BADGE)
-        return user if user else False
-
-    def _get_auto_second_approver(self):
-        user = self._get_user_by_employee_barcode(self._AUTO_SECOND_APPROVER_BADGE)
         return user if user else False
 
     @api.onchange('employee_id')
-    def _onchange_employee_id_autofill_approvers(self):
-        auto_second_approver = self._get_auto_second_approver()
-        auto_third_approver = self._get_auto_third_approver()
+    def _onchange_employee_id_autofill_third_approver(self):
+        auto_approver = self._get_auto_third_approver()
         for ticket in self:
-            if auto_second_approver and not ticket.second_approver_id:
-                ticket.second_approver_id = auto_second_approver
-            if auto_third_approver and not ticket.third_approver_id:
-                ticket.third_approver_id = auto_third_approver
-
-    def _is_attendance_officer(self, user):
-        return bool(user and user.has_group('hr_attendance.group_hr_attendance_user'))
-
-    @api.constrains('second_approver_id', 'third_approver_id')
-    def _check_attendance_officer_approvers(self):
-        for ticket in self:
-            if ticket.second_approver_id and not self._is_attendance_officer(ticket.second_approver_id):
-                raise UserError(_('Second approver must have "Officer: Manage all attendances" role.'))
-            if ticket.third_approver_id and not self._is_attendance_officer(ticket.third_approver_id):
-                raise UserError(_('Third approver must have "Officer: Manage all attendances" role.'))
+            if auto_approver and not ticket.third_approver_id:
+                ticket.third_approver_id = auto_approver
 
     def _notify_approver(self, approver, message_body):
         self.ensure_one()
@@ -286,23 +251,10 @@ class HrEmployeeGateTicket(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        auto_second_approver = self._get_auto_second_approver()
         auto_approver = self._get_auto_third_approver()
-        if not auto_second_approver:
-            _logger.warning(
-                'hr_employee_gate_ticket: auto second approver not found for barcode=%s',
-                self._AUTO_SECOND_APPROVER_BADGE,
-            )
-        if not auto_approver:
-            _logger.warning(
-                'hr_employee_gate_ticket: auto third approver not found for barcode=%s',
-                self._AUTO_THIRD_APPROVER_BADGE,
-            )
         for vals in vals_list:
             if vals.get('name', _('New')) == _('New'):
                 vals['name'] = self.env['ir.sequence'].next_by_code('hr.employee.gate.ticket') or _('New')
-            if auto_second_approver and not vals.get('second_approver_id'):
-                vals['second_approver_id'] = auto_second_approver.id
             if auto_approver and not vals.get('third_approver_id'):
                 vals['third_approver_id'] = auto_approver.id
         tickets = super().create(vals_list)
@@ -312,15 +264,10 @@ class HrEmployeeGateTicket(models.Model):
         return tickets
 
     def write(self, vals):
-        if 'employee_id' in vals and ('second_approver_id' not in vals or 'third_approver_id' not in vals):
-            auto_second_approver = self._get_auto_second_approver()
+        if 'employee_id' in vals and 'third_approver_id' not in vals:
             auto_approver = self._get_auto_third_approver()
-            new_vals = dict(vals)
-            if auto_second_approver and 'second_approver_id' not in vals:
-                new_vals['second_approver_id'] = auto_second_approver.id
-            if auto_approver and 'third_approver_id' not in vals:
-                new_vals['third_approver_id'] = auto_approver.id
-            vals = new_vals
+            if auto_approver:
+                vals = dict(vals, third_approver_id=auto_approver.id)
         result = super().write(vals)
         if any(
             field in vals
