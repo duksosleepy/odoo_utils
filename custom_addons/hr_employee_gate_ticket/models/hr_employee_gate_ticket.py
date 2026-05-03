@@ -49,20 +49,14 @@ class HrEmployeeGateTicket(models.Model):
     second_approver_id = fields.Many2one(
         'res.users',
         string='Second Approver',
-        domain=lambda self: [
-            ('share', '=', False),
-            ('all_group_ids', 'in', self.env.ref('hr_attendance.group_hr_attendance_user').id),
-        ],
+        domain=lambda self: [('id', 'in', self._get_attendance_officer_user_ids())],
         tracking=True,
         help='User who will do the second approval',
     )
     third_approver_id = fields.Many2one(
         'res.users',
         string='Third Approver',
-        domain=lambda self: [
-            ('share', '=', False),
-            ('all_group_ids', 'in', self.env.ref('hr_attendance.group_hr_attendance_user').id),
-        ],
+        domain=lambda self: [('id', 'in', self._get_attendance_officer_user_ids())],
         default=lambda self: self._get_auto_third_approver(),
         tracking=True,
         help='User who will do the third approval',
@@ -87,17 +81,34 @@ class HrEmployeeGateTicket(models.Model):
     )
     _AUTO_THIRD_APPROVER_BADGE = '041838157770'
 
-    def _get_auto_third_approver(self):
+    def _get_attendance_officer_user_ids(self):
         attendance_officer_group = self.env.ref('hr_attendance.group_hr_attendance_user')
-        user = self.env['res.users'].sudo().search(
+        return self.env['res.users'].sudo().search(
             [
                 ('share', '=', False),
                 ('all_group_ids', 'in', attendance_officer_group.id),
+            ]
+        ).ids
+
+    def _get_auto_third_approver(self):
+        user = self.env['res.users'].sudo().search(
+            [
+                ('id', 'in', self._get_attendance_officer_user_ids()),
                 ('employee_id.barcode', '=', self._AUTO_THIRD_APPROVER_BADGE),
             ],
             limit=1,
         )
         return user if user else False
+
+    @api.onchange('employee_id')
+    def _onchange_approver_domains(self):
+        domain = [('id', 'in', self._get_attendance_officer_user_ids())]
+        return {
+            'domain': {
+                'second_approver_id': domain,
+                'third_approver_id': domain,
+            }
+        }
 
     def _is_attendance_officer(self, user):
         return bool(user and user.has_group('hr_attendance.group_hr_attendance_user'))
