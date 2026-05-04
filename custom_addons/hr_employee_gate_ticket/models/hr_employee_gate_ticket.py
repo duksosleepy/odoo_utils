@@ -329,6 +329,8 @@ class HrEmployeeGateTicket(models.Model):
         tickets = super().create(vals_list)
         for ticket in tickets:
             _logger.info('Created gate ticket ID %s', ticket.id)
+            # Manually trigger approver validation after creation
+            ticket._check_approvers()
             ticket._generate_gate_ticket_pdf()
         return tickets
 
