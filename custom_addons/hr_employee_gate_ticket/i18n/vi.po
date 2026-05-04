@@ -57,6 +57,11 @@ msgstr "Vui lòng chọn đầy đủ người phê duyệt trước khi gửi. 
 
 #. module: hr_employee_gate_ticket
 #: code:addons/hr_employee_gate_ticket/models/hr_employee_gate_ticket.py:0
+msgid "Please select all approvers before saving. Missing: %s"
+msgstr "Vui lòng chọn đầy đủ người phê duyệt trước khi lưu. Thiếu: %s"
+
+#. module: hr_employee_gate_ticket
+#: code:addons/hr_employee_gate_ticket/models/hr_employee_gate_ticket.py:0
 msgid "Only tickets in first approval or refused state can be approved."
 msgstr "Chỉ phiếu ở trạng thái duyệt cấp 1 hoặc đã từ chối mới có thể duyệt."
 

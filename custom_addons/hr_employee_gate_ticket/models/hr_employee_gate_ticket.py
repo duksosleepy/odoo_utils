@@ -4,7 +4,7 @@ import logging
 from markupsafe import Markup
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -136,6 +136,22 @@ class HrEmployeeGateTicket(models.Model):
                 ticket.second_approver_id = auto_second_approver
             if auto_third_approver and not ticket.third_approver_id:
                 ticket.third_approver_id = auto_third_approver
+
+    @api.constrains('approver_id', 'second_approver_id', 'third_approver_id')
+    def _check_approvers(self):
+        for ticket in self:
+            missing_approvers = []
+            if not ticket.approver_id:
+                missing_approvers.append(_('First Approver'))
+            if not ticket.second_approver_id:
+                missing_approvers.append(_('Second Approver'))
+            if not ticket.third_approver_id:
+                missing_approvers.append(_('Third Approver'))
+
+            if missing_approvers:
+                raise ValidationError(
+                    _('Please select all approvers before saving. Missing: %s') % ', '.join(missing_approvers)
+                )
 
     def _notify_approver(self, approver, message_body):
         self.ensure_one()
