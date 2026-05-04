@@ -82,7 +82,6 @@
                 <field name="handover_replacement_picker_open" invisible="1"/>
                 <field name="handover_refused_recipient_ids" invisible="1"/>
                 <field name="handover_replaceable_recipient_ids" invisible="1"/>
-                <field name="handover_allowed_new_recipient_ids" invisible="1"/>
                 <field name="handover_escalation_label" invisible="1"/>
                 <div
                     class="alert alert-info"
@@ -121,17 +120,27 @@
                     </div>
                     <div class="mt-2" invisible="not handover_replacement_picker_open">
                         <field
-                            name="handover_swap_out_employee_id"
-                            domain="[('id', 'in', handover_replaceable_recipient_ids)]"
-                            options="{'no_create': True, 'no_open': True}"
-                            placeholder="Choose a colleague to replace"
-                        />
-                        <field
-                            name="handover_new_recipient_id"
-                            domain="[('id', 'in', handover_allowed_new_recipient_ids)]"
-                            options="{'no_create': True, 'no_open': True}"
-                            placeholder="Choose the new handover colleague"
-                        />
+                            name="handover_replacement_draft_ids"
+                            readonly="not can_manage_handover_replacement"
+                        >
+                            <list editable="bottom" create="1" delete="1">
+                                <field name="sequence" string="STT" readonly="1"/>
+                                <field
+                                    name="replace_employee_id"
+                                    string="Người cần thay"
+                                    domain="[('id', 'in', parent.handover_replaceable_recipient_ids)]"
+                                    options="{'no_create': True, 'no_open': True}"
+                                />
+                                <field
+                                    name="new_employee_id"
+                                    string="Người nhận bàn giao"
+                                    domain="[('id', 'in', allowed_new_employee_ids)]"
+                                    options="{'no_create': True, 'no_open': True}"
+                                />
+                                <field name="allowed_new_employee_ids" column_invisible="1"/>
+                                <field name="handover_work_content" string="Nội dung công việc"/>
+                            </list>
+                        </field>
                         <div class="mt-2">
                             <button
                                 name="action_handover_apply_replacement"
@@ -191,7 +200,6 @@
                 <field name="handover_replacement_picker_open" invisible="1"/>
                 <field name="handover_refused_recipient_ids" invisible="1"/>
                 <field name="handover_replaceable_recipient_ids" invisible="1"/>
-                <field name="handover_allowed_new_recipient_ids" invisible="1"/>
                 <field name="handover_escalation_label" invisible="1"/>
                 <field name="can_manage_handover_replacement" invisible="1"/>
                 <div
@@ -257,17 +265,27 @@
                     </div>
                     <div class="mt-2" invisible="not handover_replacement_picker_open">
                         <field
-                            name="handover_swap_out_employee_id"
-                            domain="[('id', 'in', handover_replaceable_recipient_ids)]"
-                            options="{'no_create': True, 'no_open': True}"
-                            placeholder="Choose a colleague to replace"
-                        />
-                        <field
-                            name="handover_new_recipient_id"
-                            domain="[('id', 'in', handover_allowed_new_recipient_ids)]"
-                            options="{'no_create': True, 'no_open': True}"
-                            placeholder="Choose the new handover colleague"
-                        />
+                            name="handover_replacement_draft_ids"
+                            readonly="not can_manage_handover_replacement"
+                        >
+                            <list editable="bottom" create="1" delete="1">
+                                <field name="sequence" string="STT" readonly="1"/>
+                                <field
+                                    name="replace_employee_id"
+                                    string="Người cần thay"
+                                    domain="[('id', 'in', parent.handover_replaceable_recipient_ids)]"
+                                    options="{'no_create': True, 'no_open': True}"
+                                />
+                                <field
+                                    name="new_employee_id"
+                                    string="Người nhận bàn giao"
+                                    domain="[('id', 'in', allowed_new_employee_ids)]"
+                                    options="{'no_create': True, 'no_open': True}"
+                                />
+                                <field name="allowed_new_employee_ids" column_invisible="1"/>
+                                <field name="handover_work_content" string="Nội dung công việc"/>
+                            </list>
+                        </field>
                         <div class="mt-2">
                             <button
                                 name="action_handover_apply_replacement"

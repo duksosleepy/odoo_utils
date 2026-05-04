@@ -256,22 +256,11 @@ class HolidaysRequest(models.Model):
         string="Replaceable handover recipients (technical)",
         compute="_compute_handover_replaceable_recipient_ids",
     )
-    handover_allowed_new_recipient_ids = fields.Many2many(
-        comodel_name="hr.employee",
-        string="Allowed new handover recipients (technical)",
-        compute="_compute_handover_allowed_new_recipient_ids",
-    )
-    handover_swap_out_employee_id = fields.Many2one(
-        comodel_name="hr.employee",
-        string="Replace refused colleague",
+    handover_replacement_draft_ids = fields.One2many(
+        comodel_name="hr.leave.handover.replacement.draft",
+        inverse_name="leave_id",
+        string="Handover replacement lines",
         copy=False,
-        help="Select which refused recipient to remove from work handover.",
-    )
-    handover_new_recipient_id = fields.Many2one(
-        comodel_name="hr.employee",
-        string="New handover colleague",
-        copy=False,
-        help="New colleague to receive work handover (cannot be someone who already accepted).",
     )
     skip_work_handover = fields.Boolean(
         string="Không cần bàn giao công việc",
@@ -312,8 +301,6 @@ class HolidaysRequest(models.Model):
             ("is_emergency_leave", "boolean"),
             ("emergency_leave_approver_notice", "varchar"),
             ("handover_replacement_picker_open", "boolean"),
-            ("handover_swap_out_employee_id", "int4"),
-            ("handover_new_recipient_id", "int4"),
             ("handover_requested_at", "timestamp"),
             ("handover_escalated", "boolean"),
             ("handover_escalated_at", "timestamp"),
@@ -1084,30 +1071,6 @@ class HolidaysRequest(models.Model):
                 leave.handover_sheet_hidden_for_viewer = True
 
     @api.depends(
-        "employee_id",
-        "handover_employee_ids",
-        "handover_swap_out_employee_id",
-        "unavailable_handover_employee_ids",
-    )
-    def _compute_handover_allowed_new_recipient_ids(self):
-        Employee = self.env["hr.employee"]
-        for leave in self:
-            if not leave.employee_id:
-                leave.handover_allowed_new_recipient_ids = Employee
-                continue
-            blocked = leave.handover_employee_ids
-            if leave.handover_swap_out_employee_id:
-                blocked = blocked - leave.handover_swap_out_employee_id
-            candidates = Employee.search(
-                [
-                    ("id", "!=", leave.employee_id.id),
-                    ("user_id", "!=", False),
-                ]
-            )
-            unavailable = leave.unavailable_handover_employee_ids
-            leave.handover_allowed_new_recipient_ids = candidates - blocked - unavailable
-
-    @api.depends(
         "holiday_status_id",
         "holiday_status_id.extra_responsible_user_ids",
         "holiday_status_id.extra_responsible_department_ids",
@@ -1709,72 +1672,78 @@ class HolidaysRequest(models.Model):
                 ),
             )
 
-    def _notify_handover_recipients_submit_via_bot(self):
-        """Send Discuss DM from handover bot when requester submits the leave."""
-        for leave in self.filtered("handover_employee_ids"):
-            requester_name = leave.employee_id.name or leave.employee_id.display_name or leave.display_name
-            date_from = leave.request_date_from or (leave.date_from and leave.date_from.date())
-            date_text = date_from.strftime("%d/%m/%Y") if date_from else ""
-            for recipient in leave.handover_employee_ids:
-                user = recipient.user_id
-                if not user or user.share or not user.partner_id:
-                    continue
-                line = leave.handover_acceptance_ids.filtered(lambda l: l.employee_id == recipient)[:1]
-                work_content = (line.handover_work_content or "").strip()
-                if work_content:
-                    body = _(
-                        "Bạn được %(requester)s bàn giao công việc khi họ nghỉ vào ngày %(date)s "
-                        "với nội dung công việc là: %(content)s. "
-                        "Vui lòng bấm vào mục Time Off để chấp nhận hoặc từ chối."
-                    ) % {
-                        "requester": requester_name,
-                        "date": date_text,
-                        "content": work_content,
-                    }
-                else:
-                    body = _(
-                        "Bạn được %(requester)s bàn giao công việc khi họ nghỉ vào ngày %(date)s. "
-                        "Vui lòng bấm vào mục Time Off để chấp nhận hoặc từ chối."
-                    ) % {
-                        "requester": requester_name,
-                        "date": date_text,
-                    }
+    def _notify_specific_handover_recipients_via_bot(self, employees):
+        """Discuss DM from handover bot: same wording as khi nộp đơn — chỉ gửi cho subset người nhận."""
+        self.ensure_one()
+        if not employees:
+            return
+        requester_name = (
+            self.employee_id.name or self.employee_id.display_name or self.display_name
+        )
+        date_from = self.request_date_from or (self.date_from and self.date_from.date())
+        date_text = date_from.strftime("%d/%m/%Y") if date_from else ""
+        bot_user = self.env.ref("business_discuss_bots.user_bot_handover", raise_if_not_found=False) or self.env.ref(
+            "base.user_root"
+        )
+        channel_model = self.env["discuss.channel"].sudo()
+        for recipient in employees:
+            user = recipient.user_id
+            if not user or user.share or not user.partner_id:
+                continue
+            line = self.handover_acceptance_ids.filtered(lambda l: l.employee_id == recipient)[:1]
+            work_content = (line.handover_work_content or "").strip()
+            if work_content:
+                body = _(
+                    "Bạn được %(requester)s bàn giao công việc khi họ nghỉ vào ngày %(date)s "
+                    "với nội dung công việc là: %(content)s. "
+                    "Vui lòng bấm vào mục Time Off để chấp nhận hoặc từ chối."
+                ) % {
+                    "requester": requester_name,
+                    "date": date_text,
+                    "content": work_content,
+                }
+            else:
+                body = _(
+                    "Bạn được %(requester)s bàn giao công việc khi họ nghỉ vào ngày %(date)s. "
+                    "Vui lòng bấm vào mục Time Off để chấp nhận hoặc từ chối."
+                ) % {
+                    "requester": requester_name,
+                    "date": date_text,
+                }
+            try:
+                chat = channel_model.with_user(bot_user)._get_or_create_chat([user.partner_id.id], pin=True)
+                chat.with_user(bot_user).sudo().message_post(
+                    body=body,
+                    message_type="comment",
+                    subtype_xmlid="mail.mt_comment",
+                )
+            except Exception:
                 try:
-                    bot_user = (
-                        self.env.ref("business_discuss_bots.user_bot_handover", raise_if_not_found=False)
-                        or self.env.ref("base.user_root")
+                    bot_partner = bot_user.partner_id if bot_user else False
+                    if not bot_partner:
+                        raise ValueError("handover bot partner not found")
+                    chat = (
+                        self.env["discuss.channel"]
+                        .sudo()
+                        .with_user(user)
+                        ._get_or_create_chat([bot_partner.id], pin=True)
                     )
-                    channel_model = self.env["discuss.channel"].sudo()
-                    # Primary path: create/get DM in bot context so sender is handover bot.
-                    chat = channel_model.with_user(bot_user)._get_or_create_chat([user.partner_id.id], pin=True)
                     chat.with_user(bot_user).sudo().message_post(
                         body=body,
                         message_type="comment",
                         subtype_xmlid="mail.mt_comment",
                     )
                 except Exception:
-                    try:
-                        # Fallback path: create/get same DM from recipient side, then still post as bot.
-                        bot_partner = bot_user.partner_id if bot_user else False
-                        if not bot_partner:
-                            raise ValueError("handover bot partner not found")
-                        chat = (
-                            self.env["discuss.channel"]
-                            .sudo()
-                            .with_user(user)
-                            ._get_or_create_chat([bot_partner.id], pin=True)
-                        )
-                        chat.with_user(bot_user).sudo().message_post(
-                            body=body,
-                            message_type="comment",
-                            subtype_xmlid="mail.mt_comment",
-                        )
-                    except Exception:
-                        _logger.exception(
-                            "time_off_extra_approval: failed to send handover submit bot chat leave_id=%s recipient_id=%s",
-                            leave.id,
-                            recipient.id,
-                        )
+                    _logger.exception(
+                        "time_off_extra_approval: failed to send handover submit bot chat leave_id=%s recipient_id=%s",
+                        self.id,
+                        recipient.id,
+                    )
+
+    def _notify_handover_recipients_submit_via_bot(self):
+        """Send Discuss DM from handover bot when requester submits the leave."""
+        for leave in self.filtered("handover_employee_ids"):
+            leave._notify_specific_handover_recipients_via_bot(leave.handover_employee_ids)
 
     def _handover_owner_selected_replacement(self):
         self.ensure_one()
@@ -2195,12 +2164,13 @@ class HolidaysRequest(models.Model):
         return True
 
     def action_handover_replacement_yes(self):
-        """Open the picker: replace one refused recipient with a new colleague."""
+        """Open the picker: replace refused recipient(s) with new colleague(s) and work content per row."""
         self.ensure_one()
         if not self.can_manage_handover_replacement:
             raise UserError(
                 _("Chỉ nhân viên đã tạo đơn nghỉ phép này mới có thể cập nhật người nhận bàn giao bị từ chối.")
             )
+        self.handover_replacement_draft_ids.unlink()
         self.write({"handover_replacement_picker_open": True})
         return self._action_return_reload_leave_form()
 
@@ -2211,6 +2181,7 @@ class HolidaysRequest(models.Model):
             raise UserError(
                 _("Chỉ nhân viên đã tạo đơn nghỉ phép này mới có thể cập nhật người nhận bàn giao bị từ chối.")
             )
+        self.handover_replacement_draft_ids.unlink()
         refused_emps = self.handover_acceptance_ids.filtered(
             lambda line: line.state == "refused"
         ).mapped("employee_id")
@@ -2218,8 +2189,6 @@ class HolidaysRequest(models.Model):
             self.write(
                 {
                     "handover_replacement_picker_open": False,
-                    "handover_swap_out_employee_id": False,
-                    "handover_new_recipient_id": False,
                 }
             )
             return self._action_return_reload_leave_form()
@@ -2235,8 +2204,6 @@ class HolidaysRequest(models.Model):
             {
                 "handover_employee_ids": [Command.set(remaining.ids)],
                 "handover_replacement_picker_open": False,
-                "handover_swap_out_employee_id": False,
-                "handover_new_recipient_id": False,
             }
         )
         self._feedback_requester_handover_update_todo(
@@ -2250,66 +2217,96 @@ class HolidaysRequest(models.Model):
         return self._action_return_reload_leave_form()
 
     def action_handover_apply_replacement(self):
-        """Remove one refused recipient and add a new colleague who has not already accepted on this request."""
+        """Apply replacement rows: remove selected recipients and add new ones with handover content."""
         self.ensure_one()
         if not self.can_manage_handover_replacement:
             raise UserError(
                 _("Chỉ nhân viên đã tạo đơn nghỉ phép này mới có thể cập nhật người nhận bàn giao bị từ chối.")
             )
-        swap = self.handover_swap_out_employee_id
-        new_emp = self.handover_new_recipient_id
-        if not swap or not new_emp:
-            raise UserError(_("Vui lòng chọn người cần thay (đã từ chối) và người thay thế mới."))
-        if swap not in self.handover_replaceable_recipient_ids:
+        draft_lines = self.handover_replacement_draft_ids.sorted(lambda l: (l.sequence or 0, l.id or 0))
+        if not draft_lines:
             raise UserError(
                 _(
-                    "Bạn chỉ có thể thay những người nhận hiện đang cho phép thay "
-                    "(đã từ chối, hoặc đang chờ sau khi quá thời gian chuyển cấp)."
+                    "Vui lòng thêm ít nhất một dòng (Thêm một dòng): chọn người cần thay, "
+                    "người nhận bàn giao mới và nội dung công việc."
                 )
             )
-        if swap not in self.handover_employee_ids:
-            raise UserError(_("Đồng nghiệp được chọn không nằm trong danh sách bàn giao hiện tại."))
-        if new_emp not in self.handover_allowed_new_recipient_ids:
-            raise UserError(
-                _(
-                    "The new colleague cannot be added: they are already on this request, "
-                    "already accepted handover, or are unavailable in this period."
+        replaceable = self.handover_replaceable_recipient_ids
+        for line in draft_lines:
+            if not line.replace_employee_id or not line.new_employee_id:
+                raise UserError(_("Mỗi dòng phải có đủ người cần thay và người nhận bàn giao mới."))
+            content = (line.handover_work_content or "").strip()
+            if not content:
+                raise UserError(_("Vui lòng điền nội dung công việc cho từng người nhận mới."))
+            if line.replace_employee_id not in replaceable:
+                raise UserError(
+                    _(
+                        "Bạn chỉ có thể thay những người nhận hiện đang cho phép thay "
+                        "(đã từ chối, hoặc đang chờ sau khi quá thời gian chuyển cấp)."
+                    )
                 )
-            )
-        if swap == new_emp:
-            raise UserError(_("Người thay thế mới phải khác với người đang được thay."))
-        new_ids = [e.id for e in self.handover_employee_ids if e != swap]
-        if new_emp.id not in new_ids:
-            new_ids.append(new_emp.id)
-        if len(new_ids) > 5:
+            if line.replace_employee_id not in self.handover_employee_ids:
+                raise UserError(_("Đồng nghiệp được chọn không nằm trong danh sách bàn giao hiện tại."))
+            if line.new_employee_id not in line.allowed_new_employee_ids:
+                raise UserError(
+                    _(
+                        "Không thể thêm đồng nghiệp này: đã có trên đơn, trùng kỳ nghỉ không khả dụng, "
+                        "hoặc không hợp lệ."
+                    )
+                )
+            if line.replace_employee_id == line.new_employee_id:
+                raise UserError(_("Người nhận mới phải khác người đang được thay."))
+        replace_ids = draft_lines.mapped("replace_employee_id").ids
+        if len(replace_ids) != len(set(replace_ids)):
+            raise UserError(_("Mỗi người cần thay chỉ được chọn trên một dòng."))
+        new_ids_from_lines = draft_lines.mapped("new_employee_id").ids
+        if len(new_ids_from_lines) != len(set(new_ids_from_lines)):
+            raise UserError(_("Người nhận bàn giao mới không được trùng nhau giữa các dòng."))
+        current = list(self.handover_employee_ids.ids)
+        specs = []
+        for line in draft_lines:
+            ro, nw = line.replace_employee_id.id, line.new_employee_id.id
+            if ro not in current:
+                raise UserError(
+                    _("Đồng nghiệp “%s” không còn trong danh sách bàn giao.") % line.replace_employee_id.display_name
+                )
+            current.remove(ro)
+            if nw in current:
+                raise UserError(
+                    _("Người nhận “%s” đã có trong danh sách bàn giao sau khi áp dụng các dòng trước.")
+                    % line.new_employee_id.display_name
+                )
+            current.append(nw)
+            specs.append((nw, (line.handover_work_content or "").strip()))
+        if len(current) > 5:
             raise ValidationError(_("Bạn chỉ có thể chọn tối đa 5 người nhận bàn giao công việc."))
+        draft_lines.unlink()
         self.write(
             {
-                "handover_employee_ids": [Command.set(new_ids)],
+                "handover_employee_ids": [Command.set(current)],
                 "handover_replacement_picker_open": False,
-                "handover_swap_out_employee_id": False,
-                "handover_new_recipient_id": False,
             }
         )
-        new_line = self.handover_acceptance_ids.filtered(lambda l: l.employee_id == new_emp)[:1]
-        if new_line:
-            write_vals = {"assigned_by_user_id": self.env.user.id}
-            if (
-                self.handover_escalated
-                and self.employee_id
-                and self.employee_id.user_id
-                and self.env.user != self.employee_id.user_id
-            ):
-                write_vals["reassigned_by_escalation_owner"] = True
-            new_line.sudo().write(write_vals)
-        self._refresh_handover_activity_notes_for_employees(new_emp)
+        new_emps = self.env["hr.employee"]
+        for emp_id, content in specs:
+            new_line = self.handover_acceptance_ids.filtered(lambda l: l.employee_id.id == emp_id)[:1]
+            if new_line:
+                write_vals = {
+                    "handover_work_content": content,
+                    "assigned_by_user_id": self.env.user.id,
+                }
+                if (
+                    self.handover_escalated
+                    and self.employee_id
+                    and self.employee_id.user_id
+                    and self.env.user != self.employee_id.user_id
+                ):
+                    write_vals["reassigned_by_escalation_owner"] = True
+                new_line.sudo().write(write_vals)
+                new_emps |= new_line.employee_id
+        self._refresh_handover_activity_notes_for_employees(new_emps)
+        self._notify_specific_handover_recipients_via_bot(new_emps)
         return self._action_return_reload_leave_form()
-
-    @api.onchange("handover_swap_out_employee_id")
-    def _onchange_handover_swap_out_employee_id(self):
-        allowed = self.handover_allowed_new_recipient_ids
-        if self.handover_new_recipient_id and self.handover_new_recipient_id not in allowed:
-            self.handover_new_recipient_id = False
 
     def _vals_trigger_emergency_leave_check(self, vals):
         if not vals:
