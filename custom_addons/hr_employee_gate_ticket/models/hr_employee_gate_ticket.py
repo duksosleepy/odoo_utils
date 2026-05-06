@@ -307,12 +307,10 @@ class HrEmployeeGateTicket(models.Model):
                     Markup('<p>Đơn ra cổng của bạn đã được chấp nhận.</p>'),
                 )
             if ticket.third_approver_id:
-                ticket._notify_approver(
-                    ticket.third_approver_id,
-                    Markup('<p>Nhân viên <b>%(employee)s</b> đã được chấp thuận ra cổng. (Notification only)</p>') % {
-                        'employee': ticket.employee_id.name,
-                    },
-                )
+                intro = Markup('<p>Nhân viên <b>%(employee)s</b> đang ra cổng.</p>') % {
+                    'employee': ticket.employee_id.name,
+                }
+                ticket._notify_approver(ticket.third_approver_id, ticket._build_ticket_info_message(intro))
             ticket.message_post(
                 body=Markup('<p>%s</p>') % _('Gateway ticket fully approved.'),
                 subtype_xmlid='mail.mt_comment',
