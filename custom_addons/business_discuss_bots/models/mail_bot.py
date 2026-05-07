@@ -1,9 +1,13 @@
 import re
 import unicodedata
+import logging
 
 from markupsafe import Markup
 
 from odoo import models, _
+from odoo.tools import html2plaintext
+
+_logger = logging.getLogger(__name__)
 
 
 class MailBot(models.AbstractModel):
@@ -40,12 +44,28 @@ class MailBot(models.AbstractModel):
             values.get("message_type") != "comment" and not command
         ):
             return
-        body = values.get("body", "").replace("\xa0", " ").strip().lower().strip(".!")
+        raw_body = values.get("body", "")
+        body = html2plaintext(raw_body or "").replace("\xa0", " ").strip().lower().strip(".!")
+        _logger.info(
+            "business_discuss_bots: _apply_logic channel_id=%s author_id=%s message_type=%s body=%r command=%s",
+            channel.id,
+            values.get("author_id"),
+            values.get("message_type"),
+            body[:200],
+            command,
+        )
         answer = self._get_answer(channel, body, values, command)
         if not answer:
+            _logger.info("business_discuss_bots: no answer for channel_id=%s body=%r", channel.id, body[:200])
             return
         author_id = self._business_bot_author_id(channel) or default_author_id
         answers = answer if isinstance(answer, list) else [answer]
+        _logger.info(
+            "business_discuss_bots: posting %s answer(s) channel_id=%s author_id=%s",
+            len(answers),
+            channel.id,
+            author_id,
+        )
         for ans in answers:
             channel.with_context(business_bot_skip_apply_logic=True).sudo().message_post(
                 author_id=author_id,
@@ -57,15 +77,24 @@ class MailBot(models.AbstractModel):
 
     def _business_bot_route(self, channel, body, values, command=False):
         if command or channel.channel_type != "chat":
+            _logger.info(
+                "business_discuss_bots: route skipped channel_id=%s command=%s channel_type=%s",
+                channel.id,
+                command,
+                channel.channel_type,
+            )
             return False
         skill_key = self._business_bot_skill_key(channel)
         if not skill_key:
+            _logger.info("business_discuss_bots: no skill key for channel_id=%s", channel.id)
             return False
         if "hr.leave" not in self.env:
             return _("Bot chưa truy cập được dữ liệu Time Off trên hệ thống hiện tại.")
         if skill_key == "main":
+            _logger.info("business_discuss_bots: route channel_id=%s skill=main", channel.id)
             return self._run_main_router_skill(body)
         intent = self._classify_intent(body)
+        _logger.info("business_discuss_bots: route channel_id=%s skill=%s intent=%s", channel.id, skill_key, intent)
         if skill_key == "approval":
             if intent not in self._APPROVAL_SUPPORTED_INTENTS:
                 return self._redirect_to_main_bot_message(_("duyệt đơn nghỉ phép"))
@@ -81,7 +110,7 @@ class MailBot(models.AbstractModel):
         return False
 
     def _business_bot_skill_key(self, channel):
-        partners = channel.channel_member_ids.partner_id
+        partners = channel.sudo().channel_member_ids.partner_id
         main_bot_partner = self.env.ref("base.partner_root", raise_if_not_found=False)
         if main_bot_partner and main_bot_partner in partners:
             return "main"

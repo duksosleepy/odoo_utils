@@ -1,0 +1,40 @@
+// Handover replacement picker: use full sheet width; widen Time Off dialogs that only use modal-sm/md.
+
+.o_form_sheet > .o_handover_replacement_fullwidth,
+.o_form_view .o_handover_replacement_fullwidth {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    align-self: stretch !important;
+    box-sizing: border-box;
+
+    .alert {
+        max-width: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .o_field_one2many {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+
+        .o_list_renderer,
+        .o_list_table {
+            max-width: 100%;
+        }
+    }
+}
+
+// Odoo puts modal-lg on .modal-dialog (see web dialog.xml: modal-{{ props.size }})
+// Raw CSS min()/max() must be interpolated or libsass fails (same pattern as hr_employee_cccd_scan SCSS).
+.modal .modal-dialog:not(.modal-lg):not(.modal-xl):has(.o_handover_replacement_fullwidth) {
+    max-width: #{"min(1140px, 96vw)"} !important;
+    width: #{"min(1140px, 96vw)"} !important;
+}
+
+.modal .modal-dialog.modal-lg:has(.o_handover_replacement_fullwidth),
+.modal .modal-dialog.modal-xl:has(.o_handover_replacement_fullwidth) {
+    max-width: #{"min(1200px, 98vw)"} !important;
+}
