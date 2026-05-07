@@ -204,6 +204,22 @@ class HrEmployeeGateTicket(models.Model):
         check_in_formatted = (self.check_in + tz_offset).strftime('%H:%M ngày %d/%m/%Y') if self.check_in else ''
         checkout_formatted = (self.checkout_time + tz_offset).strftime('%H:%M ngày %d/%m/%Y') if self.checkout_time else ''
 
+        first_approver_label = '%s (Trưởng bộ phận)' % (self.approver_id.name or '') if self.approver_id else _('Trưởng bộ phận')
+        second_approver_label = '%s (HCNS)' % (self.second_approver_id.name or '') if self.second_approver_id else _('HCNS')
+
+        if self.state == 'validate':
+            first_approver_status = _('Đã duyệt')
+            second_approver_status = _('Đã duyệt')
+        elif self.state == 'second_approve':
+            first_approver_status = _('Đã duyệt')
+            second_approver_status = _('Chờ duyệt')
+        elif self.state == 'refuse':
+            first_approver_status = _('Từ chối')
+            second_approver_status = _('Từ chối')
+        else:
+            first_approver_status = _('Chờ duyệt')
+            second_approver_status = _('Chờ duyệt')
+
         table = Markup(
             '<table style="border-collapse:collapse;margin-top:8px;">'
             '<tr>'
@@ -226,12 +242,24 @@ class HrEmployeeGateTicket(models.Model):
             '<td style="border:1px solid #ccc;padding:4px 10px;">Lý do</td>'
             '<td style="border:1px solid #ccc;padding:4px 10px;">%(reason)s</td>'
             '</tr>'
+            '<tr>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(first_approver_label)s</td>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(first_approver_status)s</td>'
+            '</tr>'
+            '<tr>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(second_approver_label)s</td>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(second_approver_status)s</td>'
+            '</tr>'
             '</table>'
         ) % {
             'check_in': check_in_formatted,
             'checkout': checkout_formatted,
             'items': self.gate_items or '',
             'reason': self.gate_ticket or '',
+            'first_approver_label': first_approver_label,
+            'first_approver_status': first_approver_status,
+            'second_approver_label': second_approver_label,
+            'second_approver_status': second_approver_status,
         }
 
         link = Markup(
