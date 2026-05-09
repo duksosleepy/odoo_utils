@@ -1224,6 +1224,65 @@ class HolidaysRequest(models.Model):
             users = self.employee_id.hr_responsible_id
         return users
 
+    def _get_leave_employee_department_for_approval(self):
+        """Department the request belongs to (same source as computed ``department_id`` on leave)."""
+        self.ensure_one()
+        dept = self.sudo().department_id or (
+            self.employee_id.sudo().department_id if self.employee_id else self.env["hr.department"]
+        )
+        return dept
+
+    def _get_leave_department_manager_user(self):
+        """User linked to ``hr.department.manager_id`` for the employee's department (internal users only)."""
+        self.ensure_one()
+        dept = self._get_leave_employee_department_for_approval()
+        if not dept:
+            return self.env["res.users"]
+        mgr = dept.manager_id.sudo()
+        if not mgr or not mgr.user_id or mgr.user_id.share:
+            return self.env["res.users"]
+        return mgr.user_id
+
+    def _employee_hr_substitute_final_director_with_department_manager(self, users):
+        """Org-chart sequential flow: director wave uses department manager, not reporting-line director tier.
+
+        Skipped when the leave targets the special \"all directors\" employee list — that flow keeps replacing
+        the chain suffix with configured/company directors.
+        """
+        self.ensure_one()
+        if self._is_multi_director_special_employee():
+            return users
+        lt = self.holiday_status_id
+        if (
+            not lt
+            or lt.leave_validation_type != "employee_hr_responsibles"
+            or lt.employee_responsible_source != "org_chart"
+            or (lt.employee_responsible_approval_mode or "any") != "sequential"
+        ):
+            return users
+        dept_user = self._get_leave_department_manager_user()
+        if not dept_user:
+            return users
+        Users = self.env["res.users"]
+        ids = list(users.ids)
+        first_director_idx = None
+        for idx, uid in enumerate(ids):
+            u = Users.browse(uid).sudo()
+            emp = u.employee_id
+            if emp and (emp.job_title or "") == _DIRECTOR_JOB_TITLE_KEY:
+                first_director_idx = idx
+                break
+
+        prefix_ids = ids[:first_director_idx] if first_director_idx is not None else ids
+        if dept_user.id in prefix_ids:
+            # Already in chain before director tier — avoid reordering ambiguous cases.
+            return users
+        if first_director_idx is None:
+            if dept_user.id in ids:
+                return users
+            return Users.browse(ids + [dept_user.id])
+        return Users.browse(prefix_ids + [dept_user.id])
+
     def _get_org_chart_approver_users_ordered(self):
         """Walk reporting line (parent_id) from direct manager upward: one approver per org level.
 
@@ -1424,7 +1483,9 @@ class HolidaysRequest(models.Model):
         ordered = core
         if lt.employee_responsible_source != "org_chart":
             ordered = self._sort_responsible_users_by_job_title(core)
-        return self._employee_hr_maybe_expand_multi_director(ordered)
+        ordered = self._employee_hr_maybe_expand_multi_director(ordered)
+        ordered = self._employee_hr_substitute_final_director_with_department_manager(ordered)
+        return ordered
 
     def _sort_responsible_users_by_job_title(self, users):
         """Sequential chain order: trưởng nhóm → trưởng BP → kiểm soát → trưởng phòng HCNS → giám đốc (see hr_job_title_vn)."""

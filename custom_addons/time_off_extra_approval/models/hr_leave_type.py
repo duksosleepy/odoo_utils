@@ -56,7 +56,9 @@ class HolidaysType(models.Model):
         default="manual",
         help="Thủ công: dùng người phụ trách HR cấu hình trên nhân viên. "
         "Sơ đồ tổ chức: đi ngược chuỗi quản lý (parent) và tạo một bước duyệt cho mỗi cấp có user nội bộ liên kết "
-        "(theo từng tuyến báo cáo, không phải mỗi chức danh một ô).",
+        "(theo từng tuyến báo cáo, không phải mỗi chức danh một ô). "
+        "Với chế độ tuần tự, các bước trước Giám đốc giữ nguyên theo sơ đồ; bước Giám đốc cuối dùng Trưởng phòng được gán "
+        "trên phòng ban của nhân viên (trường Quản lý của Phòng ban), không lấy từ chuỗi quản lý khi hai nguồn khác nhau.",
     )
 
     employee_responsible_escalation_hours = fields.Float(

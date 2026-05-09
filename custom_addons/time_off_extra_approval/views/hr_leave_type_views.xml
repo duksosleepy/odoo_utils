@@ -27,6 +27,12 @@
                     <field name="employee_responsible_source"/>
                     <field name="employee_responsible_escalation_hours"
                            invisible="employee_responsible_approval_mode != 'sequential'"/>
+                    <p class="text-muted" colspan="2"
+                       invisible="employee_responsible_source != 'org_chart' or employee_responsible_approval_mode != 'sequential'">
+                        Sơ đồ + tuần tự (ngoài danh sách nhân viên đặc biệt): bước Giám đốc cuối giao cho <strong>Quản lý
+                        phòng ban</strong> (trường trên Phòng ban của nhân viên), không bắt buộc theo Giám đốc trên chuỗi
+                        quản lý.
+                    </p>
                 </group>
                 <group string="Nhân viên đặc biệt"
                        colspan="2"
