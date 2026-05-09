@@ -29,28 +29,27 @@
                            invisible="employee_responsible_approval_mode != 'sequential'"/>
                     <p class="text-muted" colspan="2"
                        invisible="employee_responsible_source != 'org_chart' or employee_responsible_approval_mode != 'sequential'">
-                        Sơ đồ + tuần tự (ngoài danh sách nhân viên đặc biệt): bước Giám đốc cuối giao cho <strong>Quản lý
-                        phòng ban</strong> (trường trên Phòng ban của nhân viên), không bắt buộc theo Giám đốc trên chuỗi
-                        quản lý.
+                        Org chart + sequential mode (outside the special employee list): the final Director step is
+                        assigned to the <strong>Department Manager</strong> (Manager field on the employee's
+                        department), not necessarily the Director in the management chain.
                     </p>
                 </group>
-                <group string="Nhân viên đặc biệt"
+                <group string="Special employees"
                        colspan="2"
                        class="o_inner_group"
                        invisible="leave_validation_type != 'employee_hr_responsibles'">
                     <p class="text-muted" colspan="2">
-                        Nhân viên trong bảng dưới: ở chế độ duyệt tuần tự theo sơ đồ cho tới khi tới cấp Giám đốc.
-                        Nếu không tích "Duyệt theo thứ tự Giám đốc", tất cả Giám đốc cùng nhận thông báo và có thể
-                        duyệt song song (tới khi đủ chữ ký). Nếu tích, thứ tự duyệt giữa các Giám đốc theo STT trong
-                        bảng thứ hai (bảng trống thì dùng danh sách Giám đốc trong công ty như mặc định).
+                        For employees listed below, approval stays sequential by org chart until the Director level.
+                        If "Sequential director approval" is disabled, all Directors are notified and can approve in
+                        parallel. If enabled, Directors approve in sequence according to the second table.
                     </p>
                     <field name="special_director_employee_line_ids"
                            colspan="2"
                            nolabel="1">
-                        <list string="Danh sách nhân viên đặc biệt" editable="bottom" create="true" delete="true">
-                            <field name="sequence" string="STT" readonly="1"/>
+                        <list string="Special employee list" editable="bottom" create="true" delete="true">
+                            <field name="sequence" string="No." readonly="1"/>
                             <field name="employee_id"
-                                   string="Tên nhân viên"
+                                   string="Employee"
                                    options="{'no_create': True, 'no_create_edit': True}"
                                    context="{'list_view_ref': 'hr.view_employee_tree', 'search_view_ref': 'hr.view_employee_filter'}"/>
                         </list>
@@ -60,10 +59,10 @@
                            colspan="2"
                            nolabel="1"
                            invisible="not special_director_sequential_approval">
-                        <list string="Thứ tự Giám đốc" editable="bottom" create="true" delete="true">
-                            <field name="sequence" string="STT" readonly="1"/>
+                        <list string="Director order" editable="bottom" create="true" delete="true">
+                            <field name="sequence" string="No." readonly="1"/>
                             <field name="employee_id"
-                                   string="Giám đốc"
+                                   string="Director"
                                    domain="[('job_title', '=', 'giám đốc')]"
                                    options="{'no_create': True, 'no_create_edit': True}"
                                    context="{'list_view_ref': 'hr.view_employee_tree', 'search_view_ref': 'hr.view_employee_filter'}"/>

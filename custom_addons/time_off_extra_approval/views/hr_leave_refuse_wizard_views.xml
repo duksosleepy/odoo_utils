@@ -4,11 +4,11 @@
         <field name="name">hr.leave.refuse.wizard.form</field>
         <field name="model">hr.leave.refuse.wizard</field>
         <field name="arch" type="xml">
-            <form string="Từ chối bàn giao công việc">
+            <form string="Refuse Time Off Request">
                 <group>
                     <field name="leave_ids" invisible="1"/>
                     <field name="refuse_action" invisible="1"/>
-                    <field name="reason" placeholder="Giải thích lý do bạn từ chối duyệt đơn nghỉ phép..."/>
+                    <field name="reason" placeholder="Explain why you are refusing this time off request..."/>
                 </group>
                 <footer>
                     <button name="action_refuse" type="object" class="btn-primary" string="Submit Refusal"/>

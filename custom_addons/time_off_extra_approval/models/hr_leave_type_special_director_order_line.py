@@ -24,7 +24,7 @@ class HrLeaveTypeSpecialDirectorOrderLine(models.Model):
         ondelete="cascade",
         index=True,
     )
-    sequence = fields.Integer(string="STT", default=1)
+    sequence = fields.Integer(string="No.", default=1)
     employee_id = fields.Many2one(
         comodel_name="hr.employee",
         string="Employee",
@@ -47,7 +47,7 @@ class HrLeaveTypeSpecialDirectorOrderLine(models.Model):
                 continue
             title = line.employee_id.job_title or ""
             if title != _DIRECTOR_KEY:
-                raise ValidationError(_("Chỉ được chọn nhân viên có chức danh Giám đốc."))
+                raise ValidationError(_("Only employees with Director job title can be selected."))
 
     @api.onchange("employee_id")
     def _onchange_resequence_lines_realtime(self):

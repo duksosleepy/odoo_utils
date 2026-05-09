@@ -86,6 +86,10 @@ msgid "Gateway Ticket"
 msgstr "Giấy ra cổng"
 
 #. module: hr_employee_gate_ticket
+msgid "Gateway Tickets"
+msgstr "Danh sách giấy ra cổng"
+
+#. module: hr_employee_gate_ticket
 #: model:ir.ui.view,arch_db:hr_employee_gate_ticket.hr_employee_gate_ticket_view_form
 msgid "Approvers"
 msgstr "Người duyệt"

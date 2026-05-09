@@ -4,13 +4,13 @@ from odoo.exceptions import ValidationError
 
 class HrLeaveTypeApprovalStep(models.Model):
     _name = "hr.leave.type.approval.step"
-    _description = "Bước duyệt nhiều cấp của nghỉ phép"
+    _description = "Multi-step time off approval step"
     _order = "sequence, id"
 
     allowed_approver_user_ids = fields.Many2many(
         comodel_name="res.users",
         compute="_compute_allowed_approver_user_ids",
-        string="Người duyệt hợp lệ",
+        string="Allowed approvers",
     )
 
     leave_type_id = fields.Many2one(
@@ -27,12 +27,12 @@ class HrLeaveTypeApprovalStep(models.Model):
         relation="hr_leave_type_approval_step_user_rel",
         column1="step_id",
         column2="user_id",
-        string="Người duyệt (Người dùng)",
+        string="Approver (User)",
         domain="[('id', 'in', allowed_approver_user_ids)]",
     )
     approver_user_id = fields.Many2one(
         comodel_name="res.users",
-        string="Người duyệt",
+        string="Approver",
         compute="_compute_approver_user_id",
         inverse="_inverse_approver_user_id",
         store=True,
@@ -44,7 +44,7 @@ class HrLeaveTypeApprovalStep(models.Model):
         relation="hr_leave_type_approval_step_dept_rel",
         column1="step_id",
         column2="department_id",
-        string="Người duyệt (Phòng ban)",
+        string="Approver (Department)",
     )
 
     def _get_all_approver_users(self):
@@ -153,7 +153,7 @@ class HrLeaveTypeApprovalStep(models.Model):
     def _check_single_approver_user(self):
         for step in self:
             if len(step.approver_user_ids) > 1:
-                raise ValidationError(_("Mỗi bước chỉ được có một người duyệt."))
+                raise ValidationError(_("Each step can only have one approver."))
 
     @api.constrains("leave_type_id", "approver_user_id")
     def _check_unique_approver_per_leave_type(self):
@@ -163,7 +163,7 @@ class HrLeaveTypeApprovalStep(models.Model):
             )[:1]
             if duplicated:
                 raise ValidationError(
-                    _("Mỗi người duyệt chỉ được gán cho một bước. %(name)s đang bị gán lặp.")
+                    _("Each approver can only be assigned to one step. %(name)s is duplicated.")
                     % {"name": step.approver_user_id.display_name}
                 )
 
@@ -188,9 +188,9 @@ class HrLeaveTypeApprovalStep(models.Model):
                 step.approver_user_id = False
                 action = self._approver_user_domain_action()
                 action["warning"] = {
-                    "title": _("Trùng người duyệt"),
+                    "title": _("Duplicate approver"),
                     "message": _(
-                        "%(name)s đã được gán ở bước khác. Mỗi người chỉ được duyệt một bước."
+                        "%(name)s is already assigned to another step. Each approver can only validate one step."
                     )
                     % {"name": user.display_name},
                 }
@@ -205,7 +205,7 @@ class HrLeaveTypeApprovalStep(models.Model):
 
 class HrLeaveMultiApproval(models.Model):
     _name = "hr.leave.multi.approval"
-    _description = "Nhật ký duyệt nhiều cấp nghỉ phép"
+    _description = "Multi-step time off approval log"
     _order = "approved_at desc, id desc"
 
     leave_id = fields.Many2one(
@@ -237,7 +237,7 @@ class HrLeaveMultiApproval(models.Model):
         (
             "only_one_target",
             "CHECK((leave_id IS NOT NULL) <> (allocation_id IS NOT NULL))",
-            "Chỉ được thiết lập một trong hai trường leave_id hoặc allocation_id.",
+            "Only one of leave_id or allocation_id can be set.",
         ),
     ]
 

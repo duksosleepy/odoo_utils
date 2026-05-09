@@ -17,8 +17,8 @@ function languageSwitchItem(env) {
         id: "vn_language_switch",
         description:
             isVietnamese
-                ? _t("Ngon ngu: Tieng Viet (Switch to English)")
-                : _t("Language: English (Chuyen sang Tieng Viet)"),
+                ? _t("Language: Vietnamese (Switch to English)")
+                : _t("Language: English (Switch to Vietnamese)"),
         show: () => Boolean(session.enable_user_language_switch),
         callback: async () => {
             const latestLang = session.user_context?.lang || user.context?.lang || "en_US";

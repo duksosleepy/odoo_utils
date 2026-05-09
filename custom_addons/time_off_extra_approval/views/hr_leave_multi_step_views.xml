@@ -24,13 +24,13 @@
             </xpath>
 
             <xpath expr="//header/button[@name='action_cancel']" position="before">
-                <button string="Approve" name="action_multi_step_approve" type="object" class="oe_highlight"
+                <button string="Phê duyệt" name="action_multi_step_approve" type="object" class="oe_highlight"
                         invisible="validation_type != 'multi_step_6' or not can_multi_step_approve or not id"/>
-                <button string="Refuse" name="action_open_multi_step_refuse_wizard" type="object"
+                <button string="Từ chối" name="action_open_multi_step_refuse_wizard" type="object"
                         invisible="validation_type != 'multi_step_6' or not can_multi_step_approve or not id"/>
-                <button string="Approve" name="action_responsible_approve" type="object" class="oe_highlight"
+                <button string="Phê duyệt" name="action_responsible_approve" type="object" class="oe_highlight"
                         invisible="validation_type != 'employee_hr_responsibles' or not can_responsible_approve or not id"/>
-                <button string="Refuse" name="action_open_responsible_refuse_wizard" type="object"
+                <button string="Từ chối" name="action_open_responsible_refuse_wizard" type="object"
                         invisible="validation_type != 'employee_hr_responsibles' or not can_responsible_approve or not id"/>
             </xpath>
         </field>

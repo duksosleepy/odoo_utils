@@ -265,7 +265,7 @@ class HolidaysRequest(models.Model):
         copy=False,
     )
     skip_work_handover = fields.Boolean(
-        string="Không cần bàn giao công việc",
+        string="No work handover required",
         default=False,
         copy=False,
         help="Allow eligible senior employees to submit leave without handover recipients.",
@@ -697,8 +697,8 @@ class HolidaysRequest(models.Model):
             if unavailable:
                 raise ValidationError(
                     _(
-                        "Người nhận bàn giao đã chọn đang nghỉ phép trong giai đoạn này: %(names)s. "
-                        "Vui lòng chọn đồng nghiệp khác."
+                        "Selected handover recipients are on leave during this period: %(names)s. "
+                        "Please choose other colleagues."
                     )
                     % {"names": ", ".join(unavailable.mapped("name"))}
                 )
@@ -1898,7 +1898,7 @@ class HolidaysRequest(models.Model):
                 summary=_("Chỉ định người thay thế bàn giao"),
                 note=Markup("<p>%s</p><p>%s</p>") % (
                     body,
-                    _("Mở yêu cầu này và chỉ định đồng nghiệp khác trong mục Người nhận bàn giao công việc."),
+                    _("Open this request and assign another colleague in Work Handover To."),
                 ),
             )
 
@@ -2052,8 +2052,8 @@ class HolidaysRequest(models.Model):
                 note=Markup("<p>%s</p><p>%s</p>") % (
                     body,
                     _(
-                        "Mở yêu cầu này, sau đó xóa người đã từ chối "
-                        "hoặc chọn đồng nghiệp khác trong mục Người nhận bàn giao công việc."
+                        "Open this request, then remove the declined recipient "
+                        "or select another colleague in Work Handover To."
                     ),
                 ),
             )
@@ -2535,7 +2535,7 @@ class HolidaysRequest(models.Model):
             raise UserError(_("Mỗi người cần thay chỉ được chọn trên một dòng."))
         new_ids_from_lines = draft_lines.mapped("new_employee_id").ids
         if len(new_ids_from_lines) != len(set(new_ids_from_lines)):
-            raise UserError(_("Người nhận bàn giao mới không được trùng nhau giữa các dòng."))
+            raise UserError(_("New handover recipients must be unique across lines."))
         current = list(self.handover_employee_ids.ids)
         specs = []
         for line in draft_lines:

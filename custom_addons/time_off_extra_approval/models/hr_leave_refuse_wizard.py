@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -6,8 +6,8 @@ class HrLeaveRefuseWizard(models.TransientModel):
     _name = "hr.leave.refuse.wizard"
     _description = "Time Off Refuse Reason Wizard"
 
-    reason = fields.Text(string="Lý do", required=True)
-    leave_ids = fields.Many2many("hr.leave", string="Đơn xin nghỉ phép")
+    reason = fields.Text(string="Reason", required=True)
+    leave_ids = fields.Many2many("hr.leave", string="Time Off Requests")
     refuse_action = fields.Selection(
         selection=[
             ("standard", "Standard"),
@@ -29,11 +29,11 @@ class HrLeaveRefuseWizard(models.TransientModel):
         self.ensure_one()
         if self.refuse_action == "multi_step":
             if len(self.leave_ids) != 1:
-                raise UserError("Chỉ hỗ trợ từ chối theo bước cho từng đơn riêng lẻ.")
+                raise UserError(_("Step refusal is only supported for a single request at a time."))
             self.leave_ids.action_multi_step_refuse(reason=self.reason)
         elif self.refuse_action == "responsible":
             if len(self.leave_ids) != 1:
-                raise UserError("Chỉ hỗ trợ từ chối theo người phụ trách cho từng đơn riêng lẻ.")
+                raise UserError(_("Responsible-based refusal is only supported for a single request at a time."))
             self.leave_ids.action_responsible_refuse(reason=self.reason)
         else:
             self.leave_ids.action_refuse(reason=self.reason)

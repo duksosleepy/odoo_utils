@@ -6,17 +6,17 @@
                 t-if="record.data.validation_type === 'employee_hr_responsibles' &amp;&amp; record.data.can_responsible_approve"
                 t-attf-class="btn #{canSave ? 'btn-secondary': 'btn-primary'}"
                 t-on-click="() => this.onClick('action_responsible_approve')"
-                data-hotkey="x">Approve</button>
+                data-hotkey="x">Phê duyệt</button>
             <button
                 t-if="record.data.validation_type === 'multi_step_6' &amp;&amp; record.data.can_multi_step_approve"
                 t-attf-class="btn #{canSave ? 'btn-secondary': 'btn-primary'}"
                 t-on-click="() => this.onClick('action_multi_step_approve')"
-                data-hotkey="x">Approve</button>
+                data-hotkey="x">Phê duyệt</button>
             <button
                 t-if="record.data.validation_type !== 'employee_hr_responsibles' &amp;&amp; record.data.validation_type !== 'multi_step_6' &amp;&amp; canApprove"
                 t-attf-class="btn #{canSave ? 'btn-secondary': 'btn-primary'}"
                 t-on-click="() => this.onClick('action_approve')"
-                data-hotkey="x">Approve</button>
+                data-hotkey="x">Phê duyệt</button>
         </xpath>
 
         <xpath expr="//button[@t-if='canValidate']" position="replace">
@@ -32,17 +32,17 @@
                 t-if="record.data.validation_type === 'employee_hr_responsibles' &amp;&amp; record.data.can_responsible_approve"
                 t-attf-class="btn #{canSave ? 'btn-secondary' : 'btn-primary'}"
                 t-on-click="() => this.onClick('action_open_responsible_refuse_wizard')"
-                data-hotkey="x">Refuse</button>
+                data-hotkey="x">Từ chối</button>
             <button
                 t-if="record.data.validation_type === 'multi_step_6' &amp;&amp; record.data.can_multi_step_approve"
                 t-attf-class="btn #{canSave ? 'btn-secondary' : 'btn-primary'}"
                 t-on-click="() => this.onClick('action_open_multi_step_refuse_wizard')"
-                data-hotkey="x">Refuse</button>
+                data-hotkey="x">Từ chối</button>
             <button
                 t-if="record.data.validation_type !== 'employee_hr_responsibles' &amp;&amp; record.data.validation_type !== 'multi_step_6' &amp;&amp; canRefuse"
                 t-attf-class="btn #{(canValidate or canApprove) ? 'btn-secondary' : 'btn-primary'}"
                 t-on-click="() => this.onClick('action_open_refuse_wizard')"
-                data-hotkey="x">Refuse</button>
+                data-hotkey="x">Từ chối</button>
         </xpath>
     </t>
 </templates>

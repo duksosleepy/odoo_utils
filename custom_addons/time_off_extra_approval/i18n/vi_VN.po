@@ -20,3 +20,196 @@ msgstr ""
 #: code:addons/web/static/src/core/errors/error_dialogs.js:0
 msgid "Validation Error"
 msgstr "Lỗi xác thực"
+
+#. module: time_off_extra_approval
+msgid "No work handover required"
+msgstr "Không cần bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Work content"
+msgstr "Nội dung công việc"
+
+#. module: time_off_extra_approval
+msgid "Handover recipient"
+msgstr "Người nhận bàn giao"
+
+#. module: time_off_extra_approval
+msgid "No."
+msgstr "STT"
+
+#. module: time_off_extra_approval
+msgid "Replace"
+msgstr "Cần thay"
+
+#. module: time_off_extra_approval
+msgid "New recipient"
+msgstr "Người nhận"
+
+#. module: time_off_extra_approval
+msgid "Time Off"
+msgstr "Nghỉ phép"
+
+#. module: time_off_extra_approval
+msgid "Time Off Request"
+msgstr "Đơn nghỉ"
+
+#. module: time_off_extra_approval
+msgid "Work handover acceptance"
+msgstr "Xác nhận bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Handover recipient replacement line"
+msgstr "Dòng chọn lại người nhận bàn giao"
+
+#. module: time_off_extra_approval
+msgid ""
+"Selected handover recipients are on leave during this period: %(names)s. "
+"Please choose other colleagues."
+msgstr ""
+"Người nhận bàn giao đã chọn đang nghỉ phép trong giai đoạn này: %(names)s. "
+"Vui lòng chọn đồng nghiệp khác."
+
+#. module: time_off_extra_approval
+msgid "Open this request and assign another colleague in Work Handover To."
+msgstr "Mở yêu cầu này và chỉ định đồng nghiệp khác trong mục Người nhận bàn giao công việc."
+
+#. module: time_off_extra_approval
+msgid ""
+"Open this request, then remove the declined recipient or select another "
+"colleague in Work Handover To."
+msgstr ""
+"Mở yêu cầu này, sau đó xóa người đã từ chối hoặc chọn đồng nghiệp khác trong "
+"mục Người nhận bàn giao công việc."
+
+#. module: time_off_extra_approval
+msgid "New handover recipients must be unique across lines."
+msgstr "Người nhận bàn giao mới không được trùng nhau giữa các dòng."
+
+#. module: time_off_extra_approval
+msgid "Auto-escalate after (hours)"
+msgstr "Tự động chuyển cấp sau (giờ)"
+
+#. module: time_off_extra_approval
+msgid "Special employees"
+msgstr "Nhân viên đặc biệt"
+
+#. module: time_off_extra_approval
+msgid "Special employee list"
+msgstr "Danh sách nhân viên đặc biệt"
+
+#. module: time_off_extra_approval
+msgid "Employee"
+msgstr "Nhân viên"
+
+#. module: time_off_extra_approval
+msgid "Sequential director approval"
+msgstr "Duyệt theo thứ tự Giám đốc"
+
+#. module: time_off_extra_approval
+msgid "Director order"
+msgstr "Thứ tự Giám đốc"
+
+#. module: time_off_extra_approval
+msgid "Director"
+msgstr "Giám đốc"
+
+#. module: time_off_extra_approval
+msgid "Org chart + sequential mode (outside the special employee list): the final Director step is assigned to the Department Manager (Manager field on the employee's department), not necessarily the Director in the management chain."
+msgstr "Sơ đồ + tuần tự (ngoài danh sách nhân viên đặc biệt): bước Giám đốc cuối giao cho Quản lý phòng ban (trường trên Phòng ban của nhân viên), không bắt buộc theo Giám đốc trên chuỗi quản lý."
+
+#. module: time_off_extra_approval
+msgid "For employees listed below, approval stays sequential by org chart until the Director level. If \"Sequential director approval\" is disabled, all Directors are notified and can approve in parallel. If enabled, Directors approve in sequence according to the second table."
+msgstr "Nhân viên trong bảng dưới: ở chế độ duyệt tuần tự theo sơ đồ cho tới khi tới cấp Giám đốc. Nếu không tích \"Duyệt theo thứ tự Giám đốc\", tất cả Giám đốc cùng nhận thông báo và có thể duyệt song song. Nếu tích, thứ tự duyệt giữa các Giám đốc theo bảng thứ hai."
+
+#. module: time_off_extra_approval
+msgid "Cancel"
+msgstr "Hủy"
+
+#. module: time_off_extra_approval
+msgid "Time Off Request"
+msgstr "Đơn nghỉ phép"
+
+#. module: time_off_extra_approval
+msgid "Accept work handover"
+msgstr "Chấp nhận bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Refuse work handover"
+msgstr "Từ chối bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Work Handover To"
+msgstr "Người nhận bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Yes"
+msgstr "Có"
+
+#. module: time_off_extra_approval
+msgid "No"
+msgstr "Không"
+
+#. module: time_off_extra_approval
+msgid "Apply"
+msgstr "Áp dụng"
+
+#. module: time_off_extra_approval
+msgid "Cancel"
+msgstr "Hủy"
+
+#. module: time_off_extra_approval
+msgid "Work handover refusal details"
+msgstr "Chi tiết từ chối bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "HR responsibles workflow"
+msgstr "Quy trình phê duyệt của nhân sự phụ trách"
+
+#. module: time_off_extra_approval
+msgid "Work handover escalation"
+msgstr "Chuyển cấp bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Multi-step approval (6 steps)"
+msgstr "Phê duyệt nhiều bước (6 bước)"
+
+#. module: time_off_extra_approval
+msgid "Approvers (HR employees, one per step)"
+msgstr "Người phê duyệt (nhân sự, mỗi bước một người)"
+
+#. module: time_off_extra_approval
+msgid "Approve"
+msgstr "Phê duyệt"
+
+#. module: time_off_extra_approval
+msgid "Refuse"
+msgstr "Từ chối"
+
+#. module: time_off_extra_approval
+msgid "Validate Step"
+msgstr "Duyệt bước"
+
+#. module: time_off_extra_approval
+msgid "Refuse Step"
+msgstr "Từ chối bước"
+
+#. module: time_off_extra_approval
+msgid "Awaiting"
+msgstr "Đang chờ"
+
+#. module: time_off_extra_approval
+msgid "Status"
+msgstr "Trạng thái"
+
+#. module: time_off_extra_approval
+msgid "Submit Refusal"
+msgstr "Gửi từ chối"
+
+#. module: time_off_extra_approval
+msgid "Refuse Work Handover"
+msgstr "Từ chối bàn giao công việc"
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+msgid "Emergency leave confirmation"
+msgstr "Xác nhận nghỉ phép khẩn cấp"

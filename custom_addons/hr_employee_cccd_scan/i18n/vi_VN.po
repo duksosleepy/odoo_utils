@@ -1,0 +1,131 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* hr_employee_cccd_scan
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"POT-Creation-Date: 2026-05-09 00:00+0000\n"
+"PO-Revision-Date: 2026-05-09 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: vi_VN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: hr_employee_cccd_scan
+msgid "Scan ID"
+msgstr "Quét CCCD"
+
+#. module: hr_employee_cccd_scan
+msgid "Identity document"
+msgstr "Giấy tờ tùy thân"
+
+#. module: hr_employee_cccd_scan
+msgid "Scan ID card"
+msgstr "Quét căn cước công dân"
+
+#. module: hr_employee_cccd_scan
+msgid "ID Card Front"
+msgstr "Mặt trước CCCD"
+
+#. module: hr_employee_cccd_scan
+msgid "ID Card Back"
+msgstr "Mặt sau CCCD"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Take photo of ID card"
+msgstr "Chụp ảnh CCCD"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Live QR scan (auto, like Camera app)"
+msgstr "Quét QR trực tiếp (tự động, như ứng dụng Camera)"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Live camera in browser"
+msgstr "Camera trực tiếp trên trình duyệt"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Keep the QR inside the dashed frame; it is scanned continuously while the camera is on."
+msgstr "Giữ mã QR trong khung nét đứt; hệ thống sẽ quét liên tục khi camera đang bật."
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Information read from the QR code"
+msgstr "Thông tin đọc từ mã QR"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Do you want to import this information into the employee profile?"
+msgstr "Bạn có muốn nhập thông tin này vào hồ sơ nhân viên không?"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Yes, import"
+msgstr "Có, nhập dữ liệu"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "No"
+msgstr "Không"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Try to read fields again"
+msgstr "Thử đọc lại các trường dữ liệu"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Show raw QR text"
+msgstr "Hiển thị văn bản QR thô"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Could not parse QR data."
+msgstr "Không thể phân tích dữ liệu QR."
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Information has been filled in the employee form."
+msgstr "Thông tin đã được điền vào biểu mẫu nhân viên."
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Open webcam"
+msgstr "Mở webcam"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Choose image"
+msgstr "Chọn ảnh"
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "No camera was found. Connect a webcam or use “Choose image”."
+msgstr "Không tìm thấy camera. Hãy kết nối webcam hoặc dùng \"Chọn ảnh\"."
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Could not prepare image for server QR decoding."
+msgstr "Không thể chuẩn bị ảnh để máy chủ giải mã QR."
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "No QR code found."
+msgstr "Không tìm thấy mã QR."
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Server QR decoding failed."
+msgstr "Máy chủ giải mã QR thất bại."
+
+#. module: hr_employee_cccd_scan
+#. odoo-javascript
+msgid "Could not load the preview image for QR detection."
+msgstr "Không thể tải ảnh xem trước để nhận diện QR."

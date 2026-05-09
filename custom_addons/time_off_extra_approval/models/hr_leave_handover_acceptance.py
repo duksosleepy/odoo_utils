@@ -6,56 +6,56 @@ _HANDOVER_PEER_RESPONSE_FIELDS = frozenset({"state", "responded_at", "refusal_re
 
 class HrLeaveHandoverAcceptance(models.Model):
     _name = "hr.leave.handover.acceptance"
-    _description = "Xác nhận bàn giao công việc"
+    _description = "Work handover acceptance"
     _order = "sequence, id"
 
-    sequence = fields.Integer(string="STT", default=1)
+    sequence = fields.Integer(string="No.", default=1)
 
     leave_id = fields.Many2one(
         comodel_name="hr.leave",
-        string="Nghỉ phép",
+        string="Time Off",
         required=True,
         ondelete="cascade",
         index=True,
     )
     employee_id = fields.Many2one(
         comodel_name="hr.employee",
-        string="Người nhận bàn giao",
+        string="Handover recipient",
         required=True,
         ondelete="cascade",
         index=True,
     )
-    handover_work_content = fields.Text(string="Nội dung công việc")
+    handover_work_content = fields.Text(string="Work content")
     state = fields.Selection(
         selection=[
-            ("pending", "Chờ phản hồi"),
-            ("accepted", "Đã chấp nhận"),
-            ("refused", "Đã từ chối"),
+            ("pending", "Pending"),
+            ("accepted", "Accepted"),
+            ("refused", "Refused"),
         ],
-        string="Phản hồi",
+        string="Response",
         default="pending",
         required=True,
     )
-    responded_at = fields.Datetime(string="Thời điểm phản hồi")
-    refusal_reason = fields.Text(string="Lý do từ chối")
+    responded_at = fields.Datetime(string="Responded at")
+    refusal_reason = fields.Text(string="Refusal reason")
     assigned_by_user_id = fields.Many2one(
         comodel_name="res.users",
-        string="Được gán bởi",
+        string="Assigned by",
         copy=False,
-        help="Nếu có giá trị, người nhận này được chọn bởi user này (ví dụ: trưởng bộ phận sau khi bàn giao quá hạn).",
+        help="If set, this recipient was assigned by this user (for example: department head after handover timeout).",
     )
     reassigned_by_escalation_owner = fields.Boolean(
-        string="Được chọn bởi trưởng bộ phận sau chuyển cấp",
+        string="Assigned by escalation owner",
         default=False,
         copy=False,
-        help="Đúng khi trưởng bộ phận (người phụ trách chuyển cấp) đã gán người nhận này sau khi quá hạn.",
+        help="True when the escalation owner assigned this recipient after timeout.",
     )
 
     _sql_constraints = [
         (
             "leave_employee_unique",
             "unique(leave_id, employee_id)",
-            "Mỗi đồng nghiệp chỉ có một dòng bàn giao công việc cho mỗi đơn nghỉ phép.",
+            "Each colleague can only have one work handover line per time off request.",
         ),
     ]
 
@@ -100,8 +100,8 @@ class HrLeaveHandoverAcceptance(models.Model):
                 if leave.exists() and not leave._viewer_can_manage_handover_acceptance_sheet():
                     raise UserError(
                         _(
-                            "Bạn không được phép chỉnh sửa danh sách người nhận bàn giao trên đơn này. "
-                            "Chỉ người nộp đơn (hoặc nhân sự được phép) mới được thêm hoặc xóa người bàn giao."
+                            "You are not allowed to edit the handover recipient list on this request. "
+                            "Only the requester (or authorized HR users) can add or remove recipients."
                         )
                     )
             if "sequence" in vals and vals.get("sequence"):
@@ -129,8 +129,8 @@ class HrLeaveHandoverAcceptance(models.Model):
                 continue
             raise UserError(
                 _(
-                    "Bạn không được phép chỉnh sửa danh sách người nhận bàn giao trên đơn này. "
-                    "Chỉ người nộp đơn (hoặc nhân sự được phép) mới được thêm, sửa hoặc xóa người bàn giao."
+                    "You are not allowed to edit the handover recipient list on this request. "
+                    "Only the requester (or authorized HR users) can add, update, or remove recipients."
                 )
             )
         if self.env.context.get("skip_handover_resequence"):
@@ -149,8 +149,8 @@ class HrLeaveHandoverAcceptance(models.Model):
                 if leave.exists() and not leave._viewer_can_manage_handover_acceptance_sheet():
                     raise UserError(
                         _(
-                            "Bạn không được phép xóa dòng người nhận bàn giao. "
-                            "Chỉ người nộp đơn (hoặc nhân sự được phép) mới được thay đổi danh sách này."
+                            "You are not allowed to delete this handover recipient line. "
+                            "Only the requester (or authorized HR users) can change this list."
                         )
                     )
         leave_ids = self.mapped("leave_id").ids

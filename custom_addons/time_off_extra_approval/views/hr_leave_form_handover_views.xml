@@ -65,18 +65,18 @@
                     readonly="state not in ('draft', 'confirm') or handover_recipient_list_readonly or can_manage_handover_replacement"
                 >
                     <list editable="bottom" create="1" delete="1">
-                        <field name="sequence" string="STT" readonly="1"/>
+                        <field name="sequence" string="No." readonly="1"/>
                         <field
                             name="employee_id"
                             options="{'no_create': True, 'no_open': True}"
                             domain="[('id', '!=', parent.employee_id), ('user_id', '!=', False), ('id', 'not in', parent.unavailable_handover_employee_ids)]"
                         />
-                        <field name="handover_work_content" string="Nội dung công việc"/>
+                        <field name="handover_work_content" string="Work content"/>
                     </list>
                 </field>
                 <field
                     name="skip_work_handover"
-                    string="Không cần bàn giao công việc"
+                    string="No work handover required"
                     readonly="state not in ('draft', 'confirm')"
                 />
                 <field name="unavailable_handover_employee_ids" invisible="1"/>
@@ -129,21 +129,21 @@
                                     readonly="not can_manage_handover_replacement"
                                 >
                                     <list editable="bottom" create="1" delete="1">
-                                        <field name="sequence" string="STT" readonly="1"/>
+                                        <field name="sequence" string="No." readonly="1"/>
                                         <field
                                             name="replace_employee_id"
-                                            string="Cần thay"
+                                            string="Replace"
                                             domain="[('id', 'in', parent.handover_replaceable_recipient_ids)]"
                                             options="{'no_create': True, 'no_open': True}"
                                         />
                                         <field
                                             name="new_employee_id"
-                                            string="Người nhận"
+                                            string="New recipient"
                                             domain="[('id', 'in', allowed_new_employee_ids)]"
                                             options="{'no_create': True, 'no_open': True}"
                                         />
                                         <field name="allowed_new_employee_ids" column_invisible="1"/>
-                                        <field name="handover_work_content" string="Nội dung"/>
+                                        <field name="handover_work_content" string="Work content"/>
                                     </list>
                                 </field>
                                 <div class="mt-2">
@@ -310,21 +310,21 @@
                                     readonly="not can_manage_handover_replacement"
                                 >
                                     <list editable="bottom" create="1" delete="1">
-                                        <field name="sequence" string="STT" readonly="1"/>
+                                        <field name="sequence" string="No." readonly="1"/>
                                         <field
                                             name="replace_employee_id"
-                                            string="Cần thay"
+                                            string="Replace"
                                             domain="[('id', 'in', parent.handover_replaceable_recipient_ids)]"
                                             options="{'no_create': True, 'no_open': True}"
                                         />
                                         <field
                                             name="new_employee_id"
-                                            string="Người nhận"
+                                            string="New recipient"
                                             domain="[('id', 'in', allowed_new_employee_ids)]"
                                             options="{'no_create': True, 'no_open': True}"
                                         />
                                         <field name="allowed_new_employee_ids" column_invisible="1"/>
-                                        <field name="handover_work_content" string="Nội dung"/>
+                                        <field name="handover_work_content" string="Work content"/>
                                     </list>
                                 </field>
                                 <div class="mt-2">

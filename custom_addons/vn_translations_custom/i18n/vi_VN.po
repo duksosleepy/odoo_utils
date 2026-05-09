@@ -1,0 +1,142 @@
+# Translation of Odoo Server.
+# This file contains custom Vietnamese (vi_VN) overrides.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"POT-Creation-Date: 2026-05-09 00:00+0000\n"
+"PO-Revision-Date: 2026-05-09 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: vi_VN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: time_off_extra_approval
+msgid "Work handover escalation"
+msgstr "Chuyển cấp bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Handover: escalate after (hours)"
+msgstr "Bàn giao: chuyển cấp sau (giờ)"
+
+#. module: time_off_extra_approval
+msgid "Handover: max escalation job title"
+msgstr "Bàn giao: chức danh chuyển cấp tối đa"
+
+#. module: time_off_extra_approval
+msgid "Handover: auto-cancel at max escalation level"
+msgstr "Bàn giao: tự động hủy ở cấp chuyển cấp tối đa"
+
+#. module: time_off_extra_approval
+msgid "Accept work handover"
+msgstr "Chấp nhận bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Refuse work handover"
+msgstr "Từ chối bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "Refuse Work Handover"
+msgstr "Từ chối bàn giao công việc"
+
+#. module: time_off_extra_approval
+msgid "6-step approval (Demo)"
+msgstr "Duyệt 6 bước (Demo)"
+
+#. module: time_off_extra_approval
+msgid "Approve via employee HR responsibles"
+msgstr "Duyệt theo người phụ trách HR của nhân viên"
+
+#. module: time_off_extra_approval
+msgid "Employee responsible approval mode"
+msgstr "Chế độ duyệt của người phụ trách nhân viên"
+
+#. module: time_off_extra_approval
+msgid "Employee responsible source"
+msgstr "Nguồn người phụ trách nhân viên"
+
+#. module: time_off_extra_approval
+msgid "Sequential approval (in order)"
+msgstr "Duyệt tuần tự (theo thứ tự)"
+
+#. module: time_off_extra_approval
+msgid "Organization chart (job title in management chain)"
+msgstr "Sơ đồ tổ chức (theo chức danh trên chuỗi quản lý)"
+
+#. module: time_off_extra_approval
+msgid "Auto-escalate after (hours)"
+msgstr "Tự động chuyển cấp sau (giờ)"
+
+#. module: time_off_extra_approval
+msgid "Special employees"
+msgstr "Nhân viên đặc biệt"
+
+#. module: time_off_extra_approval
+msgid "Special employee list"
+msgstr "Danh sách nhân viên đặc biệt"
+
+#. module: time_off_extra_approval
+msgid "Employee"
+msgstr "Nhân viên"
+
+#. module: time_off_extra_approval
+msgid "Sequential director approval"
+msgstr "Duyệt theo thứ tự Giám đốc"
+
+#. module: time_off_extra_approval
+msgid "Director order"
+msgstr "Thứ tự Giám đốc"
+
+#. module: time_off_extra_approval
+msgid "Director"
+msgstr "Giám đốc"
+
+#. module: time_off_extra_approval
+msgid ""
+"Org chart + sequential mode (outside the special employee list): the final Director step is\n"
+"                        assigned to the <strong>Department Manager</strong> (Manager field on the employee's\n"
+"                        department), not necessarily the Director in the management chain."
+msgstr ""
+"Sơ đồ + tuần tự (ngoài danh sách nhân viên đặc biệt): bước Giám đốc cuối giao cho <strong>Quản lý\n"
+"                        phòng ban</strong> (trường trên Phòng ban của nhân viên), không bắt buộc theo Giám đốc trên chuỗi\n"
+"                        quản lý."
+
+#. module: time_off_extra_approval
+msgid ""
+"For employees listed below, approval stays sequential by org chart until the Director level.\n"
+"                        If \"Sequential director approval\" is disabled, all Directors are notified and can approve in\n"
+"                        parallel. If enabled, Directors approve in sequence according to the second table."
+msgstr ""
+"Nhân viên trong bảng dưới: ở chế độ duyệt tuần tự theo sơ đồ cho tới khi tới cấp Giám đốc.\n"
+"                        Nếu không tích \"Duyệt theo thứ tự Giám đốc\", tất cả Giám đốc cùng nhận thông báo và có thể duyệt\n"
+"                        song song. Nếu tích, thứ tự duyệt giữa các Giám đốc theo bảng thứ hai."
+
+#. module: vn_language_switch
+msgid "Language: English (Switch to Vietnamese)"
+msgstr "Ngôn ngữ: Tiếng Anh (Chuyển sang Tiếng Việt)"
+
+#. module: vn_language_switch
+msgid "Language: Vietnamese (Switch to English)"
+msgstr "Ngôn ngữ: Tiếng Việt (Chuyển sang Tiếng Anh)"
+
+#. module: time_off_extra_approval
+msgid "Approve"
+msgstr "Phê duyệt"
+
+#. module: time_off_extra_approval
+msgid "Refuse"
+msgstr "Từ chối"
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/xml/timeoff_form_dialog_buttons_patch.xml:0
+msgid "Approve"
+msgstr "Phê duyệt"
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/xml/timeoff_form_dialog_buttons_patch.xml:0
+msgid "Refuse"
+msgstr "Từ chối"

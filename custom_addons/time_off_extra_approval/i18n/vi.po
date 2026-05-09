@@ -5,17 +5,2421 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
-"POT-Creation-Date: 2026-04-27 00:00+0000\n"
-"PO-Revision-Date: 2026-04-27 00:00+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-09 07:33+0000\n"
+"PO-Revision-Date: 2026-05-09 07:33+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: vi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
 
 #. module: time_off_extra_approval
-#: code:addons/web/static/src/core/errors/error_dialogs.js:0
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"\n"
+"Lý do: %s"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_multi_step.py:0
+msgid ""
+"%(name)s is already assigned to another step. Each approver can only "
+"validate one step."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "%(name)s: %(reason)s"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"%(recipient)s đã từ chối yêu cầu nhận bàn giao công việc cho %(leave)s. Bạn "
+"có muốn chọn đồng nghiệp khác không?"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "%(step)s · %(names)s"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "%s đã chấp nhận bàn giao công việc."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "%s đã từ chối bàn giao công việc."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"%s đã xóa đồng nghiệp từ chối khỏi danh sách bàn giao mà không thay thế."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ", vui lòng vào mục Time Off để chọn lại người nhận bàn giao.<br/><br/>"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__handover_escalation_level
+msgid ""
+"0: not escalated, 1: escalated to department head, 2: escalated to "
+"department manager."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__allocation_validation_type__multi_step_6
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__leave_validation_type__multi_step_6
+msgid "6-step approval (Demo)"
+msgstr "Duyệt 6 bước (Demo)"
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"<br/>Vui lòng bấm vào Time Off để xác nhận công việc bàn giao.<br/><br/>"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_kanban_extra_approval
+msgid "<i class=\"fa fa-user-circle-o me-1\" title=\"Current approver\"/>"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__handover_escalation_max_job_title__asm
+msgid "ASM"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Accept work handover"
+msgstr "Chấp nhận bàn giao công việc"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_handover_acceptance__state__accepted
+msgid "Accepted"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__action_date
+msgid "Action Date"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__pending_since
+msgid "Active Since"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__employee_responsible_approval_mode__all
+msgid "All responsibles must approve"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__allocation_id
+msgid "Allocation"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid "Allocation must be in 'To Approve' state for step-by-step refusal."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid "Allocation must be in 'To Approve' state for step-by-step validation."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__skip_work_handover
+msgid ""
+"Allow eligible senior employees to submit leave without handover recipients."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__allowed_new_employee_ids
+msgid "Allowed New Employee"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__allowed_approver_user_ids
+msgid "Allowed approvers"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__employee_responsible_approval_mode__any
+msgid "Any responsible can approve"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__employee_responsible_approval_mode
+msgid ""
+"Applies when leave approval uses employee HR responsibles. In sequential "
+"mode, approvers are ordered by job title from team lead to director."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Apply"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__allocation_validation_type
+msgid "Approval"
+msgstr "Phê duyệt"
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Approval step for %(user)s was skipped due to timeout (%(hours)s h); "
+"escalated to the next level."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/xml/timeoff_form_dialog_buttons_patch.xml:0
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_kanban_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_tree_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_form_multi_step
+msgid "Approve"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__allocation_validation_type__leader
+msgid "Approve by department head"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__extra_responsible_department_ids
+msgid "Approve by extra departments"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__extra_responsible_user_ids
+msgid "Approve by extra officers"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__allocation_validation_type__manager
+msgid "Approve by time off manager"
+msgstr "Bởi cấp trên của nhân viên"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__leave_validation_type__employee_hr_responsibles
+msgid "Approve via employee HR responsibles"
+msgstr "Duyệt theo người phụ trách HR của nhân viên"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_responsible_approval__state__approved
+msgid "Approved"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__approved_at
+msgid "Approved At"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__approver_user_id
+msgid "Approver"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__approver_department_ids
+msgid "Approver (Department)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__approver_user_ids
+msgid "Approver (User)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__approver_user_id
+msgid "Approver User"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_step_hr_source_department_id
+msgid "Approver source (department)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "Approvers (HR employees, one per step)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__assigned_by_user_id
+msgid "Assigned by"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__reassigned_by_escalation_owner
+msgid "Assigned by escalation owner"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__employee_responsible_escalation_hours
+msgid "Auto-escalate after (hours)"
+msgstr "Tự động chuyển cấp sau (giờ)"
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_tree_extra_approval
+msgid "Awaiting"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bàn giao công việc bị từ chối"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bước %(step)d / %(total)d · %(name)s"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn chỉ có thể chọn tối đa 5 người nhận bàn giao công việc."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Bạn chỉ có thể thay những người nhận hiện đang cho phép thay (đã từ chối, "
+"hoặc đang chờ sau khi quá thời gian chuyển cấp)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn không có quyền duyệt bước hiện tại."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn không có quyền từ chối bước hiện tại."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Bạn không thể tự thay đổi người bàn giao. Vui lòng dùng nút Chấp nhận hoặc "
+"Từ chối bàn giao công việc."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Bạn không thể xóa toàn bộ người nhận bàn giao công việc. Hãy giữ ít nhất một"
+" người hoặc chọn Có để thay thế người nhận."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn không được phép duyệt đơn nghỉ phép này."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn không được phép duyệt/từ chối bước nghỉ phép nhiều cấp này."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Bạn không được phép duyệt/từ chối đơn nghỉ phép này trong luồng phụ trách "
+"hiện tại."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn không được phép từ chối đơn nghỉ phép này."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn phải là Cán bộ nghỉ phép hoặc Quản lý nghỉ phép để duyệt đơn này"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn phải là quản lý của %s hoặc là Quản lý nghỉ phép để duyệt đơn này"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn phải là quản lý của %s để duyệt đơn này"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Bạn đang gửi đơn nghỉ khẩn cấp (thời gian báo trước ngắn hơn quy định). Bạn "
+"có chắc chắn muốn tiếp tục không?"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn đã phản hồi yêu cầu bàn giao công việc này rồi."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn đã xử lý duyệt đơn nghỉ phép này rồi."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Bạn được yêu cầu bàn giao công việc khi %(name)s nghỉ (%(leave_type)s, "
+"%(dates)s)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Bạn được yêu cầu bàn giao công việc khi %(name)s nghỉ."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__can_responsible_approve
+msgid "Can Approve (Responsible Flow)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__can_multi_step_approve
+msgid "Can Approve Current Multi-step (Demo)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__approval_actionable_user_ids
+msgid "Can act on approval (technical)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__can_manage_handover_replacement
+msgid "Can manage handover replacement"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__can_respond_handover
+msgid "Can respond to work handover"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__can_skip_work_handover
+msgid "Can skip work handover"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_allocation__can_multi_step_validate
+msgid "Can validate current step (Demo)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/js/emergency_leave_form_controller.js:0
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_handover_refuse_wizard_form
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_refuse_wizard_form
+msgid "Cancel"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_holidays_cancel_leave
+msgid "Cancel Time Off Wizard"
+msgstr "Tính năng hủy đơn nghỉ phép"
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_handover_replacement_draft.py:0
+msgid "Cannot edit replacement lines after the picker is closed."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Choose another colleague to receive work handover."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Chỉ Cán bộ nghỉ phép hoặc Quản lý nghỉ phép mới có thể duyệt/từ chối yêu cầu"
+" của chính mình."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Chỉ Quản lý nghỉ phép mới có thể đặt lại đơn nghỉ phép của người khác."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Chỉ Quản lý nghỉ phép mới có thể đặt lại đơn đã bắt đầu."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Chỉ Quản lý nghỉ phép mới có thể đặt lại đơn đã bị từ chối."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Chỉ nhân viên có chức danh từ Trưởng bộ phận trở lên mới được phép bỏ qua "
+"bàn giao công việc. Nhân viên hiện tại: %(employee)s, chức danh: %(title)s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Chỉ nhân viên đã tạo đơn nghỉ phép này mới có thể cập nhật người nhận bàn "
+"giao bị từ chối."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Chỉ những người nhận bàn giao đã chọn mới có thể phản hồi tại đây."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Chỉ định người thay thế bàn giao"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/xml/error_dialog_vi_patch.xml:0
+msgid "Close"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__handover_employee_ids
+msgid ""
+"Colleagues who receive work handover while this employee is on leave (max "
+"5)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/js/emergency_leave_form_controller.js:0
+msgid "Confirm"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__create_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_refuse_wizard__create_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__create_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__create_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__create_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__create_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__create_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__create_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__create_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_refuse_wizard__create_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__create_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__create_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__create_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__create_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__create_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__create_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__approval_current_step_label
+msgid "Current approval"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_kanban_extra_approval
+msgid "Current approval step"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_allocation__multi_step_current
+msgid ""
+"Current approval step index (1..6) for multi-step time off allocation flow "
+"(demo)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_allocation__multi_step_current
+msgid "Current step (multi-step approval)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__multi_step_current
+msgid "Current step index (1..6) for multi-step time off approval (demo)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Công việc của bạn đã được bàn giao thành công. Bước vào quy trình duyệt đơn."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Cảnh báo kiểm tra dữ liệu"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Cập nhật người nhận bàn giao công việc"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__handover_escalation_max_job_title__cửa_hàng_trưởng
+msgid "Cửa hàng trưởng"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__handover_escalation_user_id
+msgid ""
+"Department head from org chart who can assign a replacement handover "
+"recipient."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "Director"
+msgstr "Giám đốc"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__special_director_order_line_ids
+msgid "Director approval order"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__special_director_order_line_ids
+msgid ""
+"Director list (Director title). Used only when sequential director approval "
+"is enabled."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "Director order"
+msgstr "Thứ tự Giám đốc"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_holidays_cancel_leave__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_allocation__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_refuse_wizard__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__display_name
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__display_name
+msgid "Display Name"
+msgstr "Tên hiển thị"
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Do không có ai nhận bàn giao việc cho bạn trong %(hours)s giờ nên phần này "
+"đã được chuyển lên cấp trên."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_multi_step.py:0
+#: code:addons/time_off_extra_approval/models/hr_leave_type.py:0
+msgid "Duplicate approver"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Duyệt đơn đang bị khóa cho đến khi tất cả người nhận bàn giao chấp nhận. "
+"Hiện vẫn đang chờ: %(names)s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_multi_step.py:0
+msgid ""
+"Each approver can only be assigned to one step. %(name)s is duplicated."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_type.py:0
+msgid ""
+"Each approver can only be assigned to one step. Duplicate picks were removed"
+" at steps %(steps)s (lowest step kept)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_multi_step.py:0
+msgid "Each step can only have one approver."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__emergency_leave_approver_notice
+msgid "Emergency"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__is_emergency_leave
+msgid "Emergency leave (short notice)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/js/emergency_leave_form_controller.js:0
+msgid "Emergency leave confirmation"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__employee_id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__employee_id
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "Employee"
+msgstr "Nhân viên"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__employee_responsible_approval_mode
+msgid "Employee responsible approval mode"
+msgstr "Chế độ duyệt của người phụ trách nhân viên"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__employee_responsible_source
+msgid "Employee responsible source"
+msgstr "Nguồn người phụ trách nhân viên"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__replace_employee_id
+msgid "Employee to replace"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__unavailable_handover_employee_ids
+msgid "Employees already on time off during this leave period."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_refuse_wizard_form
+msgid "Explain why you are refusing this time off request..."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_handover_refuse_wizard_form
+msgid "Explain why you cannot take this handover..."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__extra_approver_user_ids
+msgid "Extra Time Off Approvers"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_allocation__extra_approver_user_ids
+msgid "Extra approvers for time off allocation"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__extra_responsible_user_ids
+msgid ""
+"Extra officers/users who can approve or refuse this time off type (in "
+"addition to standard time off officers)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid ""
+"For employees listed below, approval stays sequential by org chart until the Director level.\n"
+"                        If \"Sequential director approval\" is disabled, all Directors are notified and can approve in\n"
+"                        parallel. If enabled, Directors approve in sequence according to the second table."
+msgstr ""
+"Nhân viên trong bảng dưới: ở chế độ duyệt tuần tự theo sơ đồ cho tới khi tới cấp Giám đốc.\n"
+"                        Nếu không tích \"Duyệt theo thứ tự Giám đốc\", tất cả Giám đốc cùng nhận thông báo và có thể duyệt\n"
+"                        song song. Nếu tích, thứ tự duyệt giữa các Giám đốc theo bảng thứ hai."
+"Nhân viên trong bảng dưới: ở chế độ duyệt tuần tự theo sơ đồ cho tới khi tới cấp Giám đốc.\n"
+"                        Nếu không tích \"Duyệt theo thứ tự Giám đốc\", tất cả Giám đốc cùng nhận thông báo và có thể duyệt\n"
+"                        song song. Nếu tích, thứ tự duyệt giữa các Giám đốc theo bảng thứ hai."
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__special_director_employee_line_ids
+msgid ""
+"For listed employees, approval remains sequential by org flow until Director"
+" level; then all internal users with Director title must approve in order."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__special_director_sequential_approval
+msgid ""
+"For special employees: when enabled, Director approval order follows the "
+"table below. When disabled, all Directors can approve in parallel."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__handover_escalation_max_job_title__giám_đốc
+msgid "Giám đốc"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__employee_responsible_source__manual
+msgid "HR responsibles on employee profile"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "HR responsibles workflow"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_escalated
+msgid "Handover escalated"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_escalated_at
+msgid "Handover escalated at"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_escalation_level
+msgid "Handover escalation level"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_escalation_user_id
+msgid "Handover escalation owner"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Handover escalation remained unassigned after %(hours)s hours, but no next "
+"manager user was found above %(owner)s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_escalation_label
+msgid "Handover escalation status"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_escalation_pick_prompt
+msgid "Handover escalation — assign recipient instruction"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_last_bot_escalation_signature
+msgid "Handover last bot escalation signature"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__employee_id
+msgid "Handover recipient"
+msgstr "Người nhận bàn giao"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_recipient_list_readonly
+msgid "Handover recipient cannot edit list"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_handover_replacement_draft
+msgid "Handover recipient replacement line"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__handover_sheet_hidden_for_viewer
+msgid ""
+"Handover recipients (not the applicant) do not see the editable roster; "
+"avoids confusion after accepting."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_refusal_reason_label
+msgid "Handover refusal reasons"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_refused_label
+msgid "Handover refused status"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_replacement_draft_ids
+msgid "Handover replacement lines"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_replacement_picker_open
+msgid "Handover replacement picker open"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_requested_at
+msgid "Handover requested at"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_waiting_label
+msgid "Handover status"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Handover stayed unresolved after escalation timeout and max-level timeout "
+"(max title: %(title)s, cancel timeout: %(hours)s h). This leave request was "
+"canceled automatically; requester must create a new request."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Handover still had no replacement after %(hours)s hours at current level. "
+"Escalated to %(user)s (%(manager_title)s)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Handover timeout reached (%(hours)s h), but no manager user was found in org"
+" chart."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Handover timeout reached (%(hours)s h). Escalated to %(user)s (%(title)s) to"
+" assign replacement."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Handover timeout: escalated to %(owner)s for replacement assignment."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_assigned_recipient_banner
+msgid "Handover — assigned recipient notice"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__handover_cancel_if_max_unresponsive
+msgid "Handover: auto-cancel at max escalation level"
+msgstr "Bàn giao: tự động hủy ở cấp chuyển cấp tối đa"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__handover_cancel_after_max_hours
+msgid "Handover: cancel after timeout at max level (hours)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__handover_escalation_after_hours
+msgid "Handover: escalate after (hours)"
+msgstr "Bàn giao: chuyển cấp sau (giờ)"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__handover_escalation_to_manager_hours
+msgid "Handover: escalate to next level after (hours)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__handover_escalation_max_job_title
+msgid "Handover: max escalation job title"
+msgstr "Bàn giao: chức danh chuyển cấp tối đa"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_sheet_hidden_for_viewer
+msgid "Hide Work Handover To table"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Hủy nghỉ phép"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_holidays_cancel_leave__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_allocation__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_refuse_wizard__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__id
+msgid "ID"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__handover_cancel_if_max_unresponsive
+msgid ""
+"If enabled, request auto-cancels when it reaches max escalation level and "
+"still has no assignee in time."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__handover_escalation_after_hours
+msgid "If nobody accepts handover within this period, escalation starts."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_handover_acceptance__assigned_by_user_id
+msgid ""
+"If set, this recipient was assigned by this user (for example: department "
+"head after handover timeout)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"It is now your turn to approve time off request %(leave)s for %(employee)s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Không có"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Không thể phân công bàn giao cho %(names)s vì họ đang nghỉ phép trong giai "
+"đoạn này. Những người này đã được xóa khỏi danh sách. Vui lòng chọn người "
+"khác."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Không thể thêm đồng nghiệp này: đã có trên đơn, trùng kỳ nghỉ không khả "
+"dụng, hoặc không hợp lệ."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__last_refusal_reason
+msgid "Last Refusal Reason"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__last_refuser_id
+msgid "Last Refuser"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__write_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_refuse_wizard__write_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__write_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__write_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__write_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__write_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__write_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__write_uid
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__write_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_refuse_wizard__write_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__write_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__write_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__write_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__write_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__write_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__write_date
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__leave_id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__leave_id
+msgid "Leave"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__leave_type_id
+msgid "Leave Type"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Loại nghỉ được cấu hình nhân viên đặc biệt (chặn Giám đốc) nhưng không có "
+"người duyệt nào mang chức danh Giám đốc (user nội bộ) trong chuỗi duyệt. "
+"Kiểm tra sơ đồ tổ chức hoặc bảng thứ tự Giám đốc trên loại nghỉ."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Luồng này hỗ trợ tối đa %(max)s người phụ trách HR cho mỗi nhân viên."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Lý do từ chối duyệt: %(reason)s"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Lý do:"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__employee_responsible_source
+msgid ""
+"Manual: use HR responsibles configured on the employee. Org chart: walk up "
+"the manager chain and create one approval step per level with a linked "
+"internal user. In sequential mode, pre-director steps follow the org chart; "
+"final director step uses the employee department manager."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__handover_escalation_max_job_title
+msgid "Maximum job title level used for handover escalation."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__extra_responsible_department_ids
+msgid ""
+"Members of these departments can also approve or refuse this time off type."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid ""
+"Missing approval logs for previous steps. Steps must be approved in order "
+"(1, 2, ...)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid "Missing multi-step configuration for step %s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_handover_replacement_draft.py:0
+msgid "Missing time off request for handover replacement line."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_refuse_wizard__refuse_action__multi_step
+msgid "Multi-step"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__multi_approval_line_ids
+msgid "Multi-step Approval Log (Demo)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__multi_step_current
+msgid "Multi-step Current Step"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "Multi-step approval (6 steps)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_allocation__multi_approval_line_ids
+msgid "Multi-step approval log (Demo)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_approval_step_ids
+msgid "Multi-step approval steps (Demo)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_step_approver_sync
+msgid "Multi-step approver sync key"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_multi_approval
+msgid "Multi-step time off approval log"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_type_approval_step
+msgid "Multi-step time off approval step"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Mỗi dòng phải có đủ người cần thay và người nhận bàn giao mới."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Mỗi người cần thay chỉ được chọn trên một dòng."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Mỗi người nhận bàn giao chỉ được xuất hiện một lần."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Mở Time Off"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Mở yêu cầu này và chọn Chấp nhận bàn giao hoặc Từ chối bàn giao."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Mở đơn và chọn Chấp nhận hoặc Từ chối bàn giao công việc."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__name
+msgid "Name"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid ""
+"New allocation request created by %(user)s: %(count)s days for type "
+"%(allocation_type)s"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__new_employee_id
+msgid "New handover recipient"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "New handover recipients must be unique across lines."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "New recipient"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"New time off request from %(employee)s requires your review in the "
+"responsible approval flow."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Người nhận mới phải khác người đang được thay."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Người nhận “%s” đã có trong danh sách bàn giao sau khi áp dụng các dòng "
+"trước."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Nhân viên này chưa được cấu hình người phụ trách HR."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Nhân viên: <b>{requester}</b> nhờ bàn giao công việc nghỉ ốm<br/>Ngày nghỉ: "
+"<b>{date}</b><br/>Nội dung: "
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Nhân viên: <b>{requester}</b> xin nghỉ phép<br/>Ngày nghỉ: "
+"<b>{date}</b><br/>Vui lòng bấm vào Time Off để xác nhận hoặc từ chối "
+"đơn.<br/><br/>"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "No"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"No approver was found from the organization chart. Set managers on the "
+"employee and job titles (team lead → dept head → controller → HR head → "
+"director) on the hierarchy."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "No extra officers"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "No extra offices/departments"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__skip_work_handover
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "No work handover required"
+msgstr "Không cần bàn giao công việc"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__sequence
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__sequence
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__sequence
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "No."
+msgstr "STT"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__note
+msgid "Note"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid "Only Time Off Managers can approve their own requests."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid ""
+"Only authorized officers/managers/department heads can approve or refuse "
+"this allocation type."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_type_special_director_order_line.py:0
+msgid "Only employees with Director job title can be selected."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Only employees with job title \"Director\" may approve their own time off in"
+" this workflow. Ask another approver in the chain."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Only employees with job title \"Director\" may refuse their own time off in "
+"this workflow. Ask another approver in the chain."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_handover_replacement_draft.py:0
+msgid ""
+"Only the requester (or the assigned escalation owner) can delete this line."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_handover_replacement_draft.py:0
+msgid ""
+"Only the requester (or the assigned escalation owner) can edit this section."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Open this request and assign another colleague in Work Handover To."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Open this request, then remove the declined recipient or select another "
+"colleague in Work Handover To."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid ""
+"Org chart + sequential mode (outside the special employee list): the final Director step is\n"
+"                        assigned to the <strong>Department Manager</strong> (Manager field on the employee's\n"
+"                        department), not necessarily the Director in the management chain."
+msgstr ""
+"Sơ đồ + tuần tự (ngoài danh sách nhân viên đặc biệt): bước Giám đốc cuối giao cho <strong>Quản lý\n"
+"                        phòng ban</strong> (trường trên Phòng ban của nhân viên), không bắt buộc theo Giám đốc trên chuỗi\n"
+"                        quản lý."
+"Sơ đồ + tuần tự (ngoài danh sách nhân viên đặc biệt): bước Giám đốc cuối giao cho <strong>Quản lý\n"
+"                        phòng ban</strong> (trường trên Phòng ban của nhân viên), không bắt buộc theo Giám đốc trên chuỗi\n"
+"                        quản lý."
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__employee_responsible_source__org_chart
+msgid "Organization chart (job title in management chain)"
+msgstr "Sơ đồ tổ chức (theo chức danh trên chuỗi quản lý)"
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_type.py:0
+msgid ""
+"Organization-chart approval requires 'Sequential approval (in order)' mode."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_handover_acceptance__state__pending
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_responsible_approval__state__pending
+msgid "Pending"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Please edit and save one time off request at a time when changing dates, "
+"employee, or time off type (advance-notice check)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_handover_refuse_wizard.py:0
+msgid "Please provide a reason before submitting."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_holidays_cancel_leave.py:0
+msgid "Please save/submit the time off request before canceling."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_refuse_wizard__reason
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__reason
+msgid "Reason"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_handover_replacement_draft__replace_employee_id
+msgid ""
+"Recipient currently in the handover list and eligible for replacement "
+"(refused or escalated waiting)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__refusal_reason
+msgid "Refusal reason"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/xml/timeoff_form_dialog_buttons_patch.xml:0
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_kanban_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_tree_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_form_multi_step
+msgid "Refuse"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__refuse_action
+msgid "Refuse Action"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_allocation_form_multi_step
+msgid "Refuse Step"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_refuse_wizard_form
+msgid "Refuse Time Off Request"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_handover_refuse_wizard_form
+msgid "Refuse Work Handover"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Refuse work handover"
+msgstr "Từ chối bàn giao công việc"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_handover_acceptance__state__refused
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_responsible_approval__state__refused
+msgid "Refused"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_refused_recipient_ids
+msgid "Refused handover recipients (technical)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Replace"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_replaceable_recipient_ids
+msgid "Replaceable handover recipients (technical)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__responded_at
+msgid "Responded at"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__state
+msgid "Response"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_refuse_wizard__refuse_action__responsible
+msgid "Responsible"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__responsible_approval_line_ids
+msgid "Responsible Approval Log"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_refuse_wizard.py:0
+msgid ""
+"Responsible-based refusal is only supported for a single request at a time."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__sequence
+msgid "STT"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Sau %(hours)s giờ, do không có ai nhận bàn giao đơn cho %(requester)s, vui "
+"lòng vào mục Time Off để quyết định."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Sau khi quá hạn bàn giao công việc, chỉ người được chỉ định escalate mới có "
+"thể thay đổi người nhận bàn giao."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Sau khoảng thời gian quy định, không ai nhận bàn giao công việc. Xin vui "
+"lòng chọn người nhận bàn giao công việc cho người nộp đơn."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__allocation_validation_type
+msgid ""
+"Select the level of approval needed in case of request by employee\n"
+"            #     - No validation needed: The employee's request is automatically approved.\n"
+"            #     - Approved by Time Off Officer: The employee's request need to be manually approved\n"
+"            #       by the Time Off Officer, Employee's Approver or both."
+msgstr ""
+"Lựa chọn cấp độ phê duyệt cần thiết cho đơn của nhân viên\n"
+"            #    - Không cần xác thực: Đơn của nhân viên được tự động phê duyệt.\n"
+"            #    - Phê duyệt bởi người phụ trách ngày nghỉ: Đơn của nhân viên cần được người phụ trách\n"
+"            #      ngày nghỉ, Người phê duyệt của nhân viên hoặc cả hai phê duyệt thủ công."
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Selected handover recipients are on leave during this period: %(names)s. "
+"Please choose other colleagues."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__sequence
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_approval_step__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__employee_responsible_approval_mode__sequential
+msgid "Sequential approval (in order)"
+msgstr "Duyệt tuần tự (theo thứ tự)"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__special_director_sequential_approval
+msgid "Sequential director approval"
+msgstr "Duyệt theo thứ tự Giám đốc"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__employee_responsible_escalation_hours
+msgid ""
+"Sequential mode only: if the current approver does not act in time, request "
+"escalates to the next level."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__handover_escalated
+msgid ""
+"Set when no recipient accepts handover within timeout and the request is "
+"escalated."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__is_emergency_leave
+msgid ""
+"Set when the request is submitted with less advance notice than policy "
+"requires."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_responsible_approval__state__skipped
+msgid "Skipped (timeout / escalated)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "Special employee list"
+msgstr "Danh sách nhân viên đặc biệt"
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "Special employees"
+msgstr "Nhân viên đặc biệt"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__special_director_employee_line_ids
+msgid "Special employees (all directors must approve)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_refuse_wizard__refuse_action__standard
+msgid "Standard"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__state
+msgid "State"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_tree_extra_approval
+msgid "Status"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__status_display_label
+msgid "Status Display"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_multi_approval__step_id
+msgid "Step"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_type.py:0
+msgid ""
+"Step %(step)s: employee %(name)s has no linked user and cannot approve."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_step_approver_employee_1_id
+msgid "Step 1"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_step_approver_employee_2_id
+msgid "Step 2"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_step_approver_employee_3_id
+msgid "Step 3"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_step_approver_employee_4_id
+msgid "Step 4"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_step_approver_employee_5_id
+msgid "Step 5"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__multi_step_approver_employee_6_id
+msgid "Step 6"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__multi_step_hr_source_department_id
+msgid ""
+"Step approvers are limited to internal users linked to employees in this "
+"department tree."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_refuse_wizard.py:0
+msgid "Step refusal is only supported for a single request at a time."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_handover_refuse_wizard_form
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_refuse_wizard_form
+msgid "Submit Refusal"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__handover_last_bot_escalation_signature
+msgid ""
+"Technical field to avoid duplicate escalation bot DMs for same "
+"leave/owner/level."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid "This allocation is not configured for multi-step approval."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid ""
+"This request is recorded as emergency leave (insufficient advance notice)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"This time off request does not meet the advance-notice rule. Confirm "
+"emergency leave in the application, or create the request with the “%(ctx)s”"
+" context key set to True."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Thiếu cấu hình duyệt nhiều cấp cho bước %s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Thiếu log của các bước duyệt trước đó. Cần duyệt đúng thứ tự (bước 1, rồi "
+"bước 2, ...)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__leave_id
+msgid "Time Off"
+msgstr "Ngày nghỉ"
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_allocation
+msgid "Time Off Allocation"
+msgstr "Phân bổ ngày nghỉ"
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_responsible_approval
+msgid "Time Off Employee Responsible Approval Log"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_refuse_wizard
+msgid "Time Off Refuse Reason Wizard"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_holidays_cancel_leave__leave_id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_refuse_wizard__leave_id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__leave_id
+msgid "Time Off Request"
+msgstr "Đơn nghỉ phép"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_refuse_wizard__leave_ids
+msgid "Time Off Requests"
+msgstr "Đơn nghỉ phép"
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_type
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_director_order_line__leave_type_id
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type_special_employee_line__leave_type_id
+msgid "Time Off Type"
+msgstr "Loại ngày nghỉ"
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_type_special_director_order_line
+msgid "Time Off Type — configurable director approval order"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_type_special_employee_line
+msgid "Time Off Type — special employees requiring all directors approval"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_type__leave_validation_type
+msgid "Time Off Validation"
+msgstr "Xác thực ngày nghỉ"
+
+#. module: time_off_extra_approval
+#: model:ir.actions.server,name:time_off_extra_approval.ir_cron_escalate_handover_timeouts_ir_actions_server
+msgid "Time Off: Escalate handover timeouts"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.actions.server,name:time_off_extra_approval.ir_cron_escalate_responsible_approval_ir_actions_server
+msgid "Time Off: Escalate sequential responsible approval (timeout)"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Time off request must be confirmed or validated in order to refuse it."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__handover_requested_at
+msgid "Timestamp when this leave was submitted with work handover recipients."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Trong luồng này, chỉ nhân viên có chức danh \"Giám đốc\" mới được duyệt hoặc"
+" từ chối đơn nghỉ phép của chính mình. Những người duyệt khác phải xử lý đơn"
+" của người khác."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_handover_acceptance__reassigned_by_escalation_owner
+msgid "True when the escalation owner assigned this recipient after timeout."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__handover_escalation_max_job_title__trưởng_bộ_phận
+msgid "Trưởng bộ phận"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__handover_escalation_max_job_title__trưởng_nhóm
+msgid "Trưởng nhóm"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__handover_escalation_max_job_title__trưởng_phòng
+msgid "Trưởng phòng"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields.selection,name:time_off_extra_approval.selection__hr_leave_type__handover_escalation_max_job_title__trưởng_phòng_hcns
+msgid "Trưởng phòng HCNS"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Tất cả người nhận bàn giao đã chấp nhận"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Từ chối bàn giao công việc"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Từ chối bàn giao: %s"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Từ chối duyệt đơn nghỉ phép"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__handover_replacement_picker_open
+msgid "UI only: requester chose to replace a refused handover recipient."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__unavailable_handover_employee_ids
+msgid "Unavailable handover recipients"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__multi_approval_step_ids
+msgid "Underlying configuration rows for 6-step approval."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__handover_cancel_after_max_hours
+msgid "Used only when auto-cancel at max level is enabled."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_responsible_approval__user_id
+msgid "User"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__approval_actionable_user_ids
+msgid ""
+"Users who can approve, validate, refuse, or use an extended approval action "
+"on this request."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_allocation__extra_approver_user_ids
+msgid ""
+"Users who can approve/refuse this allocation based on time off type "
+"settings."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__extra_approver_user_ids
+msgid ""
+"Users who can approve/refuse this leave based on the leave type "
+"configuration."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/xml/timeoff_form_dialog_buttons_patch.xml:0
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_kanban_extra_approval
+msgid "Validate"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_allocation_form_multi_step
+msgid "Validate Step"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-javascript
+#: code:addons/time_off_extra_approval/static/src/js/error_dialog_vi_patch.js:0
 msgid "Validation Error"
 msgstr "Lỗi xác thực"
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Vui lòng chọn ít nhất một người nhận bàn giao công việc trước khi gửi đơn "
+"xin nghỉ phép."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Vui lòng thêm ít nhất một dòng (Thêm một dòng): chọn người cần thay, người "
+"nhận bàn giao mới và nội dung công việc."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Vui lòng điền nội dung bàn giao công việc cho: %(names)s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Vui lòng điền nội dung công việc cho từng người nhận mới."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave__emergency_leave_approver_notice
+msgid ""
+"Warning marker for approvers when this is emergency leave. Empty for "
+"employees who only have a work handover role on this request."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_type__handover_escalation_to_manager_hours
+msgid ""
+"When max level is Department Manager: wait this many hours after Department "
+"Head before escalating further."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,help:time_off_extra_approval.field_hr_leave_responsible_approval__pending_since
+msgid ""
+"When this step became the current approver (used for sequential timeout "
+"escalation)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:mail.activity.type,name:time_off_extra_approval.mail_act_leave_work_handover
+msgid "Work Handover"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_acceptance_ids
+msgid "Work Handover Details"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave__handover_employee_ids
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Work Handover To"
+msgstr "Người nhận bàn giao công việc"
+
+#. module: time_off_extra_approval
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_acceptance__handover_work_content
+#: model:ir.model.fields,field_description:time_off_extra_approval.field_hr_leave_handover_replacement_draft__handover_work_content
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Work content"
+msgstr "Nội dung công việc"
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_handover_acceptance
+msgid "Work handover acceptance"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.view_hr_leave_type_form_extra_approvers
+msgid "Work handover escalation"
+msgstr "Chuyển cấp bàn giao công việc"
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Work handover for %(leave)s has no acceptance after %(hours)s hours. You are"
+" now assigned to choose a replacement handover recipient."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Work handover refusal details"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:ir.model,name:time_off_extra_approval.model_hr_leave_handover_refuse_wizard
+msgid "Work handover refusal reason"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model:mail.activity.type,summary:time_off_extra_approval.mail_act_leave_work_handover
+msgid "Work handover to confirm"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Xác nhận nghỉ khẩn cấp"
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_handover_recipients
+msgid "Yes"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid "You are not allowed to approve the current step."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid "You are not allowed to approve/refuse this multi-step allocation step."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_handover_acceptance.py:0
+msgid ""
+"You are not allowed to delete this handover recipient line. Only the "
+"requester (or authorized HR users) can change this list."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_handover_acceptance.py:0
+msgid ""
+"You are not allowed to edit the handover recipient list on this request. "
+"Only the requester (or authorized HR users) can add or remove recipients."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_handover_acceptance.py:0
+msgid ""
+"You are not allowed to edit the handover recipient list on this request. "
+"Only the requester (or authorized HR users) can add, update, or remove "
+"recipients."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave_allocation.py:0
+msgid "You are not allowed to refuse the current step."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"You were asked to cover work while %(name)s is away (%(leave_type)s, "
+"%(dates)s)."
+msgstr ""
+
+#. module: time_off_extra_approval
+#: model_terms:ir.ui.view,arch_db:time_off_extra_approval.hr_leave_view_form_dashboard_handover_actions
+msgid ""
+"You were selected for work handover for this request. Please accept or "
+"refuse."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "cấp tiếp theo"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "người duyệt"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "trưởng bộ phận"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "{refuser} đã từ chối nhận bàn giao công việc cho bạn với lý do "
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"{refuser} đã từ chối nhận bàn giao công việc cho bạn, vui lòng vào mục Time "
+"Off để chọn lại người nhận bàn giao.<br/><br/>"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đang chờ bàn giao công việc"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đang chờ bàn giao: %s"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đang chờ duyệt"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Đã bật 'Duyệt theo thứ tự Giám đốc' và có dòng trong bảng, nhưng không có "
+"Giám đốc nào hợp lệ (chức danh Giám đốc và user nội bộ). Vui lòng sửa danh "
+"sách."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đã chấp nhận bàn giao công việc."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đã từ chối bàn giao công việc."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Đã xóa đồng nghiệp từ chối khỏi danh sách bàn giao; quy trình duyệt có thể "
+"tiếp tục."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Đơn của bạn xin nghỉ vào ngày %(date)s đã bị từ chối bởi %(refuser)s với lý "
+"do là %(reason)s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn của bạn xin nghỉ vào ngày %(date)s đã bị từ chối bởi %(refuser)s."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Đơn nghỉ phép %(leave)s của bạn đã bị hệ thống tự động hủy vì quá thời gian "
+"chờ nhận bàn giao/duyệt theo cấu hình."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Đơn nghỉ phép %(leave)s đã bị tự động hủy do quá thời gian chờ bàn giao công"
+" việc. Vui lòng tạo đơn mới nếu vẫn cần nghỉ."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn nghỉ phép bị tự động hủy"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn nghỉ phép này chưa được cấu hình duyệt nhiều cấp."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Đơn nghỉ phép này chưa được cấu hình luồng Người phụ trách HR của nhân viên."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn nghỉ phép này phải được duyệt đúng thứ tự tuần tự."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn nghỉ phép này phải được từ chối đúng thứ tự tuần tự."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn nghỉ phép phải ở trạng thái 'Chờ duyệt' hoặc 'Duyệt cấp 2'."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn nghỉ phép phải ở trạng thái 'Chờ duyệt' để duyệt theo từng bước."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn nghỉ phép phải ở trạng thái 'Chờ duyệt' để từ chối theo từng bước."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn nghỉ phép đã tự động hủy"
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid ""
+"Đơn xin nghỉ của bạn vào %(date)s đã bị tự động hủy do quá thời gian chờ bàn"
+" giao công việc. Vui lòng tạo đơn mới nếu vẫn cần nghỉ."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn xin nghỉ của bạn vào ngày %(date)s đã bị hủy."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn xin nghỉ của bạn vào ngày %(date)s đã được phê duyệt thành công."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đơn xin nghỉ phép đã đóng."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đồng nghiệp được chọn không nằm trong danh sách bàn giao hiện tại."
+msgstr ""
+
+#. module: time_off_extra_approval
+#. odoo-python
+#: code:addons/time_off_extra_approval/models/hr_leave.py:0
+msgid "Đồng nghiệp “%s” không còn trong danh sách bàn giao."
+msgstr ""

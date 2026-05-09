@@ -4,27 +4,27 @@ from odoo.exceptions import UserError
 
 class HrLeaveHandoverReplacementDraft(models.Model):
     _name = "hr.leave.handover.replacement.draft"
-    _description = "Dòng chọn lại người nhận bàn giao"
+    _description = "Handover recipient replacement line"
     _order = "sequence, id"
 
     leave_id = fields.Many2one(
         comodel_name="hr.leave",
-        string="Đơn nghỉ",
+        string="Time Off Request",
         required=True,
         ondelete="cascade",
         index=True,
     )
-    sequence = fields.Integer(string="STT", default=1)
+    sequence = fields.Integer(string="No.", default=1)
     replace_employee_id = fields.Many2one(
         comodel_name="hr.employee",
-        string="Người cần thay",
-        help="Người đang trong danh sách bàn giao và được phép thay (đã từ chối hoặc chờ sau chuyển cấp).",
+        string="Employee to replace",
+        help="Recipient currently in the handover list and eligible for replacement (refused or escalated waiting).",
     )
     new_employee_id = fields.Many2one(
         comodel_name="hr.employee",
-        string="Người nhận bàn giao",
+        string="New handover recipient",
     )
-    handover_work_content = fields.Text(string="Nội dung công việc")
+    handover_work_content = fields.Text(string="Work content")
     allowed_new_employee_ids = fields.Many2many(
         comodel_name="hr.employee",
         compute="_compute_allowed_new_employee_ids",
@@ -32,12 +32,12 @@ class HrLeaveHandoverReplacementDraft(models.Model):
 
     def _raise_if_leave_cannot_manage_drafts(self, leave):
         if not leave or not leave.exists():
-            raise UserError(_("Thiếu đơn nghỉ phép cho dòng chọn lại bàn giao."))
+            raise UserError(_("Missing time off request for handover replacement line."))
         if not leave.handover_replacement_picker_open:
-            raise UserError(_("Không thể chỉnh sửa danh sách thay thế khi hộp chọn đã đóng."))
+            raise UserError(_("Cannot edit replacement lines after the picker is closed."))
         if not leave.can_manage_handover_replacement:
             raise UserError(
-                _("Chỉ người nộp đơn (hoặc trưởng bộ phận được giao sau chuyển cấp) mới được chỉnh sửa phần này.")
+                _("Only the requester (or the assigned escalation owner) can edit this section.")
             )
 
     @api.depends(
@@ -108,7 +108,7 @@ class HrLeaveHandoverReplacementDraft(models.Model):
                 leave = line.leave_id
                 if leave.handover_replacement_picker_open and not leave.can_manage_handover_replacement:
                     raise UserError(
-                        _("Chỉ người nộp đơn (hoặc trưởng bộ phận được giao sau chuyển cấp) mới được xóa dòng này.")
+                        _("Only the requester (or the assigned escalation owner) can delete this line.")
                     )
         leave_ids = self.mapped("leave_id").ids
         res = super().unlink()
