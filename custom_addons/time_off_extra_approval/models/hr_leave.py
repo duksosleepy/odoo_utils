@@ -2911,7 +2911,7 @@ class HolidaysRequest(models.Model):
             )
 
     def _notify_requester_approval_outcome_via_bot(self, outcome_state, refusal_reason=None, refuser_name=None):
-        """Send approval result DM from default OdooBot to requester."""
+        """Send approval/refusal/cancel result DM from approval Discuss bot (OdooBot Duyệt đơn)."""
         self.ensure_one()
         requester_user = self.employee_id.user_id
         if not requester_user or requester_user.share or not requester_user.partner_id:
@@ -2945,7 +2945,9 @@ class HolidaysRequest(models.Model):
                 "date": leave_date_text
             }
         try:
-            bot_user = self.env.ref("base.user_root")
+            bot_user = self.env.ref("business_discuss_bots.user_bot_approval", raise_if_not_found=False)
+            if not bot_user:
+                bot_user = self.env.ref("base.user_root")
             chat = (
                 self.env["discuss.channel"]
                 .with_user(bot_user)
