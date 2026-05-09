@@ -31,7 +31,7 @@ class HrEmployeeGateTicket(models.Model):
         tracking=True,
     )
     check_in = fields.Datetime(
-        string='Created Time',
+        string='Checkin',
         required=True,
         default=fields.Datetime.now,
         tracking=True,
@@ -201,6 +201,7 @@ class HrEmployeeGateTicket(models.Model):
         self.ensure_one()
         ticket_url = self._notify_get_action_link('view')
         tz_offset = timedelta(hours=7)
+        created_formatted = (self.create_date + tz_offset).strftime('%H:%M ngày %d/%m/%Y') if self.create_date else ''
         check_in_formatted = (self.check_in + tz_offset).strftime('%H:%M ngày %d/%m/%Y') if self.check_in else ''
         checkout_formatted = (self.checkout_time + tz_offset).strftime('%H:%M ngày %d/%m/%Y') if self.checkout_time else ''
 
@@ -228,6 +229,10 @@ class HrEmployeeGateTicket(models.Model):
             '</tr>'
             '<tr>'
             '<td style="border:1px solid #ccc;padding:4px 10px;">Tạo lúc</td>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(created)s</td>'
+            '</tr>'
+            '<tr>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">Giờ vào</td>'
             '<td style="border:1px solid #ccc;padding:4px 10px;">%(check_in)s</td>'
             '</tr>'
             '<tr>'
@@ -252,6 +257,7 @@ class HrEmployeeGateTicket(models.Model):
             '</tr>'
             '</table>'
         ) % {
+            'created': created_formatted,
             'check_in': check_in_formatted,
             'checkout': checkout_formatted,
             'items': self.gate_items or '',

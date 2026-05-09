@@ -157,8 +157,8 @@ msgstr "Người duyệt cấp 3"
 
 #. module: hr_employee_gate_ticket
 #: model:ir.model.fields,field_description:hr_employee_gate_ticket.field_hr_employee_gate_ticket__check_in
-msgid "Created Time"
-msgstr "Tạo lúc"
+msgid "Checkin"
+msgstr "Giờ vào"
 
 #. module: hr_employee_gate_ticket
 #: model:ir.model.fields,field_description:hr_employee_gate_ticket.field_hr_employee_gate_ticket__checkout_time
