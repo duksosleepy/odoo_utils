@@ -28,6 +28,27 @@
                     <field name="employee_responsible_escalation_hours"
                            invisible="employee_responsible_approval_mode != 'sequential'"/>
                 </group>
+                <group string="Nhân viên đặc biệt"
+                       colspan="2"
+                       class="o_inner_group"
+                       invisible="leave_validation_type != 'employee_hr_responsibles'">
+                    <p class="text-muted" colspan="2">
+                        Nhân viên trong bảng: ở chế độ duyệt tuần tự, luồng theo sơ đồ giữ nguyên tới khi gặp cấp có
+                        chức danh Giám đốc; sau đó từng Giám đốc (cùng chức danh, có user nội bộ) trong công ty đều
+                        phải duyệt lần lượt.
+                    </p>
+                    <field name="special_director_employee_line_ids"
+                           colspan="2"
+                           nolabel="1">
+                        <list string="Danh sách nhân viên đặc biệt" editable="bottom" create="true" delete="true">
+                            <field name="sequence" string="STT"/>
+                            <field name="employee_id"
+                                   string="Tên nhân viên"
+                                   options="{'no_create': True, 'no_create_edit': True}"
+                                   context="{'list_view_ref': 'hr.view_employee_tree', 'search_view_ref': 'hr.view_employee_filter'}"/>
+                        </list>
+                    </field>
+                </group>
                 <group string="Work handover escalation"
                        colspan="2"
                        class="o_inner_group">

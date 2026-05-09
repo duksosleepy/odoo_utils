@@ -65,6 +65,14 @@ class HolidaysType(models.Model):
         help="Chỉ áp dụng cho luồng tuần tự: nếu người duyệt hiện tại không xử lý trong thời gian này, "
         "yêu cầu sẽ chuyển lên cấp tiếp theo.",
     )
+    special_director_employee_line_ids = fields.One2many(
+        comodel_name="hr.leave.type.special.employee.line",
+        inverse_name="leave_type_id",
+        string="Special employees (all directors must approve)",
+        help="Nhân viên trong danh sách: luồng duyệt tuần tự theo sơ đồ/lan toán giữ nguyên cho tới khi tới cấp có "
+        "chức danh Giám đốc; từ đó mỗi người có chức danh Giám đốc (có user nội bộ) trong công ty đều phải duyệt "
+        "theo thứ tự trước khi hoàn tất.",
+    )
     handover_escalation_after_hours = fields.Float(
         string="Bàn giao: Chuyển cấp sau (giờ)",
         default=2.0,

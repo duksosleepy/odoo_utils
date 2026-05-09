@@ -27,6 +27,8 @@ _HR_RESPONSIBLE_APPROVAL_JOB_TITLE_ORDER = tuple(
 _DIRECTOR_JOB_TITLE_KEY = "giám đốc"
 # Manual / sorted-by-title flows; org-chart mode allows one row per manager level (can exceed 6).
 _MAX_EMPLOYEE_HR_RESPONSIBLES = 15
+# Special multi-director list can exceed the usual cap (chain + all directors).
+_MAX_EMPLOYEE_HR_RESPONSIBLES_MULTI_DIRECTOR = 40
 _HANDOVER_ACTIVITY_XMLID = "time_off_extra_approval.mail_act_leave_work_handover"
 # Handover acknowledgement rows and activities apply while the request awaits approval.
 _HANDOVER_ACTIVE_STATES = ("confirm", "validate1")
@@ -1084,6 +1086,8 @@ class HolidaysRequest(models.Model):
         "holiday_status_id.multi_approval_step_ids.approver_user_ids",
         "holiday_status_id.multi_approval_step_ids.approver_department_ids",
         "holiday_status_id.employee_responsible_source",
+        "holiday_status_id.special_director_employee_line_ids",
+        "holiday_status_id.special_director_employee_line_ids.employee_id",
         "employee_id.parent_id",
         "employee_id.parent_id.parent_id",
         "employee_id.parent_id.parent_id.parent_id",
@@ -1242,7 +1246,8 @@ class HolidaysRequest(models.Model):
             cur = mgr.parent_id
         return Users.browse(user_ids)
 
-    def _get_responsible_approval_users(self):
+    def _employee_hr_responsible_users_core(self):
+        """Approver users from org chart or manual HR responsible fields (no sequential sort / director expansion)."""
         self.ensure_one()
         if self.holiday_status_id.employee_responsible_source == "org_chart":
             users = self._get_org_chart_approver_users_ordered()
@@ -1256,6 +1261,79 @@ class HolidaysRequest(models.Model):
                     users = self.env["res.users"].browse([pu.id] + [uid for uid in users.ids if uid != pu.id])
             return users
         return self._get_employee_responsible_users()
+
+    def _get_company_director_users(self):
+        self.ensure_one()
+        Employee = self.env["hr.employee"].sudo()
+        domain = [
+            ("job_title", "=", _DIRECTOR_JOB_TITLE_KEY),
+            ("user_id", "!=", False),
+        ]
+        company = self.company_id or self.env.company
+        if company:
+            domain = ["&"] + domain + ["|", ("company_id", "=", False), ("company_id", "=", company.id)]
+        employees = Employee.search(domain)
+        users = employees.user_id.filtered(lambda u: u and not u.share)
+        return users.sorted(key=lambda u: ((u.name or "").casefold(), u.id))
+
+    def _is_multi_director_special_employee(self):
+        self.ensure_one()
+        lt = self.holiday_status_id
+        if not lt or not self.employee_id:
+            return False
+        specials = lt.special_director_employee_line_ids.mapped("employee_id")
+        return bool(specials and self.employee_id in specials)
+
+    def _employee_hr_maybe_expand_multi_director(self, users):
+        """Sequential special list: replace from first Director in the chain with every company director."""
+        self.ensure_one()
+        if not self._is_multi_director_special_employee():
+            return users
+        directors = self._get_company_director_users()
+        Users = self.env["res.users"]
+        ordered_ids = list(users.ids)
+        first_dir_idx = None
+        for idx, uid in enumerate(ordered_ids):
+            user = Users.browse(uid).sudo()
+            emp = user.employee_id
+            if emp and (emp.job_title or "") == _DIRECTOR_JOB_TITLE_KEY:
+                first_dir_idx = idx
+                break
+        out_ids = []
+        seen = set()
+        if first_dir_idx is None:
+            for uid in ordered_ids:
+                if uid not in seen:
+                    out_ids.append(uid)
+                    seen.add(uid)
+            for uid in directors.ids:
+                if uid not in seen:
+                    out_ids.append(uid)
+                    seen.add(uid)
+        else:
+            for uid in ordered_ids[:first_dir_idx]:
+                if uid not in seen:
+                    out_ids.append(uid)
+                    seen.add(uid)
+            for uid in directors.ids:
+                if uid not in seen:
+                    out_ids.append(uid)
+                    seen.add(uid)
+        return Users.browse(out_ids)
+
+    def _get_responsible_approval_users(self):
+        self.ensure_one()
+        lt = self.holiday_status_id
+        core = self._employee_hr_responsible_users_core()
+        if not lt or lt.leave_validation_type != "employee_hr_responsibles":
+            return core
+        mode = lt.employee_responsible_approval_mode or "any"
+        if mode != "sequential":
+            return core
+        ordered = core
+        if lt.employee_responsible_source != "org_chart":
+            ordered = self._sort_responsible_users_by_job_title(core)
+        return self._employee_hr_maybe_expand_multi_director(ordered)
 
     def _sort_responsible_users_by_job_title(self, users):
         """Sequential chain order: trưởng nhóm → trưởng BP → kiểm soát → trưởng phòng HCNS → giám đốc (see hr_job_title_vn)."""
@@ -2576,6 +2654,8 @@ class HolidaysRequest(models.Model):
         "holiday_status_id.leave_validation_type",
         "holiday_status_id.employee_responsible_approval_mode",
         "holiday_status_id.employee_responsible_source",
+        "holiday_status_id.special_director_employee_line_ids",
+        "holiday_status_id.special_director_employee_line_ids.employee_id",
         "employee_id",
         "employee_id.job_title",
         "employee_id.hr_responsible_ids",
@@ -2695,8 +2775,13 @@ class HolidaysRequest(models.Model):
                 continue
             lt = leave.holiday_status_id
             approvers = leave._get_responsible_approval_users()
-            if lt.employee_responsible_approval_mode == "sequential" and lt.employee_responsible_source != "org_chart":
-                approvers = leave._sort_responsible_users_by_job_title(approvers)
+            if leave._is_multi_director_special_employee() and not leave._get_company_director_users():
+                raise UserError(
+                    _(
+                        "Loại nghỉ được cấu hình nhân viên đặc biệt (duyệt đồng loạt Giám đốc) nhưng chưa có nhân "
+                        "viên nào mang chức danh Giám đốc với user nội bộ trong công ty để làm người duyệt."
+                    )
+                )
             if not approvers:
                 if lt.employee_responsible_source == "org_chart":
                     raise UserError(
@@ -2706,10 +2791,15 @@ class HolidaysRequest(models.Model):
                         )
                     )
                 raise UserError(_("Nhân viên này chưa được cấu hình người phụ trách HR."))
-            if len(approvers) > _MAX_EMPLOYEE_HR_RESPONSIBLES:
+            slot_limit = (
+                _MAX_EMPLOYEE_HR_RESPONSIBLES_MULTI_DIRECTOR
+                if leave._is_multi_director_special_employee()
+                else _MAX_EMPLOYEE_HR_RESPONSIBLES
+            )
+            if len(approvers) > slot_limit:
                 raise UserError(
                     _("Luồng này hỗ trợ tối đa %(max)s người phụ trách HR cho mỗi nhân viên.")
-                    % {"max": _MAX_EMPLOYEE_HR_RESPONSIBLES}
+                    % {"max": slot_limit}
                 )
             now = fields.Datetime.now()
             for sequence, user in enumerate(approvers, start=1):
