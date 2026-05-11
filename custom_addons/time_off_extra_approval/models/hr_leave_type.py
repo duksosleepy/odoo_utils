@@ -18,7 +18,7 @@ for _key, _label in JOB_TITLE_SELECTION:
         _HANDOVER_MAX_ESCALATION_JOB_TITLE_SELECTION.append((_key, _label))
 if not _HANDOVER_MAX_ESCALATION_JOB_TITLE_SELECTION:
     _HANDOVER_MAX_ESCALATION_JOB_TITLE_SELECTION = [
-        ("trưởng BP", "Trưởng BP"),
+        ("trưởng bộ phận", "Trưởng bộ phận"),
         ("trưởng phòng", "Trưởng phòng"),
     ]
 
@@ -88,7 +88,7 @@ class HolidaysType(models.Model):
     handover_escalation_max_job_title = fields.Selection(
         selection=_HANDOVER_MAX_ESCALATION_JOB_TITLE_SELECTION,
         string="Handover: max escalation job title",
-        default="trưởng BP",
+        default="trưởng bộ phận",
         help="Maximum job title level used for handover escalation.",
     )
     handover_escalation_to_manager_hours = fields.Float(
@@ -449,8 +449,25 @@ class HolidaysType(models.Model):
                 cr.execute(
                     "UPDATE hr_leave_type SET handover_escalation_max_job_title = %s "
                     "WHERE handover_escalation_max_job_title IS NULL",
-                    ("trưởng BP",),
+                    ("trưởng bộ phận",),
                 )
+            # Always normalize obsolete/invalid keys to a current selection value so that
+            # any row pre-dating the JOB_TITLE_SELECTION rename ('trưởng BP' -> 'trưởng bộ phận',
+            # etc.) does not break onchange/render with a Selection ValueError.
+            valid_keys = tuple(k for k, _label in _HANDOVER_MAX_ESCALATION_JOB_TITLE_SELECTION)
+            cr.execute(
+                """
+                UPDATE hr_leave_type
+                SET handover_escalation_max_job_title = CASE
+                    WHEN handover_escalation_max_job_title = 'trưởng BP' THEN 'trưởng bộ phận'
+                    WHEN handover_escalation_max_job_title = 'trưởng phòng HCNS' THEN 'trưởng phòng hcns'
+                    ELSE %s
+                END
+                WHERE handover_escalation_max_job_title IS NOT NULL
+                  AND handover_escalation_max_job_title NOT IN %s
+                """,
+                ("trưởng bộ phận", valid_keys),
+            )
             if not sql.column_exists(cr, "hr_leave_type", "handover_escalation_to_manager_hours"):
                 _logger.warning(
                     "time_off_extra_approval: creating missing column hr_leave_type.handover_escalation_to_manager_hours"
