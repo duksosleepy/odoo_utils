@@ -1,0 +1,14 @@
+# Translation of Odoo Server.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. module: timeoff_calendar_toggle
+#. odoo-javascript
+#: code:addons/timeoff_calendar_toggle/static/src/timeoff_calendar_toggle.js:0
+msgid "Show start time"
+msgstr "Hiển thị giờ trên lịch"

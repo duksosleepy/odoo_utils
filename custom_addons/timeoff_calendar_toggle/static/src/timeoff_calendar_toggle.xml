@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="hr_holidays.TimeOffCalendarSidePanel" t-inherit-mode="extension">
+        <xpath expr="//h5[text()='Legend']" position="before">
+            <div class="o_calendar_filter_item o-checkbox form-check position-relative w-100 cursor-pointer mb-3">
+                <input
+                    type="checkbox"
+                    class="o_cw_filter_input_bg form-check-input"
+                    id="o_timeoff_calendar_toggle_show_start_time"
+                    t-att-checked="props.model.showCalendarEventTime"
+                    t-on-change="onShowStartTimeChange"
+                />
+                <label class="d-flex align-items-center gap-1" for="o_timeoff_calendar_toggle_show_start_time">
+                    <span class="o_cw_filter_title flex-grow-1 text-truncate lh-base fw-bolder" t-esc="showStartTimeLabel"/>
+                </label>
+            </div>
+        </xpath>
+    </t>
+</templates>
