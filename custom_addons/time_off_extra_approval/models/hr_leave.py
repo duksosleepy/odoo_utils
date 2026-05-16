@@ -1,4 +1,6 @@
 import logging
+import hashlib
+import hmac
 import re
 import unicodedata
 from datetime import date, datetime, time, timedelta
@@ -1656,18 +1658,19 @@ class HolidaysRequest(models.Model):
             date_from = leave.date_from.date()
         date_txt = format_date(self.env, date_from) if date_from else ""
         footer = _("Mở đơn và chọn Chấp nhận hoặc Từ chối bàn giao công việc.")
+        button_html = leave._notify_handover_bot_leave_form_open_button_markup()
         who = leave._handover_who_label_for_line(line)
         if requester_name:
             first = _(
                 "Bạn được yêu cầu bàn giao công việc khi %(name)s nghỉ "
                 "(%(leave_type)s, %(dates)s)."
             ) % {"name": requester_name, "leave_type": leave_type, "dates": date_txt}
-            return Markup("<p>%s</p><p>%s</p>") % (first, footer)
+            return Markup("<p>%s</p><p>%s</p><p>%s</p>") % (first, footer, button_html)
         first = _(
             "You were asked to cover work while %(name)s is away (%(leave_type)s, %(dates)s)."
         ) % {"name": requester_name, "leave_type": leave_type, "dates": date_txt}
         second = _("Mở yêu cầu này và chọn Chấp nhận bàn giao hoặc Từ chối bàn giao.")
-        return Markup("<p>%s</p><p>%s</p>") % (first, second)
+        return Markup("<p>%s</p><p>%s</p><p>%s</p>") % (first, second, button_html)
 
     def _refresh_handover_activity_notes_for_employees(self, employees):
         """After assigned_by_user_id is updated, rewrite open handover activities so the note matches."""
@@ -1909,17 +1912,88 @@ class HolidaysRequest(models.Model):
                 ),
             )
 
-    def _notify_handover_bot_leave_form_open_button_markup(self):
-        """Purple pill link to this leave form (Discuss-safe HTML, sanitizer whitelist)."""
+    # --- Discuss bot: plain-HTTP opener (mobile browsers handle this reliably) ---
+
+    def _leave_discuss_hmac_secret_key(self):
+        icp = self.env["ir.config_parameter"].sudo()
+        secret = icp.get_param("database.secret") or icp.get_param("database.uuid") or ""
+        return secret.encode("utf-8")
+
+    def _leave_discuss_link_token(self):
         self.ensure_one()
-        base = (self.get_base_url() or "").rstrip("/")
-        leave_url = f"{base}/web#id={self.id}&model=hr.leave&view_type=form"
+        key = self._leave_discuss_hmac_secret_key()
+        if not key:
+            _logger.warning(
+                "time_off_extra_approval: database.secret/database.uuid missing — Discuss leave links disabled"
+            )
+            return ""
+        msg = ("v1|hr.leave.discuss_open|%s" % (self.id,)).encode()
+        return hmac.new(key, msg, hashlib.sha256).hexdigest()
+
+    def _leave_discuss_link_verify_token(self, token):
+        self.ensure_one()
+        expected = self._leave_discuss_link_token()
+        if not expected or not token or len(token) != len(expected):
+            return False
+        try:
+            return hmac.compare_digest(expected, token)
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _leave_discuss_open_client_fragment(self):
+        self.ensure_one()
+        return "#id=%s&model=hr.leave&view_type=form" % self.id
+
+    def _leave_discuss_open_spa_path(self):
+        """Canonical in-app URL (Odoo 19 path router). Used in Discuss bot pills."""
+        self.ensure_one()
+        return "/odoo/hr.leave/%s" % self.id
+
+    def _leave_discuss_open_http_path(self):
+        """Signed HTTP route for old messages / bookmarks; Discuss pills use SPA path."""
+        self.ensure_one()
+        tok = self._leave_discuss_link_token()
+        if not tok:
+            return self._leave_discuss_open_spa_path()
+        return "/time_off_extra_approval/discuss_leave/%s/%s" % (self.id, tok)
+
+    def _notify_discuss_leave_open_button_markup(self, button_label, *, discuss_link_type):
+        """Purple pill for Discuss bots (handover + approval).
+
+        Uses ``data-oe-*`` attributes (survive mail HTML sanitization; ``class`` does not).
+        """
+        self.ensure_one()
+        path_esc = escape(self._leave_discuss_open_spa_path())
         return Markup(
-            '<a href="{href}" target="_blank" rel="noreferrer noopener" '
-            'style="display:inline-block;padding:8px 18px;background-color:#714B67;'
+            '<a class="o_timeoff_leave_pill" href="{href}" target="_self" '
+            'data-oe-model="hr.leave" data-oe-id="{res_id}" data-oe-type="{link_type}" '
+            'style="display:inline-block;padding:8px 18px;background-color:#714B67;cursor:pointer;'
+            'touch-action:manipulation;-webkit-tap-highlight-color:rgba(255,255,255,0.2);'
             'color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;'
             'font-size:14px;line-height:1.2;">{label}</a>'
-        ).format(href=leave_url, label=_("Mở Time Off"))
+        ).format(
+            href=path_esc,
+            res_id=self.id,
+            link_type=escape(discuss_link_type),
+            label=escape(button_label),
+        )
+
+    def _notify_handover_bot_leave_form_open_button_markup(self):
+        """OdooBot Bàn giao việc — same mobile-safe link as approval bot."""
+        self.ensure_one()
+        return self._notify_discuss_leave_open_button_markup(
+            _("Mở Time Off"),
+            discuss_link_type="handover",
+        )
+
+    def _notify_approval_bot_leave_form_open_button_markup(self):
+        """OdooBot Duyệt đơn."""
+        self.ensure_one()
+        return self._notify_discuss_leave_open_button_markup(
+            _("Time Off"),
+            discuss_link_type="approval",
+        )
+
 
     def _notify_specific_handover_recipients_via_bot(self, employees):
         """Discuss DM from handover bot: same wording as khi nộp đơn — chỉ gửi cho subset người nhận."""
@@ -1961,7 +2035,9 @@ class HolidaysRequest(models.Model):
             body = (
                 intro
                 + escape(str(content_text))
-                + Markup(_("<br/>Vui lòng bấm vào Time Off để xác nhận công việc bàn giao.<br/><br/>"))
+                + Markup(
+                    _("<br/>Vui lòng bấm vào <b>Mở Time Off</b> để xác nhận công việc bàn giao.<br/><br/>")
+                )
                 + button_html
             )
             post_vals = {
@@ -3124,8 +3200,6 @@ class HolidaysRequest(models.Model):
         requester_name = self.employee_id.name or self.employee_id.display_name or self.display_name
         leave_date = self.request_date_from or (self.date_from and self.date_from.date())
         leave_date_text = leave_date.strftime("%d/%m/%Y") if leave_date else ""
-        base = (self.get_base_url() or "").rstrip("/")
-        leave_url = f"{base}/web#id={self.id}&model=hr.leave&view_type=form"
         intro = Markup(
             _(
                 "Nhân viên: <b>{requester}</b> xin nghỉ phép<br/>"
@@ -3136,12 +3210,7 @@ class HolidaysRequest(models.Model):
             requester=escape(str(requester_name)),
             date=escape(str(leave_date_text)),
         )
-        button_html = Markup(
-            '<a href="{href}" target="_blank" rel="noreferrer noopener" '
-            'style="display:inline-block;padding:8px 18px;background-color:#714B67;'
-            'color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;'
-            'font-size:14px;line-height:1.2;">{label}</a>'
-        ).format(href=leave_url, label=_("Time Off"))
+        button_html = self._notify_approval_bot_leave_form_open_button_markup()
         body = intro + button_html
         try:
             # Current-turn approver notifications must come from approval bot.

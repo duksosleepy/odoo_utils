@@ -1,0 +1,17 @@
+// Mobile WebKit: links inside Discuss message bodies (notifications, mail/view buttons).
+.o-mail-Message.o-isMobileOS .o-mail-Message-body a,
+.o-mail-Message.o-isMobileOS .o-mail-Message-richBody a {
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-user-select: auto;
+    user-select: auto;
+}
+
+// Thông báo dạng notification (OdooBot, layout mail) — không dùng component Message.
+.o-mail-NotificationMessage a {
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-user-select: auto;
+    user-select: auto;
+    pointer-events: auto;
+}

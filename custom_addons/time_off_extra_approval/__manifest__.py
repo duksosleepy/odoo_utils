@@ -1,6 +1,6 @@
 {
     "name": "Time Off Extra Approvers (Demo)",
-    "version": "19.0.6.1.81",
+    "version": "19.0.6.1.93",
     "category": "Human Resources",
     "summary": "Allow extra officers/offices to approve time off by leave type",
     "depends": ["hr_holidays", "hr_employee_multi_responsible", "hr_job_title_vn", "business_discuss_bots"],
@@ -24,9 +24,11 @@
     "assets": {
         "web.assets_backend": [
             "time_off_extra_approval/static/src/scss/handover_replacement.scss",
+            "time_off_extra_approval/static/src/scss/timeoff_discuss_bot_link.scss",
             "time_off_extra_approval/static/src/js/many2one_save_on_change_field.js",
             "time_off_extra_approval/static/src/js/timeoff_cancel_dialog_fix.js",
             "time_off_extra_approval/static/src/js/emergency_leave_form_controller.js",
+            "time_off_extra_approval/static/src/js/discuss_time_off_link_patch.js",
             "time_off_extra_approval/static/src/js/error_dialog_vi_patch.js",
             "time_off_extra_approval/static/src/xml/error_dialog_vi_patch.xml",
             "time_off_extra_approval/static/src/xml/timeoff_form_dialog_buttons_patch.xml",

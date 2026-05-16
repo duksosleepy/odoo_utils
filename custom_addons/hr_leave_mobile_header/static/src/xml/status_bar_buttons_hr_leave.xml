@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- On phone, web collapses header buttons behind "⋯". Skip that for hr.leave. -->
+    <t t-name="hr_leave_mobile_header.StatusBarButtons" t-inherit="web.StatusBarButtons" t-inherit-mode="extension">
+        <xpath expr="//t[@t-if='env.isSmall']" position="attributes">
+            <attribute name="t-if">env.isSmall &amp;&amp; (!env.model || !env.model.config || env.model.config.resModel !== 'hr.leave')</attribute>
+        </xpath>
+    </t>
+</templates>

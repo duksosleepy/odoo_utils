@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+      Nút "View document" / Time Off trong layout mail chỉ có href /mail/view.
+      Trên Discuss mobile, thêm data-oe-model / data-oe-id để client (kể cả stock) mở form
+      qua dataset khi href / parse lỗi (LAN vs web.base.url, v.v.).
+    -->
+    <template id="mail_notification_layout_access_link_data_attrs" inherit_id="mail.mail_notification_layout">
+        <xpath expr="//td[contains(@t-if, 'has_button_access')]/a" position="attributes">
+            <attribute name="t-att-data-oe-model">record._name if record else False</attribute>
+            <attribute name="t-att-data-oe-id">record.id if record else False</attribute>
+        </xpath>
+    </template>
+
+    <template id="mail_notification_light_access_link_data_attrs" inherit_id="mail.mail_notification_light">
+        <xpath expr="//t[contains(@t-if, 'has_button_access')]/a" position="attributes">
+            <attribute name="t-att-data-oe-model">record._name if record else False</attribute>
+            <attribute name="t-att-data-oe-id">record.id if record else False</attribute>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,45 @@
+/**
+ * Discuss wraps message HTML in TWO scroll wrappers (outer `o-discuss-text-body` +
+ * inner `o-mail-Message-richBody`), both with `overflow-x-auto`. On phones the
+ * outer one still captures horizontal touch and can block taps on nested links.
+ *
+ * Message sanitizer strips `class` from bot HTML; target links via data-oe / href.
+ */
+
+.o-discuss-text-body:has(a[data-oe-model="hr.leave"]),
+.o-discuss-text-body:has(a[data-oe-type="handover"]),
+.o-discuss-text-body:has(a[data-oe-type="approval"]),
+.o-discuss-text-body:has(a[href*="/hr.leave/"]),
+.o-mail-Message-richBody:has(a[data-oe-model="hr.leave"]),
+.o-mail-Message-richBody:has(a[data-oe-type="handover"]),
+.o-mail-Message-richBody:has(a[data-oe-type="approval"]),
+.o-mail-Message-richBody:has(a[href*="/hr.leave/"]) {
+    overflow-x: visible !important;
+    touch-action: pan-y;
+}
+
+// Incoming bot DMs use a blue bubble overlay that can swallow taps on mobile.
+.o-discuss-text-body:has(a[data-oe-model="hr.leave"]) .o-mail-Message-bubble,
+.o-discuss-text-body:has(a[href*="/hr.leave/"]) .o-mail-Message-bubble {
+    pointer-events: none;
+}
+
+.o-mail-ChatWindow .o-discuss-text-body:has(a[data-oe-model="hr.leave"]),
+.o-mail-ChatWindow .o-discuss-text-body:has(a[href*="/hr.leave/"]) {
+    overflow-x: visible !important;
+}
+
+a[data-oe-model="hr.leave"][data-oe-id],
+a[data-oe-type="handover"][data-oe-id],
+a[data-oe-type="approval"][data-oe-id],
+a[href*="/hr.leave/"] {
+    position: relative;
+    z-index: 3;
+    touch-action: manipulation;
+    user-select: auto;
+    -webkit-user-select: auto;
+}
+
+a[data-oe-model="hr.leave"][data-oe-id] {
+    color: #ffffff !important;
+}
