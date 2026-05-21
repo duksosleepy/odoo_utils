@@ -5,15 +5,19 @@ All approval mechanics (responsible_approval_line_ids, action_responsible_approv
 notifications, timeout escalation) are shared with employee_hr_responsibles.
 
 Approval flows:
-  Nhân viên CH  → Cửa hàng trưởng → ASM → RSM → Admin 1 → Admin
-  Cửa hàng trưởng → ASM → RSM → Admin 1 → Admin
-  ASM           → RSM → Admin 1 → Admin
-  RSM           → Admin 1 → Admin
-  Giám sát Miền Nam / Giám sát Miền Bắc → Hạnh KT → HCNS Ngọc Anh
+  Nhân viên CH    → CHT → ASM → RSM  (pool by Mã bộ phận)
+                  → org-chart above RSM (sequential) → Admin
+  Cửa hàng trưởng → ASM → RSM         (pool by Mã bộ phận)
+                  → org-chart above RSM (sequential) → Admin
+  ASM             → RSM               (pool by Mã bộ phận)
+                  → org-chart above RSM (sequential) → Admin
+  RSM             → org-chart above RSM (sequential) → Admin
+  Giám sát (Miền Nam) → org-chart manager chain → … → Human Resources Manager (final)
 
-Pool for Cửa hàng trưởng / ASM / RSM steps: employee with that job title
-sharing the same Mã bộ phận as the requester (1:1 per code in practice).
-Admin 1, Admin, Hạnh KT, HCNS Ngọc Anh are hardcoded via Odoo badge ID (barcode field).
+Pool for CHT / ASM / RSM steps: employee with that job title sharing the same
+Mã bộ phận as the requester (1:1 per code in practice).
+After RSM: walk parent_id chain from RSM upward; Admin (Thủy) always appended last.
+Admin and Hạnh KT / HCNS Ngọc Anh are hardcoded via Odoo badge ID (barcode field).
 """
 
 import logging
@@ -27,7 +31,6 @@ _logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # TODO: replace each placeholder with the real Odoo badge ID (barcode field).
 # ---------------------------------------------------------------------------
-_BADGE_ADMIN_1 = "TODO_ADMIN_1_BADGE_ID"
 _BADGE_ADMIN = "TODO_ADMIN_BADGE_ID"   # also used as Thủy (Admin) for refusal notification
 _BADGE_HANH_KT = "TODO_HANH_KT_BADGE_ID"
 _BADGE_HCNS_NGOC_ANH = "TODO_HCNS_NGOC_ANH_BADGE_ID"
@@ -39,9 +42,11 @@ _STORE_CHAIN_JOB_TITLES = frozenset({
     "cửa hàng trưởng",
     "asm",
     "rsm",
-    "giám sát miền nam",
-    "giám sát miền bắc",
+    "giám sát",
 })
+
+# Job position name (hr.job) that terminates the Giám sát Miền Nam org-chain.
+_HR_MANAGER_JOB_POSITION = "Human Resources Manager"
 
 
 class HrLeaveStoreChain(models.Model):
@@ -91,6 +96,18 @@ class HrLeaveStoreChain(models.Model):
             return self.env["res.users"]
         return user
 
+    def _store_chain_find_employee_by_title_and_dept(self, job_title_key, ma_bo_phan):
+        """Return the first hr.employee with given job title and Mã bộ phận (no user required)."""
+        if not ma_bo_phan:
+            return self.env["hr.employee"]
+        return self.env["hr.employee"].sudo().search(
+            [
+                ("job_title", "=", job_title_key),
+                ("ma_bo_phan", "=", ma_bo_phan),
+            ],
+            limit=1,
+        )
+
     def _store_chain_find_user_by_title_and_dept(self, job_title_key, ma_bo_phan):
         """Return the internal user for the first employee with given job title and Mã bộ phận."""
         if not ma_bo_phan:
@@ -125,6 +142,64 @@ class HrLeaveStoreChain(models.Model):
             return self.env["res.users"]
         return user
 
+    def _store_chain_org_chain_from_employee(self, start_emp, stop_badge=None):
+        """Walk parent_id org chain upward from start_emp (exclusive — start_emp itself is not added).
+
+        Stops and includes the employee whose barcode == stop_badge when given.
+        Returns res.users in order (closest manager first).
+        """
+        user_ids = []
+        seen = set()
+        cur = start_emp.sudo().parent_id if start_emp else None
+        while cur:
+            if cur.user_id and not cur.user_id.share:
+                uid = cur.user_id.id
+                if uid not in seen:
+                    user_ids.append(uid)
+                    seen.add(uid)
+                if stop_badge and (cur.barcode or "") == stop_badge:
+                    break
+            cur = cur.parent_id
+        return self.env["res.users"].browse(user_ids)
+
+    def _store_chain_after_rsm_approver_users(self, rsm_emp):
+        """Org-chart chain starting above RSM, with Admin (Thủy) appended as final approver."""
+        user_ids = []
+        seen = set()
+
+        def _add(user):
+            if user and user.id and user.id not in seen:
+                user_ids.append(user.id)
+                seen.add(user.id)
+
+        for user in self._store_chain_org_chain_from_employee(rsm_emp):
+            _add(user)
+        _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN))
+        return self.env["res.users"].browse(user_ids)
+
+    def _store_chain_giam_sat_approver_users(self):
+        """Walk parent_id org chain for Giám sát Miền Nam, stopping inclusively at Human Resources Manager."""
+        self.ensure_one()
+        user_ids = []
+        seen = set()
+        cur = self.employee_id.sudo().parent_id
+        while cur:
+            if cur.user_id and not cur.user_id.share:
+                uid = cur.user_id.id
+                if uid not in seen:
+                    user_ids.append(uid)
+                    seen.add(uid)
+                job_position = (cur.job_id.name or "").strip()
+                if job_position == _HR_MANAGER_JOB_POSITION:
+                    break
+            cur = cur.parent_id
+        if not user_ids:
+            _logger.warning(
+                "time_off_extra_approval: store chain — Giám sát org chain is empty for employee %s",
+                self.employee_id.name,
+            )
+        return self.env["res.users"].browse(user_ids)
+
     def _get_store_chain_approver_users(self):
         """Build the ordered approver list for the store chain flow.
 
@@ -146,35 +221,44 @@ class HrLeaveStoreChain(models.Model):
                 seen.add(user.id)
 
         if title == "nhân viên ch":
-            # Nhân viên CH → Cửa hàng trưởng → ASM → RSM → Admin 1 → Admin
+            # Nhân viên CH → CHT → ASM → RSM (pool by ma_bo_phan) → org-chain above RSM → Admin
             _add(self._store_chain_find_user_by_title_and_dept("cửa hàng trưởng", ma_bo_phan))
             _add(self._store_chain_find_user_by_title_and_dept("asm", ma_bo_phan))
-            _add(self._store_chain_find_user_by_title_and_dept("rsm", ma_bo_phan))
-            _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN_1))
-            _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN))
+            rsm_emp = self._store_chain_find_employee_by_title_and_dept("rsm", ma_bo_phan)
+            _add(rsm_emp.user_id if rsm_emp and rsm_emp.user_id and not rsm_emp.user_id.share else self.env["res.users"])
+            for user in self._store_chain_after_rsm_approver_users(rsm_emp):
+                _add(user)
 
         elif title == "cửa hàng trưởng":
-            # Cửa hàng trưởng → ASM → RSM → Admin 1 → Admin
+            # CHT → ASM → RSM (pool by ma_bo_phan) → org-chain above RSM → Admin
             _add(self._store_chain_find_user_by_title_and_dept("asm", ma_bo_phan))
-            _add(self._store_chain_find_user_by_title_and_dept("rsm", ma_bo_phan))
-            _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN_1))
-            _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN))
+            rsm_emp = self._store_chain_find_employee_by_title_and_dept("rsm", ma_bo_phan)
+            _add(rsm_emp.user_id if rsm_emp and rsm_emp.user_id and not rsm_emp.user_id.share else self.env["res.users"])
+            for user in self._store_chain_after_rsm_approver_users(rsm_emp):
+                _add(user)
 
         elif title == "asm":
-            # ASM → RSM → Admin 1 → Admin
-            _add(self._store_chain_find_user_by_title_and_dept("rsm", ma_bo_phan))
-            _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN_1))
-            _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN))
+            # ASM → RSM (pool by ma_bo_phan) → org-chain above RSM → Admin
+            rsm_emp = self._store_chain_find_employee_by_title_and_dept("rsm", ma_bo_phan)
+            _add(rsm_emp.user_id if rsm_emp and rsm_emp.user_id and not rsm_emp.user_id.share else self.env["res.users"])
+            for user in self._store_chain_after_rsm_approver_users(rsm_emp):
+                _add(user)
 
         elif title == "rsm":
-            # RSM → Admin 1 → Admin
-            _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN_1))
-            _add(self._store_chain_find_user_by_badge(_BADGE_ADMIN))
+            # RSM → org-chain above RSM → Admin
+            rsm_emp = emp.sudo()
+            for user in self._store_chain_after_rsm_approver_users(rsm_emp):
+                _add(user)
 
-        elif title in ("giám sát miền nam", "giám sát miền bắc"):
-            # Both regions → Hạnh KT → HCNS Ngọc Anh
-            _add(self._store_chain_find_user_by_badge(_BADGE_HANH_KT))
-            _add(self._store_chain_find_user_by_badge(_BADGE_HCNS_NGOC_ANH))
+        elif title == "giám sát":
+            mien = (emp.sudo().mien or "").strip()
+            if mien == "Nam":
+                # Giám sát Miền Nam → org-chart manager chain → … → Human Resources Manager
+                for user in self._store_chain_giam_sat_approver_users():
+                    _add(user)
+            else:
+                _add(self._store_chain_find_user_by_badge(_BADGE_HANH_KT))
+                _add(self._store_chain_find_user_by_badge(_BADGE_HCNS_NGOC_ANH))
 
         return Users.browse(user_ids)
 

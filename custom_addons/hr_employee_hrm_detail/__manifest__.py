@@ -17,7 +17,7 @@
         - Employment dates (Ngày vào làm, Ngày nghỉ việc, Ngày chính thức)
         - Additional info (Nguồn tuyển dụng, Ghi chú, Nhân viên cũ)
     """,
-    'depends': ['hr'],
+    'depends': ['hr', 'hr_holidays'],
     'data': [
         'security/ir.model.access.csv',
         'views/hr_employee_views.xml',
