@@ -26,7 +26,7 @@ _RESPONSIBLE_FLOW_TYPES = ("employee_hr_responsibles", "vp_chain")
 # Order for sequential HR-responsible approval: by job title (keys from hr_job_title_vn), lowest first.
 # Excludes the generic employee tier so approvers map to management chain only.
 _HR_RESPONSIBLE_APPROVAL_JOB_TITLE_ORDER = tuple(
-    key for key, _label in JOB_TITLE_SELECTION if key != "nhân viên"
+    key for key, _label in JOB_TITLE_SELECTION if key not in ("nhân viên vp", "nhân viên ch")
 )
 # Key used in hr_job_title_vn hr.version job_title selection; only this tier may approve their own leave in HR Responsibles flow.
 _DIRECTOR_JOB_TITLE_KEY = "giám đốc"
@@ -50,7 +50,7 @@ _SKIP_EMERGENCY_LEAVE_CHECK_CTX = "skip_emergency_leave_check"
 _SKIP_SUBMIT_BOT_NOTIFY_CTX = "skip_handover_submit_bot_notify"
 _SKIP_OUTCOME_BOT_NOTIFY_CTX = "skip_outcome_bot_notify"
 _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX = "skip_responsible_submit_notify"
-_SHORT_LEAD_JOB_KEYS = frozenset({"nhân viên", "trưởng nhóm"})
+_SHORT_LEAD_JOB_KEYS = frozenset({"nhân viên vp", "nhân viên ch", "trưởng nhóm"})
 _SHORT_LEAD_DAYS = 3
 _DEFAULT_LEAD_DAYS = 7
 

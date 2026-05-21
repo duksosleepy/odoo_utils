@@ -251,7 +251,7 @@ _MULTI_STEP_RESET_CTX = approval_constants.MULTI_STEP_RESET_CTX
 _SKIP_OUTCOME_BOT_NOTIFY_CTX = approval_constants.SKIP_OUTCOME_BOT_NOTIFY_CTX
 _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX = approval_constants.SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX
 _HR_RESPONSIBLE_APPROVAL_JOB_TITLE_ORDER = tuple(
-    key for key, _label in JOB_TITLE_SELECTION if key != "nhân viên"
+    key for key, _label in JOB_TITLE_SELECTION if key not in ("nhân viên vp", "nhân viên ch")
 )
 _DIRECTOR_JOB_TITLE_KEY = approval_constants.DIRECTOR_JOB_TITLE_KEY
 _MAX_EMPLOYEE_HR_RESPONSIBLES = approval_constants.MAX_EMPLOYEE_HR_RESPONSIBLES
@@ -311,7 +311,7 @@ _SKIP_EMERGENCY_LEAVE_CHECK_CTX = "skip_emergency_leave_check"
 _SKIP_SUBMIT_BOT_NOTIFY_CTX = handover_constants.SKIP_SUBMIT_BOT_NOTIFY_CTX
 _SKIP_OUTCOME_BOT_NOTIFY_CTX = approval_constants.SKIP_OUTCOME_BOT_NOTIFY_CTX
 _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX = approval_constants.SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX
-_SHORT_LEAD_JOB_KEYS = frozenset({"nhân viên", "trưởng nhóm"})
+_SHORT_LEAD_JOB_KEYS = frozenset({"nhân viên vp", "nhân viên ch", "trưởng nhóm"})
 _SHORT_LEAD_DAYS = 3
 _DEFAULT_LEAD_DAYS = 7
 

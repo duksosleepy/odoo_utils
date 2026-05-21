@@ -4,7 +4,8 @@ from odoo import fields, models
 
 # Static list: Odoo passes the model as first arg to callable selection helpers; use a list, not a 0-arg function.
 JOB_TITLE_SELECTION = [
-    ("nhân viên", "Nhân viên"),
+    ("nhân viên vp", "Nhân viên VP"),
+    ("nhân viên ch", "Nhân viên CH"),
     ("giám sát", "Giám sát"),
     ("trưởng nhóm", "Trưởng nhóm"),
     ("nhóm trưởng", "Nhóm trưởng"),
