@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//group[@name='col_left']/field[@name='employee_id'][@widget='many2one_avatar_employee']" position="replace">
                 <label for="employee_id" string="Nhân viên"/>
-                <div class="o_row flex-nowrap align-items-center gap-2">
+                <div class="o_hr_leave_employee_row">
                     <field
                         name="employee_id"
                         widget="many2one_avatar_employee"
@@ -19,7 +19,7 @@
                         name="employee_id_hrm"
                         readonly="1"
                         nolabel="1"
-                        class="text-muted flex-shrink-0 mb-0 align-self-center"
+                        class="text-muted o_hr_leave_employee_id_hrm"
                     />
                 </div>
                 <field name="employee_ma_bo_phan" readonly="1"/>
@@ -33,14 +33,39 @@
         </field>
     </record>
 
-    <!-- time-off-overview uses model hr.leave.report.calendar + this form, not hr.leave dashboard -->
+    <!-- time-off-overview (Tổng quan) uses hr.leave.report.calendar + this form -->
     <record id="hr_leave_report_calendar_view_form_department" model="ir.ui.view">
         <field name="name">hr.leave.report.calendar.view.form.department</field>
         <field name="model">hr.leave.report.calendar</field>
         <field name="inherit_id" ref="hr_holidays.hr_leave_report_calendar_view_form"/>
         <field name="arch" type="xml">
-            <field name="employee_id" position="after">
+            <field name="employee_id" position="replace">
+                <label for="employee_id" string="Nhân viên"/>
+                <div class="o_hr_leave_employee_row">
+                    <field
+                        name="employee_id"
+                        widget="many2one_avatar_employee"
+                        readonly="1"
+                        nolabel="1"
+                        class="flex-grow-1"
+                    />
+                    <field
+                        name="employee_id_hrm"
+                        readonly="1"
+                        nolabel="1"
+                        class="text-muted o_hr_leave_employee_id_hrm"
+                    />
+                </div>
+                <field name="employee_ma_bo_phan" readonly="1"/>
                 <field name="department_id" readonly="1"/>
+            </field>
+            <field name="description" position="replace">
+                <field
+                    name="leave_reason"
+                    readonly="1"
+                    widget="text"
+                    placeholder="Không có lý do nào"
+                />
             </field>
         </field>
     </record>

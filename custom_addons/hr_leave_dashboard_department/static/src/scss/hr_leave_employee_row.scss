@@ -1,0 +1,35 @@
+// Employee name + HRM ID on the same row (time-off popups).
+.o_form_view .o_hr_leave_employee_row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center !important;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+
+    .o_wrap_field,
+    .o_cell {
+        margin-bottom: 0 !important;
+        align-self: center;
+    }
+
+    .o_field_widget {
+        margin-bottom: 0 !important;
+        align-self: center;
+    }
+
+    .o_field_char {
+        line-height: 1.5;
+    }
+
+    // HRM ID: push to the right with clear gap from employee name.
+    > .o_wrap_field:last-child,
+    > .o_cell:last-child,
+    .o_hr_leave_employee_id_hrm,
+    .o_wrap_field:has(.o_hr_leave_employee_id_hrm) {
+        margin-left: auto !important;
+        padding-left: 1.5rem;
+        flex-shrink: 0;
+    }
+}
