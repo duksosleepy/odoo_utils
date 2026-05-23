@@ -176,6 +176,6 @@ class HrEmployee(models.Model):
                 continue
             data = leave_types.get_allocation_data(employee)
             emp_data = data.get(employee, [])
-            total_taken = sum(info.get('virtual_leaves_taken', 0.0) for _lt_name, info in emp_data)
+            total_taken = sum(item[1].get('virtual_leaves_taken', 0.0) for item in emp_data)
             employee.da_su_dung = total_taken
             employee.con_lai = employee.tong_so_phep - total_taken
