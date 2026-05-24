@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <delete model="ir.ui.view" search="[
+        ('model', '=', 'hr.leave'),
+        ('name', 'in', [
+            'hr.leave.form.mien.domain',
+            'hr.leave.form.dashboard.mien.domain',
+            'hr.leave.form.dashboard.new.mien.domain',
+            'hr.leave.form.mien.context',
+        ]),
+    ]"/>
+</odoo>
