@@ -13,6 +13,7 @@
     "post_init_hook": "post_init_hook",
     "data": [
         "data/ir_cron_data.xml",
+        "security/hr_leave_extra_approver_rule.xml",
         "security/ir.model.access.csv",
     ],
     "installable": True,
