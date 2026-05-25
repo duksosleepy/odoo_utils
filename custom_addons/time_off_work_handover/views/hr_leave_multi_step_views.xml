@@ -16,8 +16,9 @@
             <xpath expr="//header/button[@name='action_approve'][2]" position="attributes">
                 <attribute name="invisible">validation_type in ['multi_step_6','employee_hr_responsibles'] or not can_validate or can_approve or not id</attribute>
             </xpath>
-            <xpath expr="//header/button[@name='action_open_refuse_wizard']" position="attributes">
+            <xpath expr="//header/button[@name='action_refuse']" position="attributes">
                 <attribute name="invisible">validation_type in ['multi_step_6','employee_hr_responsibles'] or not can_refuse or not id</attribute>
+                <attribute name="name">action_open_refuse_wizard</attribute>
             </xpath>
 
             <xpath expr="//header/button[@name='action_cancel']" position="before">
