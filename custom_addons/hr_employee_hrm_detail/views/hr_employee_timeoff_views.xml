@@ -14,6 +14,10 @@
                         <field name="con_lai"/>
                         <field name="ngay_het_han"/>
                     </group>
+                    <group string="Năm trước">
+                        <field name="nam_chot_con_lai"/>
+                        <field name="con_lai_nam_truoc"/>
+                    </group>
                 </group>
             </xpath>
         </field>

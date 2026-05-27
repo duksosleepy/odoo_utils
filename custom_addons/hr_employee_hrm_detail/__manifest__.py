@@ -1,6 +1,6 @@
 {
     'name': 'HR Employee HRM Detail',
-    'version': '19.0.1.1.8',
+    'version': '19.0.1.1.9',
     'category': 'Human Resources/Employees',
     'summary': 'Add HRM detail fields to employee Personal tab',
     'description': """
@@ -20,6 +20,7 @@
     'depends': ['hr', 'hr_store', 'hr_holidays'],
     'data': [
         'security/ir.model.access.csv',
+        'data/ir_cron.xml',
         'views/hr_employee_views.xml',
         'views/hr_employee_timeoff_views.xml',
     ],

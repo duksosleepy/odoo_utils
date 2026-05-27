@@ -268,6 +268,51 @@ class HrLeaveStoreChain(models.Model):
             return self._get_store_chain_approver_users()
         return super()._get_responsible_approval_users()
 
+    def _store_chain_notify_all_remaining_approvers(self):
+        """After the Mã bộ phận (ASM) step completes, notify every still-pending approver.
+
+        The sequential order is preserved — only the next-in-line can actually approve —
+        but all remaining approvers receive the bot DM so they know the ticket is coming.
+        The next-wave approver was already notified by _notify_responsible_current_turn();
+        we notify the others here (they are pending but not the current wave).
+        """
+        self.ensure_one()
+        already_notified = self._responsible_pending_current_wave().mapped("user_id")
+        remaining = self.responsible_approval_line_ids.filtered(
+            lambda ln: ln.state == "pending" and ln.user_id not in already_notified
+        )
+        for ln in remaining:
+            user = ln.user_id
+            if not user or user.share or not user.partner_id:
+                continue
+            try:
+                self._notify_responsible_current_turn_via_approval_bot(user)
+            except Exception:
+                _logger.exception(
+                    "time_off_extra_approval: store chain — failed to notify remaining approver "
+                    "leave_id=%s user_id=%s",
+                    self.id,
+                    user.id,
+                )
+
+    def action_responsible_approve(self):
+        if not self._is_store_chain_flow():
+            return super().action_responsible_approve()
+
+        # Capture which line is being approved (sequence 1 = ASM / Mã bộ phận step).
+        approved_line = self.responsible_approval_line_ids.filtered(
+            lambda l: l.user_id == self.env.user and l.state == "pending"
+        )[:1]
+        approved_seq = approved_line.sequence if approved_line else None
+
+        res = super().action_responsible_approve()
+
+        # After the Mã bộ phận (sequence-1) step is done, notify all remaining approvers.
+        if approved_seq == 1:
+            self._store_chain_notify_all_remaining_approvers()
+
+        return res
+
     def action_responsible_refuse(self, reason=False):
         res = super().action_responsible_refuse(reason=reason)
         if self._is_store_chain_flow():

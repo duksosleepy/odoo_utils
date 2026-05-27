@@ -1,5 +1,10 @@
+import logging
+from datetime import date
+
 from odoo import api, fields, models
 from odoo.tools.translate import _
+
+_logger = logging.getLogger(__name__)
 
 # Chỉ trừ phép khi đơn đã duyệt xong (Approved), không trừ khi còn chờ duyệt.
 _LEAVES_DEDUCT_STATES = ("validate",)
@@ -23,6 +28,16 @@ class HrEmployeeTimeoff(models.Model):
         store=True,
     )
     ngay_het_han = fields.Date(string="Ngày hết hạn")
+    con_lai_nam_truoc = fields.Float(
+        string="Số phép còn lại năm trước",
+        readonly=True,
+        help="Số ngày phép còn lại vào cuối năm trước, được hệ thống tự động lưu vào ngày 01/01 hàng năm.",
+    )
+    nam_chot_con_lai = fields.Integer(
+        string="Năm chốt",
+        readonly=True,
+        help="Năm tương ứng với giá trị Số phép còn lại năm trước.",
+    )
 
     def _get_leave_days_used_for_summary(self):
         """Tổng ngày nghỉ đã được phê duyệt (state = validate)."""
@@ -67,6 +82,31 @@ class HrEmployeeTimeoff(models.Model):
             employee._compute_time_off_summary()
         return super(HrEmployeeTimeoff, self.with_context(**ctx)).get_time_off_dashboard_data(
             target_date=target_date
+        )
+
+    @api.model
+    def cron_snapshot_con_lai_prev_year(self):
+        """Chạy vào 01/01 hàng năm: lưu con_lai của năm vừa kết thúc vào con_lai_nam_truoc.
+
+        Không reset tong_so_phep hay da_su_dung — HR tự xử lý việc đó.
+        """
+        prev_year = date.today().year - 1
+        employees = self.sudo().search([("active", "=", True)])
+        if not employees:
+            return
+
+        # Refresh computed balances to make sure values reflect reality.
+        employees._compute_time_off_summary()
+
+        for emp in employees:
+            emp.write({
+                "con_lai_nam_truoc": emp.con_lai,
+                "nam_chot_con_lai": prev_year,
+            })
+        _logger.info(
+            "hr_employee_hrm_detail: snapshotted con_lai for %d employees (year=%d)",
+            len(employees),
+            prev_year,
         )
 
 
