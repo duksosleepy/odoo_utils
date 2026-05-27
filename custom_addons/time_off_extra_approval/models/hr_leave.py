@@ -394,31 +394,11 @@ class HolidaysRequest(models.Model):
             ("handover_last_bot_escalation_signature", "varchar"),
             ("skip_work_handover", "boolean"),
         ):
-            cr.execute(
-                """
-                SELECT 1 FROM information_schema.columns
-                WHERE table_name = %s AND column_name = %s
-                  AND table_schema = current_schema
-                """,
-                ("hr_leave", column_name),
-            )
-            if cr.fetchone():
+            if sql.column_exists(cr, "hr_leave", column_name):
                 continue
-            try:
-                sql.create_column(cr, "hr_leave", column_name, column_type)
-                if column_name == "emergency_leave_approver_notice":
-                    created_notice_column = True
-            except Exception:
-                cr.execute(
-                    """
-                    SELECT 1 FROM information_schema.columns
-                    WHERE table_name = %s AND column_name = %s
-                      AND table_schema = current_schema
-                    """,
-                    ("hr_leave", column_name),
-                )
-                if not cr.fetchone():
-                    raise
+            sql.create_column(cr, "hr_leave", column_name, column_type)
+            if column_name == "emergency_leave_approver_notice":
+                created_notice_column = True
         if created_notice_column:
             leaves = self.env["hr.leave"].sudo().search([])
             if leaves:
