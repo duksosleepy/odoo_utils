@@ -3,7 +3,7 @@
 import calendar
 import json
 import re
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from io import BytesIO
 
 import xlsxwriter
@@ -53,6 +53,35 @@ JOB_TITLE_SHORT = {
 # Khớp time_off_extra_approval._DEFAULT_LEAD_DAYS (giám đốc miễn rule nhưng vẫn có ngưỡng 7 ngày)
 _DEFAULT_EMERGENCY_LEAD_DAYS = 7
 
+IMPORT_CAPNHATCONG_HEADERS = [
+    "Stt",
+    "Ngay_Ct",
+    "Ma_Bp",
+    "Is_UuTien",
+    "Update_Type",
+    "Ghi_Chu",
+    "Ma_Khieu",
+    "Ma_CbNv",
+    "Ngay_Bd",
+    "Ngay_Kt",
+    "Tong_Gio",
+    "MA_LOI_CC",
+]
+
+# Giá trị mặc định — có thể chỉnh sau (theo file mẫu import cập nhật công CH)
+IMPORT_CAPNHATCONG_DEFAULT_MA_BP = "LUG_IPH"
+IMPORT_CAPNHATCONG_DEFAULT_IS_UUTIEN = 1
+IMPORT_CAPNHATCONG_DEFAULT_UPDATE_TYPE = "1-Cập nhật công"
+IMPORT_CAPNHATCONG_DEFAULT_GHI_CHU = ""
+
+# Tong_Gio mặc định theo Ma_Khieu (giờ)
+TONG_GIO_P1 = 10
+TONG_GIO_P2_PER_DAY = 8
+TONG_GIO_O = 0
+
+IMPORT_CAPNHATCONG_COL_MA_KHIEU = IMPORT_CAPNHATCONG_HEADERS.index("Ma_Khieu")
+IMPORT_CAPNHATCONG_COL_TONG_GIO = IMPORT_CAPNHATCONG_HEADERS.index("Tong_Gio")
+
 
 class HrLeaveStoreExportMixin(models.AbstractModel):
     """Store form Excel export (used via hr.leave.matrix.export.wizard)."""
@@ -73,6 +102,94 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         if isinstance(value, date):
             return f"{value.day}/{value.month}/{value.year}"
         return str(value)
+
+    @staticmethod
+    def _leave_span_in_month(leave, month_start, month_end):
+        """Khoảng nghỉ của đơn (cắt theo tháng xuất), một đơn = một dòng."""
+        if not leave.request_date_from or not leave.request_date_to:
+            return None
+        span_start = max(leave.request_date_from, month_start)
+        span_end = min(leave.request_date_to, month_end)
+        if span_start > span_end:
+            return None
+        return span_start, span_end
+
+    def _employee_ma_cb_nv(self, employee):
+        if not employee:
+            return ""
+        for attr in ("ma_cham_cong", "ma_nv_ke_toan", "id_hrm"):
+            value = (getattr(employee, attr, None) or "").strip()
+            if value:
+                return value
+        return ""
+
+    @staticmethod
+    def _capnhatcong_day_count(ngay_bd, ngay_kt):
+        if not ngay_bd or not ngay_kt:
+            return 0
+        return (ngay_kt - ngay_bd).days + 1
+
+    @classmethod
+    def _tong_gio_capnhatcong(cls, ma_khieu, ngay_bd, ngay_kt):
+        code = (ma_khieu or "").strip().upper()
+        days = cls._capnhatcong_day_count(ngay_bd, ngay_kt)
+        if code == "P1":
+            return TONG_GIO_P1
+        if code == "P2":
+            return TONG_GIO_P2_PER_DAY * days
+        if code == "O":
+            return TONG_GIO_O
+        return ""
+
+    def _import_capnhatcong_row_payload(self, leave, ngay_bd, ngay_kt):
+        employee = leave.employee_id
+        ma_bp = (getattr(employee, "ma_bo_phan", None) or "").strip() if employee else ""
+        if not ma_bp:
+            ma_bp = IMPORT_CAPNHATCONG_DEFAULT_MA_BP
+        ma_khieu = self._leave_type_symbol(leave)
+        return {
+            "ma_bp": ma_bp,
+            "ma_khieu": ma_khieu,
+            "ma_cb": self._employee_ma_cb_nv(employee),
+            "ngay_bd": ngay_bd,
+            "ngay_kt": ngay_kt,
+            "tong_gio": self._tong_gio_capnhatcong(ma_khieu, ngay_bd, ngay_kt),
+        }
+
+    @staticmethod
+    def _merge_consecutive_capnhatcong_rows(rows):
+        """Gộp dòng liên tiếp cùng Ma_CbNv + Ma_Khieu (P2: 3–4, O: 5–6)."""
+        if not rows:
+            return rows
+        merged = [dict(rows[0])]
+        for row in rows[1:]:
+            prev = merged[-1]
+            same_person = row["ma_cb"] == prev["ma_cb"] and row["ma_khieu"] == prev["ma_khieu"]
+            next_day = prev["ngay_kt"] + timedelta(days=1)
+            if same_person and row["ngay_bd"] == next_day:
+                prev["ngay_kt"] = row["ngay_kt"]
+                prev["tong_gio"] = HrLeaveStoreExportMixin._tong_gio_capnhatcong(
+                    prev["ma_khieu"], prev["ngay_bd"], prev["ngay_kt"]
+                )
+            else:
+                merged.append(dict(row))
+        return merged
+
+    def _import_capnhatcong_row_values(self, stt, payload):
+        return [
+            stt,
+            "",
+            payload["ma_bp"],
+            IMPORT_CAPNHATCONG_DEFAULT_IS_UUTIEN,
+            IMPORT_CAPNHATCONG_DEFAULT_UPDATE_TYPE,
+            IMPORT_CAPNHATCONG_DEFAULT_GHI_CHU,
+            self._ma_khieu_export_display(payload["ma_khieu"]),
+            payload["ma_cb"],
+            payload["ngay_bd"],
+            payload["ngay_kt"],
+            payload["tong_gio"],
+            "",
+        ]
 
     def _employee_mien(self, employee):
         """Miền nhân viên (trực tiếp hoặc từ mã bộ phận)."""
@@ -194,6 +311,14 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             code = code[1:-1].strip()
         return code
 
+    @classmethod
+    def _ma_khieu_export_display(cls, ma_khieu):
+        """Cột Ma_Khieu: không hiển thị O (payload vẫn giữ O để merge / Tong_Gio)."""
+        code = cls._normalize_leave_type_code(ma_khieu)
+        if code.upper() == "O":
+            return ""
+        return ma_khieu or ""
+
     def _leave_type_symbol(self, leave):
         """Mã loại nghỉ, vd. Nghỉ Phép (P1) -> P1."""
         leave_type = leave.holiday_status_id
@@ -311,6 +436,137 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         workbook.close()
         buffer.seek(0)
         filename = "form_ket_xuat_nghi_phep_ch_%s-%02d.xlsx" % (year, month)
+
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": filename,
+                "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "raw": buffer.read(),
+                "res_model": self._name,
+                "res_id": self.id,
+            }
+        )
+        return {
+            "type": "ir.actions.act_url",
+            "url": "/web/content/%s?download=true" % attachment.id,
+            "target": "self",
+        }
+
+    def action_export_import_capnhatcong_ch_excel(self):
+        """File import cập nhật công cửa hàng (miền Bắc / Nam / ĐTT)."""
+        self.ensure_one()
+        if not self.env.user.has_group("base.group_allow_export"):
+            raise UserError(_("You need export permissions to download this file."))
+
+        year, month = int(self.year), int(self.month)
+        last_day = calendar.monthrange(year, month)[1]
+        month_start = date(year, month, 1)
+        month_end = date(year, month, last_day)
+        leaves = self._search_store_leaves(year, month, self._parse_domain())
+
+        buffer = BytesIO()
+        workbook = xlsxwriter.Workbook(buffer, {"in_memory": True})
+        sheet_name = "import_capnhatcong CUA HANG"[:31]
+        sheet = workbook.add_worksheet(sheet_name)
+
+        header_fmt = workbook.add_format(
+            {
+                "bold": True,
+                "bg_color": "#D9E1F2",
+                "border": 1,
+                "align": "center",
+                "valign": "vcenter",
+            }
+        )
+        cell_fmt = workbook.add_format({"border": 1, "valign": "vcenter"})
+        date_fmt = workbook.add_format({"border": 1, "num_format": "m/d/yyyy", "valign": "vcenter"})
+        red_fmt = workbook.add_format(
+            {"border": 1, "font_color": "#FF0000", "valign": "vcenter"}
+        )
+        red_date_fmt = workbook.add_format(
+            {
+                "border": 1,
+                "font_color": "#FF0000",
+                "num_format": "m/d/yyyy",
+                "valign": "vcenter",
+            }
+        )
+        # num_format=1: định dạng số nguyên Excel (ô kiểu Number, phù hợp import tính lương).
+        red_int_fmt = workbook.add_format(
+            {
+                "border": 1,
+                "font_color": "#FF0000",
+                "valign": "vcenter",
+                "num_format": 1,
+            }
+        )
+
+        for col, title in enumerate(IMPORT_CAPNHATCONG_HEADERS):
+            sheet.write(0, col, title, header_fmt)
+
+        payloads = []
+        for leave in leaves:
+            span = self._leave_span_in_month(leave, month_start, month_end)
+            if not span:
+                continue
+            payloads.append(self._import_capnhatcong_row_payload(leave, span[0], span[1]))
+        payloads = self._merge_consecutive_capnhatcong_rows(payloads)
+        for payload in payloads:
+            payload["tong_gio"] = self._tong_gio_capnhatcong(
+                payload["ma_khieu"], payload["ngay_bd"], payload["ngay_kt"]
+            )
+
+        row = 1
+        for stt, payload in enumerate(payloads, start=1):
+            values = self._import_capnhatcong_row_values(stt, payload)
+            tong_gio = payload["tong_gio"]
+            for col, value in enumerate(values):
+                if col in (8, 9) and isinstance(value, date):
+                    sheet.write_datetime(
+                        row,
+                        col,
+                        datetime.combine(value, time.min),
+                        date_fmt,
+                    )
+                elif col == IMPORT_CAPNHATCONG_COL_MA_KHIEU:
+                    sheet.write(
+                        row,
+                        col,
+                        self._ma_khieu_export_display(payload["ma_khieu"]),
+                        red_fmt,
+                    )
+                elif col == IMPORT_CAPNHATCONG_COL_TONG_GIO:
+                    if tong_gio == "":
+                        sheet.write(row, col, "", red_fmt)
+                    else:
+                        sheet.write_number(row, col, int(tong_gio), red_int_fmt)
+                elif col == 3:
+                    sheet.write(row, col, value, cell_fmt)
+                else:
+                    sheet.write(row, col, value if value != "" else "", cell_fmt)
+            row += 1
+
+        if row == 1:
+            sheet.write_row(1, 0, [""] * len(IMPORT_CAPNHATCONG_HEADERS), cell_fmt)
+            row = 2
+
+        sheet.autofilter(0, 0, max(row - 1, 0), len(IMPORT_CAPNHATCONG_HEADERS) - 1)
+        sheet.freeze_panes(1, 0)
+        sheet.set_column(0, 0, 6)
+        sheet.set_column(1, 1, 12)
+        sheet.set_column(2, 2, 12)
+        sheet.set_column(3, 3, 10)
+        sheet.set_column(4, 4, 18)
+        sheet.set_column(5, 5, 14)
+        sheet.set_column(6, 6, 10)
+        sheet.set_column(7, 7, 12)
+        sheet.set_column(8, 9, 12)
+        sheet.set_column(10, 10, 12)
+        sheet.set_column(11, 11, 12)
+
+        workbook.close()
+        buffer.seek(0)
+        filename = "import_capnhatcong CUA HANG_%s-%02d.xlsx" % (year, month)
 
         attachment = self.env["ir.attachment"].create(
             {

@@ -26,6 +26,12 @@ patch(ExportAll, {
             onSelected.bind="onStoreExport">
             <i class="fa fa-fw fa-file-excel-o me-1"/>Kết xuất nghỉ phép CH
         </DropdownItem>
+        <DropdownItem
+            t-if="env.model and env.model.root and env.model.root.resModel === 'hr.leave'"
+            class="'o_hr_leave_import_capnhatcong_menu'"
+            onSelected.bind="onImportCapnhatcongExport">
+            <i class="fa fa-fw fa-file-excel-o me-1"/>import_capnhatcong CUA HANG
+        </DropdownItem>
     `,
 });
 
@@ -38,6 +44,16 @@ patch(ExportAll.prototype, {
         await this._openLeaveExportWizard("hr.leave.matrix.export.wizard", _t("Kết xuất nghỉ phép CH"), {
             form_view_ref: "hr_leave_matrix_export.view_hr_leave_store_export_wizard_form",
         });
+    },
+
+    async onImportCapnhatcongExport() {
+        await this._openLeaveExportWizard(
+            "hr.leave.matrix.export.wizard",
+            _t("import_capnhatcong CUA HANG"),
+            {
+                form_view_ref: "hr_leave_matrix_export.view_hr_leave_import_capnhatcong_wizard_form",
+            }
+        );
     },
 
     async _openLeaveExportWizard(resModel, title, extraContext = {}) {
