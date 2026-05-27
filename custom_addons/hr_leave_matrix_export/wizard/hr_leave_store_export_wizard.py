@@ -1,5 +1,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import base64
 import calendar
 import json
 import re
@@ -201,6 +202,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         return MIEN_DISPLAY.get(mien, (mien or "").upper())
 
     def _job_title_code(self, employee):
+        """Mã chức vụ ngắn (CHT, ASM…) — dùng nội bộ, không phải cột export."""
         if not employee:
             return ""
         ma = (getattr(employee, "ma_chuc_vu", None) or "").strip()
@@ -214,6 +216,23 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             label = labels.get(jt, jt)
             return (label or "").upper()
         return jt.upper()
+
+    def _job_title_label(self, employee):
+        """Chức danh hiển thị trên form export (vd. Giám đốc, Nhân viên CH)."""
+        if not employee:
+            return ""
+        jt = employee.job_title or ""
+        if jt and "job_title" in employee._fields:
+            field = employee._fields["job_title"]
+            if field.type == "selection":
+                labels = dict(field._description_selection(self.env))
+                if jt in labels and labels[jt]:
+                    return labels[jt]
+        if jt:
+            return jt
+        if employee.job_id:
+            return (employee.job_id.name or "").strip()
+        return ""
 
     def _handover_recipient_names(self, leave):
         if "handover_acceptance_ids" not in leave._fields:
@@ -328,7 +347,57 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         return self._normalize_leave_type_code(name)
 
     def _leave_reason(self, leave):
-        return (leave.private_name or leave.name or "").strip()
+        return (leave.notes or leave.private_name or leave.name or "").strip()
+
+    def _format_ngay_nghi_display(self, leave):
+        """Một cột NGÀY NGHỈ: một ngày hoặc khoảng from–to."""
+        d_from = self._format_date(leave.request_date_from)
+        d_to = self._format_date(leave.request_date_to)
+        if d_to and d_to != d_from:
+            return f"{d_from} - {d_to}"
+        return d_from
+
+    @staticmethod
+    def _format_so_ngay_nghi_label(leave):
+        days = leave.number_of_days
+        if not days:
+            return ""
+        count = int(days) if float(days).is_integer() else days
+        return f"{count} NGÀY"
+
+    def _leave_form_image_bytes(self, leave):
+        """Ảnh đính kèm đơn nghỉ (cột ĐƠN XIN NGHỈ PHÉP)."""
+        attachments = leave.attachment_ids
+        if not attachments:
+            attachments = self.env["ir.attachment"].sudo().search(
+                [("res_model", "=", "hr.leave"), ("res_id", "=", leave.id)],
+                order="id",
+            )
+        for att in attachments:
+            mimetype = (att.mimetype or "").lower()
+            if not mimetype.startswith("image/"):
+                continue
+            data = att.raw
+            if not data and att.datas:
+                data = base64.b64decode(att.datas)
+            if data:
+                return data
+        return None
+
+    def _search_leaves_in_mien(self, year, month, base_domain, mien_codes):
+        last_day = calendar.monthrange(year, month)[1]
+        month_start = date(year, month, 1)
+        month_end = date(year, month, last_day)
+        overlap = [
+            ("request_date_from", "<=", month_end),
+            ("request_date_to", ">=", month_start),
+        ]
+        domain = base_domain + overlap if base_domain else overlap
+        leaves = self.env["hr.leave"].search(
+            domain,
+            order="employee_id, request_date_from, id",
+        )
+        return leaves.filtered(lambda leave: self._leave_in_mien(leave, mien_codes))
 
     def _row_for_leave(self, leave):
         emp = leave.employee_id
@@ -339,7 +408,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             (getattr(emp, "id_hrm", None) or "").strip() if emp else "",
             (emp.name or "").upper() if emp else "",
             (getattr(emp, "ma_bo_phan", None) or "").strip().upper() if emp else "",
-            self._job_title_code(emp),
+            self._job_title_label(emp),
             self._format_date(leave.create_date),
             self._format_date(leave.request_date_from),
             self._format_date(leave.request_date_to),
@@ -390,7 +459,6 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
                 "bg_color": "#BDD7EE",
                 "border": 1,
                 "align": "center",
-                "text_wrap": True,
                 "valign": "vcenter",
             }
         )
@@ -399,6 +467,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         sheet.merge_range(0, 0, 0, len(STORE_HEADERS) - 1, "FORM KẾT XUẤT NGHỈ PHÉP", title_fmt)
         for col, title in enumerate(STORE_HEADERS):
             sheet.write(1, col, title, header_fmt)
+        sheet.set_row(1, 22)
 
         row = 2
         for leave in leaves:
@@ -417,8 +486,8 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         sheet.set_column(2, 2, 28)
         sheet.set_column(3, 4, 12)
         sheet.set_column(5, 8, 14)
-        sheet.set_column(9, 9, 32)
-        sheet.set_column(10, 10, 28)
+        sheet.set_column(9, 9, 36)
+        sheet.set_column(10, 10, 40)
         sheet.set_column(11, 14, 18)
         sheet.set_column(15, 15, 14)
         sheet.set_column(16, 16, 10)

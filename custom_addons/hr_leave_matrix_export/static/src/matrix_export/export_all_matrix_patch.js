@@ -37,7 +37,9 @@ patch(ExportAll, {
 
 patch(ExportAll.prototype, {
     async onMatrixExport() {
-        await this._openLeaveExportWizard("hr.leave.matrix.export.wizard", _t("Kết xuất nghỉ phép VP"));
+        await this._openLeaveExportWizard("hr.leave.matrix.export.wizard", _t("Kết xuất nghỉ phép VP"), {
+            form_view_ref: "hr_leave_matrix_export.view_hr_leave_matrix_export_wizard_form",
+        });
     },
 
     async onStoreExport() {
