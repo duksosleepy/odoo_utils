@@ -29,6 +29,7 @@ STATUS_LABELS = {
 
 class HrLeaveMatrixExportWizard(models.TransientModel):
     _name = "hr.leave.matrix.export.wizard"
+    _inherit = ["hr.leave.store.export.mixin"]
     _description = "Export time off as day matrix (Excel)"
 
     year = fields.Integer(required=True, default=lambda self: fields.Date.context_today(self).year)
@@ -42,6 +43,17 @@ class HrLeaveMatrixExportWizard(models.TransientModel):
         help="Technical: current list filters from the Time Off list view.",
     )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        # Ignore stale client/registry payloads after export_kind was removed.
+        for vals in vals_list:
+            vals.pop("export_kind", None)
+        return super().create(vals_list)
+
+    def write(self, vals):
+        vals.pop("export_kind", None)
+        return super().write(vals)
+
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
@@ -49,6 +61,7 @@ class HrLeaveMatrixExportWizard(models.TransientModel):
         raw = ctx.get("matrix_export_domain_json")
         if raw is not None and "domain_json" in fields_list:
             res["domain_json"] = raw if isinstance(raw, str) else json.dumps(raw)
+        res.pop("export_kind", None)
         return res
 
     @api.constrains("month")

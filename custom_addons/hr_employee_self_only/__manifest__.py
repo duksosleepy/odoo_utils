@@ -3,7 +3,7 @@
     "version": "19.0.1.1.8",
     "category": "Human Resources",
     "summary": "Employees=No: hide Personal tab on others; full employee list for handover and search",
-    "depends": ["hr", "hr_employee_managed_departments"],
+    "depends": ["hr", "hr_holidays", "hr_employee_managed_departments"],
     "data": [
         "security/hr_employee_privilege_groups.xml",
         "views/hr_employee_views.xml",

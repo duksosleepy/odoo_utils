@@ -1,6 +1,6 @@
 {
     "name": "Time Off Work Handover",
-    "version": "19.0.1.0.4",
+    "version": "19.0.1.0.5",
     "category": "Human Resources",
     "summary": "Work handover workflow for time off requests",
     "depends": [
@@ -14,6 +14,7 @@
         "data/mail_activity_type_data.xml",
         "data/ir_cron_data.xml",
         "security/handover_security.xml",
+        "security/hr_leave_type_rule_relaxed.xml",
         "security/ir.model.access.csv",
         "security/hr_leave_handover_replacement_draft_access.xml",
         "views/hr_leave_form_handover_views.xml",

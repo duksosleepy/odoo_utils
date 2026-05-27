@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+        <!--
+            Relax core leave-type visibility for shared leave types (company_id=False).
+            Country-based filtering can block reading historical/custom leave types in popup onchanges.
+        -->
+        <record id="hr_holidays.hr_holidays_status_rule_multi_company" model="ir.rule">
+            <field name="domain_force">
+                [
+                    '|',
+                        ('company_id', 'in', company_ids),
+                        ('company_id', '=', False)
+                ]
+            </field>
+        </record>
+    </data>
+</odoo>

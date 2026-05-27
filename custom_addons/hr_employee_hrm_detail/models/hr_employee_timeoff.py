@@ -57,10 +57,17 @@ class HrEmployeeTimeoff(models.Model):
     @api.model
     def get_time_off_dashboard_data(self, target_date=None):
         """Làm mới số phép HRM trước khi dashboard đọc da_su_dung / con_lai."""
-        employee = self._get_contextual_employee().sudo()
+        employee = self._get_contextual_employee()
+        ctx = {
+            "employees_no_timeoff_write": True,
+            "employees_no_allowed_employee_ids": [employee.id] if employee else [],
+        }
+        employee = employee.sudo().with_context(**ctx)
         if employee:
             employee._compute_time_off_summary()
-        return super().get_time_off_dashboard_data(target_date=target_date)
+        return super(HrEmployeeTimeoff, self.with_context(**ctx)).get_time_off_dashboard_data(
+            target_date=target_date
+        )
 
 
 class HrLeaveTimeOffSummary(models.Model):
@@ -111,7 +118,10 @@ class HrLeaveTimeOffSummary(models.Model):
             return self._con_lai_zero_no_confirmation()
 
         emp = self.env["hr.employee"].browse(employee_id)
-        emp._compute_time_off_summary()
+        emp.with_context(
+            employees_no_timeoff_write=True,
+            employees_no_allowed_employee_ids=[employee_id],
+        )._compute_time_off_summary()
         if (emp.con_lai or 0.0) > 0:
             return self._con_lai_zero_no_confirmation()
 

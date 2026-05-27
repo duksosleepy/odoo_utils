@@ -18,26 +18,43 @@ patch(ExportAll, {
             t-if="env.model and env.model.root and env.model.root.resModel === 'hr.leave'"
             class="'o_hr_leave_matrix_export_menu'"
             onSelected.bind="onMatrixExport">
-            <i class="fa fa-fw fa-table me-1"/>Export Excel file (matrix)
+            <i class="fa fa-fw fa-table me-1"/>Kết xuất nghỉ phép VP
+        </DropdownItem>
+        <DropdownItem
+            t-if="env.model and env.model.root and env.model.root.resModel === 'hr.leave'"
+            class="'o_hr_leave_store_export_menu'"
+            onSelected.bind="onStoreExport">
+            <i class="fa fa-fw fa-file-excel-o me-1"/>Kết xuất nghỉ phép CH
         </DropdownItem>
     `,
 });
 
 patch(ExportAll.prototype, {
     async onMatrixExport() {
+        await this._openLeaveExportWizard("hr.leave.matrix.export.wizard", _t("Kết xuất nghỉ phép VP"));
+    },
+
+    async onStoreExport() {
+        await this._openLeaveExportWizard("hr.leave.matrix.export.wizard", _t("Kết xuất nghỉ phép CH"), {
+            form_view_ref: "hr_leave_matrix_export.view_hr_leave_store_export_wizard_form",
+        });
+    },
+
+    async _openLeaveExportWizard(resModel, title, extraContext = {}) {
         const sm = this.env.searchModel;
         const domain = sm ? sm.domain : [];
         const today = luxon.DateTime.local();
         await this.env.services.action.doAction({
             type: "ir.actions.act_window",
-            name: _t("Export time off matrix (Excel)"),
-            res_model: "hr.leave.matrix.export.wizard",
+            name: title,
+            res_model: resModel,
             views: [[false, "form"]],
             target: "new",
             context: {
                 default_year: today.year,
                 default_month: today.month,
                 matrix_export_domain_json: JSON.stringify(domain),
+                ...extraContext,
             },
         });
     },
