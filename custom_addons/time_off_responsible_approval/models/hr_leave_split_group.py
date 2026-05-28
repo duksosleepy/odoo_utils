@@ -234,8 +234,23 @@ class HrLeaveSplitGroup(models.Model):
         if not lines:
             return
 
+        # Also notify sale-admin users from the next pending step in parallel (FYI — approval order unchanged).
+        stop_positions = self._get_org_chart_stop_positions()
+        current_seq = lines[0].sequence if lines else None
+        notify_lines = lines
+        if current_seq is not None:
+            all_pending = self.responsible_approval_line_ids.filtered(
+                lambda l: l.state == "pending" and l.sequence > current_seq
+            ).sorted(lambda l: (l.sequence, l.id))
+            for nxt in all_pending:
+                job_pos = (nxt.user_id.sudo().employee_id.job_id.name or "").strip().casefold()
+                if job_pos in stop_positions:
+                    notify_lines = lines | nxt
+                else:
+                    break
+
         notified_users = set()
-        for line in lines:
+        for line in notify_lines:
             approver = line.user_id
             if not approver or not approver.partner_id or approver.id in notified_users:
                 continue
