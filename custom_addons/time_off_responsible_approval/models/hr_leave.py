@@ -1042,7 +1042,21 @@ class HrLeaveResponsibleApproval(models.Model):
             "leave": self.display_name,
             "employee": self.employee_id.name or "",
         }
-        for line in lines:
+        # Also notify sale-admin users from the next pending step in parallel (FYI only — approval order unchanged).
+        stop_positions = self._get_org_chart_stop_positions()
+        current_seq = lines[0].sequence if lines else None
+        notify_lines = lines
+        if current_seq is not None:
+            all_pending = self.responsible_approval_line_ids.filtered(
+                lambda l: l.state == "pending" and l.sequence > current_seq
+            ).sorted(lambda l: (l.sequence, l.id))
+            for nxt in all_pending:
+                job_pos = (nxt.user_id.sudo().employee_id.job_id.name or "").strip().casefold()
+                if job_pos in stop_positions:
+                    notify_lines = lines | nxt
+                else:
+                    break
+        for line in notify_lines:
             if not line.user_id.partner_id:
                 continue
             duplicate_message = self.env["mail.message"].sudo().search(
