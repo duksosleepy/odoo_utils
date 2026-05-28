@@ -1,7 +1,9 @@
 import io
 import logging
+import mimetypes
 
 from odoo import api, models
+from odoo.tools.mimetypes import guess_mimetype
 
 _logger = logging.getLogger(__name__)
 
@@ -12,13 +14,25 @@ _WORD_MIMETYPES = frozenset({
 })
 
 
+def _detect_mimetype(vals):
+    """Replicate Odoo's _compute_mimetype logic to detect mimetype before super().create()."""
+    mime = vals.get("mimetype")
+    if not mime and vals.get("name"):
+        mime = mimetypes.guess_type(vals["name"])[0]
+    if not mime or mime == "application/octet-stream":
+        raw = vals.get("raw")
+        if raw:
+            mime = guess_mimetype(raw)
+    return (mime or "application/octet-stream").lower()
+
+
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
 
     @api.model_create_multi
     def create(self, vals_list):
         for i, vals in enumerate(vals_list):
-            if vals.get("res_model") == "hr.leave" and vals.get("mimetype") in _WORD_MIMETYPES:
+            if vals.get("res_model") == "hr.leave" and _detect_mimetype(vals) in _WORD_MIMETYPES:
                 vals_list[i] = self._convert_docx_to_pdf(vals)
         return super().create(vals_list)
 
@@ -36,7 +50,7 @@ class IrAttachment(models.Model):
                 raw_bytes = base64.b64decode(datas)
 
             original_name = vals.get("name", "document.docx")
-            original_mimetype = vals.get("mimetype", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            original_mimetype = _detect_mimetype(vals)
             pdf_name = original_name.rsplit(".", 1)[0] + ".pdf"
 
             with GotenbergClient(_GOTENBERG_URL) as client:
