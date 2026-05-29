@@ -608,8 +608,75 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             "target": "self",
         }
 
+    @staticmethod
+    def _import_capnhatcong_xlwt_styles(xlwt_module):
+        """Định dạng ô cho file .xls (Excel 97–2003) — phần mềm công thường yêu cầu."""
+        borders = "borders: left thin, right thin, top thin, bottom thin"
+        header = xlwt_module.easyxf(
+            "font: bold on; align: horiz center, vert center; "
+            f"pattern: pattern solid, fore_colour pale_blue; {borders}"
+        )
+        cell = xlwt_module.easyxf(borders)
+        red = xlwt_module.easyxf(f"font: colour red; {borders}")
+        red_int = xlwt_module.easyxf(f"font: colour red; {borders}", num_format_str="0")
+        date_cell = xlwt_module.easyxf(borders, num_format_str="M/D/YY")
+        return header, cell, red, red_int, date_cell
+
+    def _build_import_capnhatcong_xls(self, payloads):
+        try:
+            import xlwt  # noqa: PLC0415
+        except ImportError as err:
+            raise UserError(
+                _("Thư viện Python xlwt chưa cài. Chạy: pip install xlwt")
+            ) from err
+
+        header_style, cell_style, red_style, red_int_style, date_style = (
+            self._import_capnhatcong_xlwt_styles(xlwt)
+        )
+        workbook = xlwt.Workbook()
+        sheet = workbook.add_sheet("import_capnhatcong CUA HANG"[:31])
+
+        for col, title in enumerate(IMPORT_CAPNHATCONG_HEADERS):
+            sheet.write(0, col, title, header_style)
+
+        row = 1
+        for stt, payload in enumerate(payloads, start=1):
+            values = self._import_capnhatcong_row_values(stt, payload)
+            tong_gio = payload["tong_gio"]
+            for col, value in enumerate(values):
+                if col in (8, 9) and isinstance(value, date):
+                    sheet.write(
+                        row,
+                        col,
+                        datetime.combine(value, time.min),
+                        date_style,
+                    )
+                elif col == IMPORT_CAPNHATCONG_COL_MA_KHIEU:
+                    sheet.write(
+                        row,
+                        col,
+                        self._ma_khieu_export_display(payload["ma_khieu"]),
+                        red_style,
+                    )
+                elif col == IMPORT_CAPNHATCONG_COL_TONG_GIO:
+                    if tong_gio == "":
+                        sheet.write(row, col, "", red_style)
+                    else:
+                        sheet.write(row, col, int(tong_gio), red_int_style)
+                else:
+                    sheet.write(row, col, value if value != "" else "", cell_style)
+            row += 1
+
+        if row == 1:
+            for col in range(len(IMPORT_CAPNHATCONG_HEADERS)):
+                sheet.write(1, col, "", cell_style)
+
+        buffer = BytesIO()
+        workbook.save(buffer)
+        return buffer.getvalue()
+
     def action_export_import_capnhatcong_ch_excel(self):
-        """File import cập nhật công cửa hàng (miền Bắc / Nam / ĐTT)."""
+        """File import cập nhật công cửa hàng (miền Bắc / Nam / ĐTT) — định dạng .xls."""
         self.ensure_one()
         if not self.env.user.has_group("base.group_allow_export"):
             raise UserError(_("You need export permissions to download this file."))
@@ -619,46 +686,6 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         month_start = date(year, month, 1)
         month_end = date(year, month, last_day)
         leaves = self._search_store_leaves(year, month, self._parse_domain())
-
-        buffer = BytesIO()
-        workbook = xlsxwriter.Workbook(buffer, {"in_memory": True})
-        sheet_name = "import_capnhatcong CUA HANG"[:31]
-        sheet = workbook.add_worksheet(sheet_name)
-
-        header_fmt = workbook.add_format(
-            {
-                "bold": True,
-                "bg_color": "#D9E1F2",
-                "border": 1,
-                "align": "center",
-                "valign": "vcenter",
-            }
-        )
-        cell_fmt = workbook.add_format({"border": 1, "valign": "vcenter"})
-        date_fmt = workbook.add_format({"border": 1, "num_format": "m/d/yyyy", "valign": "vcenter"})
-        red_fmt = workbook.add_format(
-            {"border": 1, "font_color": "#FF0000", "valign": "vcenter"}
-        )
-        red_date_fmt = workbook.add_format(
-            {
-                "border": 1,
-                "font_color": "#FF0000",
-                "num_format": "m/d/yyyy",
-                "valign": "vcenter",
-            }
-        )
-        # num_format=1: định dạng số nguyên Excel (ô kiểu Number, phù hợp import tính lương).
-        red_int_fmt = workbook.add_format(
-            {
-                "border": 1,
-                "font_color": "#FF0000",
-                "valign": "vcenter",
-                "num_format": 1,
-            }
-        )
-
-        for col, title in enumerate(IMPORT_CAPNHATCONG_HEADERS):
-            sheet.write(0, col, title, header_fmt)
 
         payloads = []
         for leave in self._iter_export_root_leaves(leaves):
@@ -673,63 +700,14 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
                         )
                     )
 
-        row = 1
-        for stt, payload in enumerate(payloads, start=1):
-            values = self._import_capnhatcong_row_values(stt, payload)
-            tong_gio = payload["tong_gio"]
-            for col, value in enumerate(values):
-                if col in (8, 9) and isinstance(value, date):
-                    sheet.write_datetime(
-                        row,
-                        col,
-                        datetime.combine(value, time.min),
-                        date_fmt,
-                    )
-                elif col == IMPORT_CAPNHATCONG_COL_MA_KHIEU:
-                    sheet.write(
-                        row,
-                        col,
-                        self._ma_khieu_export_display(payload["ma_khieu"]),
-                        red_fmt,
-                    )
-                elif col == IMPORT_CAPNHATCONG_COL_TONG_GIO:
-                    if tong_gio == "":
-                        sheet.write(row, col, "", red_fmt)
-                    else:
-                        sheet.write_number(row, col, int(tong_gio), red_int_fmt)
-                elif col == 3:
-                    sheet.write(row, col, value, cell_fmt)
-                else:
-                    sheet.write(row, col, value if value != "" else "", cell_fmt)
-            row += 1
-
-        if row == 1:
-            sheet.write_row(1, 0, [""] * len(IMPORT_CAPNHATCONG_HEADERS), cell_fmt)
-            row = 2
-
-        sheet.autofilter(0, 0, max(row - 1, 0), len(IMPORT_CAPNHATCONG_HEADERS) - 1)
-        sheet.freeze_panes(1, 0)
-        sheet.set_column(0, 0, 6)
-        sheet.set_column(1, 1, 12)
-        sheet.set_column(2, 2, 12)
-        sheet.set_column(3, 3, 10)
-        sheet.set_column(4, 4, 18)
-        sheet.set_column(5, 5, 14)
-        sheet.set_column(6, 6, 10)
-        sheet.set_column(7, 7, 12)
-        sheet.set_column(8, 9, 12)
-        sheet.set_column(10, 10, 12)
-        sheet.set_column(11, 11, 12)
-
-        workbook.close()
-        buffer.seek(0)
-        filename = "import_capnhatcong CUA HANG_%s-%02d.xlsx" % (year, month)
+        data = self._build_import_capnhatcong_xls(payloads)
+        filename = "import_capnhatcong CUA HANG_%s-%02d.xls" % (year, month)
 
         attachment = self.env["ir.attachment"].create(
             {
                 "name": filename,
-                "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "raw": buffer.read(),
+                "mimetype": "application/vnd.ms-excel",
+                "raw": data,
                 "res_model": self._name,
                 "res_id": self.id,
             }
