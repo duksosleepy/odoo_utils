@@ -87,10 +87,15 @@ class HrLeaveMonthlySplit(models.Model):
         return date(day.year, day.month, last)
 
     @api.model
-    def _monthly_mien_split_plan_for_month(self, days_before, date_from, date_to):
+    def _monthly_mien_split_plan_for_month(
+        self, days_before, date_from, date_to, paid_budget=None, monthly_cap=None
+    ):
         """
         P1/P2/O trong một tháng lịch (date_from và date_to cùng tháng).
         days_before: số ngày nghỉ đã có trong tháng đó (không tính đơn hiện tại).
+        paid_budget: ngày phép có lương còn lại của nhân viên (None = không giới hạn).
+        monthly_cap: hạn mức phép có lương / tháng (None = dùng MAX_PAID_LEAVE_DAYS_PER_MONTH).
+                     Trả về (segments, paid_used) — paid_used là tổng P1+P2 đã cấp.
         """
         from .hr_leave_mien_config import MAX_PAID_LEAVE_DAYS_PER_MONTH
 
@@ -99,25 +104,72 @@ class HrLeaveMonthlySplit(models.Model):
         segments = []
         cursor = date_from
         remaining = (date_to - date_from).days + 1
+        paid_used = 0
+        effective_cap = (
+            MAX_PAID_LEAVE_DAYS_PER_MONTH if monthly_cap is None else max(0, monthly_cap)
+        )
 
-        if days_before == 0 and remaining > 0:
+        budget_unlimited = paid_budget is None
+        budget_left = paid_budget if not budget_unlimited else None
+
+        if (
+            days_before == 0
+            and remaining > 0
+            and effective_cap > 0
+            and (budget_unlimited or (budget_left or 0) > 0)
+        ):
             segments.append(("p1", cursor, cursor))
             cursor += timedelta(days=1)
             remaining -= 1
             days_before += 1
+            paid_used += 1
+            if not budget_unlimited:
+                budget_left -= 1
 
-        p2_budget = max(0, MAX_PAID_LEAVE_DAYS_PER_MONTH - days_before)
-        p2_days = min(p2_budget, remaining)
+        p2_budget_month = max(0, effective_cap - days_before)
+        if not budget_unlimited:
+            p2_budget_month = min(p2_budget_month, max(0, budget_left or 0))
+        p2_days = min(p2_budget_month, remaining)
         if p2_days > 0:
             p2_end = cursor + timedelta(days=p2_days - 1)
             segments.append(("p2", cursor, p2_end))
             cursor = p2_end + timedelta(days=1)
             remaining -= p2_days
+            paid_used += p2_days
 
         if remaining > 0:
             segments.append(("o", cursor, date_to))
 
-        return segments
+        return segments, paid_used
+
+    @api.model
+    def _monthly_mien_employee_monthly_cap(self, employee):
+        """Hạn mức phép có lương / tháng của nhân viên (override > mặc định)."""
+        from .hr_leave_mien_config import MAX_PAID_LEAVE_DAYS_PER_MONTH
+
+        if employee and "monthly_paid_leave_cap" in employee._fields:
+            override = employee.monthly_paid_leave_cap
+            if override:
+                return int(override)
+        return MAX_PAID_LEAVE_DAYS_PER_MONTH
+
+    @api.model
+    def _monthly_mien_paid_budget_for_employee(self, employee, exclude_leave_ids=None):
+        """Ngân sách phép có lương còn lại của nhân viên (tong_so_phep − đã cam kết, không tính O).
+
+        Trả về None khi không xác định được (không chặn theo Còn lại — chỉ áp dụng quy tắc 3 ngày/tháng).
+        """
+        if not employee or "tong_so_phep" not in employee._fields:
+            return None
+        if not hasattr(self, "_con_lai_committed_days"):
+            return None
+        committed = self._con_lai_committed_days(
+            employee, exclude_leave_ids=exclude_leave_ids
+        )
+        budget = (employee.tong_so_phep or 0.0) - committed
+        if budget < 0:
+            budget = 0
+        return int(budget)
 
     @api.model
     def _monthly_mien_split_plan(
@@ -125,7 +177,8 @@ class HrLeaveMonthlySplit(models.Model):
     ):
         """
         Trả về list (kind, date_from, date_to) — áp dụng P1/P2/O riêng từng tháng
-        khi đơn nghỉ trải qua nhiều tháng.
+        khi đơn nghỉ trải qua nhiều tháng. Hạn mức P1/P2 còn bị giới hạn bởi Còn lại
+        của nhân viên: khi hết Còn lại, các ngày tiếp theo đều thành O.
         """
         date_from = self._coerce_to_date(date_from)
         date_to = self._coerce_to_date(date_to)
@@ -134,6 +187,10 @@ class HrLeaveMonthlySplit(models.Model):
         if date_to < date_from:
             date_from, date_to = date_to, date_from
 
+        paid_budget = self._monthly_mien_paid_budget_for_employee(
+            employee, exclude_leave_ids=exclude_leave_ids
+        )
+        monthly_cap = self._monthly_mien_employee_monthly_cap(employee)
         segments = []
         cursor = date_from
         while cursor <= date_to:
@@ -144,11 +201,16 @@ class HrLeaveMonthlySplit(models.Model):
                 cursor.month,
                 exclude_leave_ids,
             )
-            segments.extend(
-                self._monthly_mien_split_plan_for_month(
-                    days_before, cursor, month_end
-                )
+            month_segments, paid_used = self._monthly_mien_split_plan_for_month(
+                days_before,
+                cursor,
+                month_end,
+                paid_budget=paid_budget,
+                monthly_cap=monthly_cap,
             )
+            segments.extend(month_segments)
+            if paid_budget is not None:
+                paid_budget = max(0, paid_budget - paid_used)
             cursor = month_end + timedelta(days=1)
         return segments
 

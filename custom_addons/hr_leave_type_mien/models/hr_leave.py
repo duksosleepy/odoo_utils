@@ -184,7 +184,7 @@ class HrLeave(models.Model):
 
     @api.model
     def _monthly_o_rule_applies(self, employee, start_date, leave=None):
-        """Từ ngày nghỉ thứ 4 trong tháng trở đi → O."""
+        """Từ ngày nghỉ vượt hạn mức tháng trở đi → O."""
         start_date = self._coerce_to_date(start_date)
         if not self._monthly_p1p2_mien_applies(employee) or not start_date:
             return False
@@ -192,7 +192,8 @@ class HrLeave(models.Model):
         days_before = self._count_leave_days_in_calendar_month(
             employee, start_date.year, start_date.month, exclude
         )
-        return days_before >= MAX_PAID_LEAVE_DAYS_PER_MONTH
+        cap = self._monthly_mien_employee_monthly_cap(employee)
+        return days_before >= cap
 
     @api.model
     def _first_leave_in_month_p1_rule_applies(self, employee, start_date, leave=None):
@@ -221,7 +222,8 @@ class HrLeave(models.Model):
         days_before = self._count_leave_days_in_calendar_month(
             employee, start_date.year, start_date.month, exclude
         )
-        return days_before < MAX_PAID_LEAVE_DAYS_PER_MONTH
+        cap = self._monthly_mien_employee_monthly_cap(employee)
+        return days_before < cap
 
     @api.model
     def _monthly_leave_rule_kind(self, employee, start_date, leave=None, end_date=None):
@@ -234,7 +236,8 @@ class HrLeave(models.Model):
         days_before = self._count_leave_days_in_calendar_month(
             employee, start_date.year, start_date.month, exclude
         )
-        if days_before >= MAX_PAID_LEAVE_DAYS_PER_MONTH:
+        cap = self._monthly_mien_employee_monthly_cap(employee)
+        if days_before >= cap:
             return "o"
         plan = self._monthly_mien_split_plan(
             employee, start_date, end_date, exclude
@@ -580,14 +583,15 @@ class HrLeave(models.Model):
                         "từ ngày thứ %(day)s trở đi bắt buộc loại (%(o)s)."
                     ),
                 }
+                cap = leave._monthly_mien_employee_monthly_cap(leave.employee_id)
                 params = {
                     "mien": mien,
                     "code": code_map[rule],
                     "p1": P1_LEAVE_TYPE_CODE,
                     "p2": P2_LEAVE_TYPE_CODE,
                     "o": O_LEAVE_TYPE_CODE,
-                    "max": MAX_PAID_LEAVE_DAYS_PER_MONTH,
-                    "day": MAX_PAID_LEAVE_DAYS_PER_MONTH + 1,
+                    "max": cap,
+                    "day": cap + 1,
                 }
                 raise ValidationError(messages[rule] % params)
 

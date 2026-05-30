@@ -2,14 +2,20 @@ import logging
 from datetime import date
 
 from odoo import api, fields, models
+from odoo.exceptions import AccessError, ValidationError
 from odoo.tools.translate import _
 
 _logger = logging.getLogger(__name__)
 
 # Chỉ trừ phép khi đơn đã duyệt xong (Approved), không trừ khi còn chờ duyệt.
 _LEAVES_DEDUCT_STATES = ("validate",)
+# Đơn đang "chiếm chỗ" trong ngân sách Còn lại (chưa hủy/từ chối).
+_LEAVES_BUDGET_STATES = ("confirm", "validate1", "validate")
 _CON_LAI_ZERO_CONFIRMED_CTX = "con_lai_zero_confirmed"
 _SKIP_CON_LAI_ZERO_CHECK_CTX = "skip_con_lai_zero_check"
+_SKIP_CON_LAI_NEGATIVE_CHECK_CTX = "skip_con_lai_negative_check"
+# Tên Job Position được phép chỉnh `monthly_paid_leave_cap`.
+_MONTHLY_CAP_EDITOR_JOB_POSITION = "sale admin"
 
 
 class HrEmployeeTimeoff(models.Model):
@@ -38,6 +44,53 @@ class HrEmployeeTimeoff(models.Model):
         readonly=True,
         help="Năm tương ứng với giá trị Số phép còn lại năm trước.",
     )
+    monthly_paid_leave_cap = fields.Integer(
+        string="Hạn mức phép có lương / tháng",
+        help=(
+            "Số ngày phép có lương tối đa trong một tháng dành riêng cho nhân viên này. "
+            "Bỏ trống để dùng mặc định toàn hệ thống (3 ngày). "
+            "Chỉ SALE ADMIN (Job Position) và quản trị hệ thống được phép chỉnh."
+        ),
+        tracking=True,
+    )
+    can_edit_monthly_paid_leave_cap = fields.Boolean(
+        compute="_compute_can_edit_monthly_paid_leave_cap",
+    )
+
+    @api.depends_context("uid")
+    def _compute_can_edit_monthly_paid_leave_cap(self):
+        allowed = self.env["hr.employee"]._monthly_paid_leave_cap_editor_allowed()
+        for emp in self:
+            emp.can_edit_monthly_paid_leave_cap = allowed
+
+    @api.model
+    def _monthly_paid_leave_cap_editor_allowed(self):
+        """True khi user hiện tại có quyền chỉnh `monthly_paid_leave_cap`."""
+        user = self.env.user
+        if user._is_superuser() or user.has_group("base.group_system"):
+            return True
+        emp = user.sudo().employee_id
+        job_name = (emp.job_id.name or "").strip().casefold() if emp else ""
+        return job_name == _MONTHLY_CAP_EDITOR_JOB_POSITION
+
+    @api.constrains("monthly_paid_leave_cap")
+    def _check_monthly_paid_leave_cap_positive(self):
+        for emp in self:
+            if emp.monthly_paid_leave_cap and emp.monthly_paid_leave_cap < 0:
+                raise ValidationError(
+                    _("Hạn mức phép có lương / tháng không được là số âm.")
+                )
+
+    def write(self, vals):
+        if "monthly_paid_leave_cap" in vals:
+            if not self._monthly_paid_leave_cap_editor_allowed():
+                raise AccessError(
+                    _(
+                        "Chỉ SALE ADMIN hoặc quản trị viên hệ thống mới được phép "
+                        "thay đổi Hạn mức phép có lương / tháng."
+                    )
+                )
+        return super().write(vals)
 
     def _get_leave_days_used_for_summary(self):
         """Tổng ngày nghỉ đã được phê duyệt (state = validate)."""
@@ -176,14 +229,152 @@ class HrLeaveTimeOffSummary(models.Model):
         if employees:
             employees._compute_time_off_summary()
 
+    @api.model
+    def _con_lai_negative_check_skipped(self):
+        ctx = self.env.context
+        return bool(
+            ctx.get(_SKIP_CON_LAI_NEGATIVE_CHECK_CTX)
+            or ctx.get(_SKIP_CON_LAI_ZERO_CHECK_CTX)
+            or ctx.get("leave_fast_create")
+        )
+
+    @api.model
+    def _con_lai_unpaid_leave_type_ids(self):
+        """ID các loại phép không tính vào ngân sách Còn lại (Unpaid Leave (O))."""
+        unpaid_ids = set()
+        LeaveType = self.env["hr.leave.type"]
+        if hasattr(LeaveType, "_get_o_leave_type"):
+            try:
+                o_type = self.env["hr.leave"]._get_o_leave_type()
+                if o_type:
+                    unpaid_ids.update(o_type.ids)
+            except Exception:  # pragma: no cover - bảo vệ khi cấu hình thiếu
+                _logger.debug("con_lai: cannot resolve Unpaid Leave (O) type", exc_info=True)
+        unpaid_ids.update(
+            LeaveType.sudo().search([("requires_allocation", "=", False)]).ids
+        )
+        return list(unpaid_ids)
+
+    @api.model
+    def _con_lai_committed_days(self, employee, exclude_leave_ids=None):
+        """Tổng số ngày phép tính phí (loại trừ O / unpaid) đang chiếm chỗ."""
+        domain = [
+            ("employee_id", "=", employee.id),
+            ("state", "in", _LEAVES_BUDGET_STATES),
+        ]
+        unpaid_ids = self._con_lai_unpaid_leave_type_ids()
+        if unpaid_ids:
+            domain.append(("holiday_status_id", "not in", unpaid_ids))
+        if exclude_leave_ids:
+            domain.append(("id", "not in", list(exclude_leave_ids)))
+        groups = self.sudo().read_group(
+            domain=domain,
+            fields=["number_of_days:sum"],
+            groupby=[],
+        )
+        if not groups:
+            return 0.0
+        row = groups[0]
+        return row.get("number_of_days_sum") or row.get("number_of_days") or 0.0
+
+    @api.model
+    def _coerce_id_from_value(self, value):
+        if isinstance(value, models.Model):
+            return value.id
+        if isinstance(value, (list, tuple)) and value:
+            return value[0]
+        return value
+
+    @api.model
+    def _is_unpaid_leave_type(self, leave_type_id):
+        if not leave_type_id:
+            return False
+        return leave_type_id in self._con_lai_unpaid_leave_type_ids()
+
+    @api.model
+    def _vals_days_for_negative_check(self, vals, leave=None):
+        if not vals:
+            return leave.number_of_days if leave else 0.0
+        days = vals.get("number_of_days")
+        if days is not None:
+            return days or 0.0
+        return leave.number_of_days if leave else 0.0
+
+    @api.model
+    def _assert_con_lai_not_negative(self, employee, projected_days, exclude_leave_ids=None):
+        """Chặn cứng khi đơn sẽ kéo Còn lại < 0 (==0 vẫn cho phép)."""
+        if not employee or projected_days <= 0:
+            return
+        committed = self._con_lai_committed_days(
+            employee, exclude_leave_ids=exclude_leave_ids
+        )
+        budget = employee.tong_so_phep or 0.0
+        if budget - committed - projected_days < 0:
+            raise ValidationError(
+                _(
+                    "Không thể tạo đơn nghỉ: Số phép Còn lại của %(name)s sẽ bị âm.\n"
+                    "Tổng phép: %(budget).2f — Đang sử dụng: %(used).2f — Đơn này: %(new).2f"
+                )
+                % {
+                    "name": employee.name or employee.display_name or "",
+                    "budget": budget,
+                    "used": committed,
+                    "new": projected_days,
+                }
+            )
+
     @api.model_create_multi
     def create(self, vals_list):
+        if not self._con_lai_negative_check_skipped():
+            Employee = self.env["hr.employee"]
+            additions = {}
+            for vals in vals_list:
+                emp_id = self._coerce_id_from_value(vals.get("employee_id"))
+                if not emp_id:
+                    continue
+                lt_id = self._coerce_id_from_value(vals.get("holiday_status_id"))
+                if self._is_unpaid_leave_type(lt_id):
+                    continue
+                days = self._vals_days_for_negative_check(vals)
+                if days <= 0:
+                    continue
+                additions[emp_id] = additions.get(emp_id, 0.0) + days
+            for emp_id, projected in additions.items():
+                employee = Employee.browse(emp_id)
+                if not employee.exists():
+                    continue
+                self._assert_con_lai_not_negative(employee, projected)
         records = super().create(vals_list)
         if not self.env.context.get("leave_fast_create"):
             records._recompute_employee_time_off_summary()
         return records
 
     def write(self, vals):
+        if (
+            not self._con_lai_negative_check_skipped()
+            and {"employee_id", "number_of_days", "holiday_status_id"}.intersection(vals)
+        ):
+            Employee = self.env["hr.employee"]
+            for leave in self:
+                emp_id = self._coerce_id_from_value(
+                    vals.get("employee_id")
+                ) or leave.employee_id.id
+                if not emp_id:
+                    continue
+                lt_id = self._coerce_id_from_value(vals.get("holiday_status_id")) or (
+                    leave.holiday_status_id.id if leave.holiday_status_id else False
+                )
+                if self._is_unpaid_leave_type(lt_id):
+                    continue
+                projected = self._vals_days_for_negative_check(vals, leave=leave)
+                if projected <= 0:
+                    continue
+                employee = Employee.browse(emp_id)
+                if not employee.exists():
+                    continue
+                self._assert_con_lai_not_negative(
+                    employee, projected, exclude_leave_ids=[leave.id]
+                )
         res = super().write(vals)
         if not self.env.context.get("leave_fast_create") and {
             "employee_id",

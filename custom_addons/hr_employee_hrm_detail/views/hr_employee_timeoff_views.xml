@@ -18,6 +18,14 @@
                         <field name="nam_chot_con_lai"/>
                         <field name="con_lai_nam_truoc"/>
                     </group>
+                    <group string="Hạn mức phép có lương / tháng">
+                        <field name="can_edit_monthly_paid_leave_cap" invisible="1"/>
+                        <field
+                            name="monthly_paid_leave_cap"
+                            readonly="not can_edit_monthly_paid_leave_cap"
+                            placeholder="Mặc định 3 ngày"
+                        />
+                    </group>
                 </group>
             </xpath>
         </field>
