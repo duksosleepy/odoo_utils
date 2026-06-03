@@ -1,0 +1,36 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* hr_leave_delete_cancel
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: 2026-06-03 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: vi_VN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: hr_leave_delete_cancel
+#: model:res.groups.privilege,name:hr_leave_delete_cancel.res_groups_privilege_leave_delete
+msgid "Delete Time Off"
+msgstr "Xoá ngày phép"
+
+#. module: hr_leave_delete_cancel
+#: model:res.groups,comment:hr_leave_delete_cancel.group_hr_holidays_leave_delete
+msgid "The user can delete and cancel time off requests of employees."
+msgstr "Người dùng được phép xoá và huỷ đơn nghỉ phép của nhân viên."
+
+#. module: hr_leave_delete_cancel
+#: model:res.groups.privilege,description:hr_leave_delete_cancel.res_groups_privilege_leave_delete
+msgid "Allows deleting and cancelling time off requests of employees."
+msgstr "Cho phép xoá và huỷ đơn nghỉ phép của nhân viên."
+
+#. module: hr_leave_delete_cancel
+#: code:addons/hr_leave_delete_cancel/models/hr_leave.py:0
+msgid "You are not allowed to delete or cancel time off requests of employees."
+msgstr "Bạn không có quyền xoá hoặc huỷ đơn nghỉ phép của nhân viên."
