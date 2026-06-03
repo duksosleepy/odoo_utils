@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_leave_odoobot_notify_config_form" model="ir.ui.view">
+        <field name="name">hr.leave.odoobot.notify.config.form</field>
+        <field name="model">hr.leave.odoobot.notify.config</field>
+        <field name="arch" type="xml">
+            <form string="Thông báo odoobot">
+                <sheet>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="remind_interval_hours" widget="float_time"/>
+                        <field name="skip_level_hours" widget="float_time"/>
+                        <field name="max_skip_job_title"/>
+                    </group>
+                    <div class="text-muted">
+                        <p>
+                            <strong>Thời gian nhắc lại:</strong>
+                            gửi lại tin OdooBot Duyệt đơn cho người đang duyệt nếu chưa xử lý (0 = tắt).
+                        </p>
+                        <p>
+                            <strong>Thời gian bỏ qua cấp:</strong>
+                            tự chuyển sang cấp duyệt tiếp theo (chỉ áp dụng khi chức danh hiện tại
+                            <em>thấp hơn</em> chức danh dừng skip bên dưới).
+                        </p>
+                        <p>
+                            <strong>Chức danh dừng skip:</strong>
+                            khi đơn tới người có chức danh này (hoặc cao hơn), hệ thống
+                            <strong>không</strong> tự bỏ qua cấp nữa — chỉ nhắc lại theo
+                            <em>Thời gian nhắc lại</em> cho đến khi duyệt hoặc từ chối.
+                        </p>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_leave_odoobot_notify_config" model="ir.actions.server">
+        <field name="name">Thông báo odoobot</field>
+        <field name="model_id" ref="model_hr_leave_odoobot_notify_config"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_company_config()</field>
+    </record>
+
+    <menuitem
+        id="menu_hr_leave_odoobot_notify_configuration"
+        name="Thông báo odoobot"
+        parent="hr_holidays.menu_hr_holidays_configuration"
+        action="action_hr_leave_odoobot_notify_config"
+        groups="hr_holidays.group_hr_holidays_manager"
+        sequence="6"/>
+
+</odoo>

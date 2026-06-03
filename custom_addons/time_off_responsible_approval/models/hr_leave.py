@@ -120,13 +120,53 @@ class HrLeaveResponsibleApproval(models.Model):
         string="Current approval",
         compute="_compute_approval_current_step_label",
     )
+    def _odoobot_notify_config(self):
+        self.ensure_one()
+        return self.env["hr.leave.odoobot.notify.config"]._get_for_company(self.company_id)
+
+    def _responsible_skip_level_hours(self):
+        self.ensure_one()
+        return self._odoobot_notify_config().skip_level_hours
+
+    def _responsible_approval_job_title_rank(self, title_key):
+        self.ensure_one()
+        if not title_key:
+            return -1
+        return _job_title_rank_map().get(_normalize_job_title_key(title_key), -1)
+
+    def _responsible_max_skip_job_title(self):
+        self.ensure_one()
+        title = self._odoobot_notify_config().max_skip_job_title
+        return title or "trưởng bộ phận"
+
+    def _responsible_current_wave_blocks_auto_skip(self):
+        """True when current approver reached max skip job title — only remind, no auto-skip."""
+        self.ensure_one()
+        max_rank = self._responsible_approval_job_title_rank(self._responsible_max_skip_job_title())
+        if max_rank < 0:
+            return True
+        wave = self._responsible_pending_current_wave()
+        if not wave:
+            return True
+        for line in wave:
+            user = line.user_id
+            employee = user.employee_id if user else False
+            rank = self._responsible_approval_job_title_rank(
+                employee.job_title if employee else False
+            )
+            if rank >= max_rank:
+                return True
+        return False
+
     def _apply_responsible_timeout_escalation(self):
         self.ensure_one()
         if self.holiday_status_id.employee_responsible_approval_mode != "sequential":
             return
         if not self.responsible_approval_line_ids:
             return
-        hours = self.holiday_status_id.employee_responsible_escalation_hours or 2.0
+        if self._responsible_current_wave_blocks_auto_skip():
+            return
+        hours = self._responsible_skip_level_hours()
         threshold = fields.Datetime.now() - timedelta(hours=hours)
         wave = self._responsible_pending_current_wave()
         if not wave:
@@ -156,6 +196,7 @@ class HrLeaveResponsibleApproval(models.Model):
         if next_wave:
             now = fields.Datetime.now()
             next_wave.write({"pending_since": now})
+            self.sudo().write({"approval_last_odoobot_remind_at": False})
             self.activity_update()
             self._notify_responsible_current_turn()
         else:
@@ -1036,6 +1077,7 @@ class HrLeaveResponsibleApproval(models.Model):
                 user.id if user else None,
             )
             return
+        self.sudo().write({"approval_last_odoobot_remind_at": False})
         body_text = _(
             "It is now your turn to approve time off request %(leave)s for %(employee)s."
         ) % {
@@ -1181,7 +1223,7 @@ class HrLeaveResponsibleApproval(models.Model):
             wave = leave._responsible_pending_current_wave()
             if not wave:
                 continue
-            hours = leave.holiday_status_id.employee_responsible_escalation_hours or 2.0
+            hours = leave._responsible_skip_level_hours()
             threshold = fields.Datetime.now() - timedelta(hours=hours)
             missing = wave.filtered(lambda ln: not ln.pending_since)
             if not missing:
@@ -1402,6 +1444,47 @@ class HrLeaveResponsibleApproval(models.Model):
             except Exception:
                 _logger.exception(
                     "time_off_extra_approval: responsible-timeout escalation failed for leave id=%s",
+                    leave.id,
+                )
+
+    def cron_remind_responsible_approval_odoobot(self):
+        """Re-send OdooBot Duyệt đơn to current approver when repeat interval elapsed."""
+        now = fields.Datetime.now()
+        leaves = self.sudo().search(
+            [
+                ("state", "in", ("confirm", "validate1")),
+                ("validation_type", "=", "employee_hr_responsibles"),
+            ]
+        )
+        for leave in leaves:
+            try:
+                if leave.holiday_status_id.employee_responsible_approval_mode != "sequential":
+                    continue
+                config = leave._odoobot_notify_config()
+                interval = config.remind_interval_hours
+                if not interval or interval <= 0:
+                    continue
+                wave = leave._responsible_pending_current_wave()
+                if not wave:
+                    continue
+                pending_since = min(
+                    (ln.pending_since for ln in wave if ln.pending_since),
+                    default=False,
+                )
+                if not pending_since:
+                    continue
+                if pending_since > now - timedelta(hours=interval):
+                    continue
+                last_remind = leave.approval_last_odoobot_remind_at
+                if last_remind and last_remind > now - timedelta(hours=interval):
+                    continue
+                for approver in wave.mapped("user_id"):
+                    if approver:
+                        leave._notify_responsible_current_turn_via_approval_bot(approver)
+                leave.sudo().write({"approval_last_odoobot_remind_at": now})
+            except Exception:
+                _logger.exception(
+                    "time_off_responsible_approval: OdooBot remind failed for leave id=%s",
                     leave.id,
                 )
 

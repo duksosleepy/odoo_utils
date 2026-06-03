@@ -25,8 +25,11 @@
                        invisible="leave_validation_type != 'employee_hr_responsibles'">
                     <field name="employee_responsible_approval_mode"/>
                     <field name="employee_responsible_source"/>
-                    <field name="employee_responsible_escalation_hours"
-                           invisible="employee_responsible_approval_mode != 'sequential'"/>
+                    <p class="text-muted" colspan="2"
+                       invisible="employee_responsible_approval_mode != 'sequential'">
+                        Thời gian bỏ qua cấp và nhắc lại OdooBot: cấu hình tại
+                        <strong>Ngày nghỉ → Cấu hình → Thông báo odoobot</strong>.
+                    </p>
                     <p class="text-muted" colspan="2"
                        invisible="employee_responsible_source != 'org_chart' or employee_responsible_approval_mode != 'sequential'">
                         Org chart + sequential mode (outside the special employee list): the final Director step is
