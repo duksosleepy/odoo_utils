@@ -37,6 +37,19 @@ class HrEmployeeTimeoff(models.Model):
             return self.env["hr.employee"]
         return self.search([("id", "=", emp_id)], limit=1)
 
+    def _timeoff_summary_privacy_context(self):
+        """Allow stored compute writes for time-off counters (hr_employee_self_only)."""
+        return {
+            "employees_no_timeoff_write": True,
+            "employees_no_allowed_employee_ids": self.ids,
+        }
+
+    def _employees_for_timeoff_summary_compute(self):
+        """Only employees visible to the current user (skips OdooBot / out-of-scope rows)."""
+        if not self:
+            return self.env["hr.employee"]
+        return self.env["hr.employee"].search([("id", "in", self.ids)])
+
     @api.model
     def _get_contextual_employee(self):
         ctx = self.env.context
@@ -142,13 +155,17 @@ class HrEmployeeTimeoff(models.Model):
 
     @api.depends("tong_so_phep")
     def _compute_time_off_summary(self):
+        employees = self._employees_for_timeoff_summary_compute()
+        if not employees:
+            return
+        employees = employees.with_context(**employees._timeoff_summary_privacy_context())
         if "hr.leave.type" not in self.env:
-            for employee in self:
+            for employee in employees:
                 employee.da_su_dung = 0.0
                 employee.con_lai = employee.tong_so_phep
             return
-        for employee in self:
-            # Chá»‰ Ä‘Æ¡n validate; khÃ´ng dÃ¹ng virtual_leaves_taken (Odoo cÃ³ thá»ƒ tÃ­nh cáº£ Ä‘Æ¡n chá» duyá»‡t).
+        for employee in employees:
+            # Chỉ đơn validate; không dùng virtual_leaves_taken (Odoo có thể tính cả đơn chờ duyệt).
             leave_taken = employee._get_leave_days_used_for_summary()
             employee.da_su_dung = leave_taken
             employee.con_lai = (employee.tong_so_phep or 0.0) - leave_taken
@@ -157,13 +174,12 @@ class HrEmployeeTimeoff(models.Model):
     def get_time_off_dashboard_data(self, target_date=None):
         """Làm mới số phép HRM trước khi dashboard đọc da_su_dung / con_lai."""
         employee = self._get_contextual_employee()
-        ctx = {
-            "employees_no_timeoff_write": True,
-            "employees_no_allowed_employee_ids": [employee.id] if employee else [],
-        }
-        employee = employee.sudo().with_context(**ctx)
         if employee:
             employee._compute_time_off_summary()
+        ctx = employee._timeoff_summary_privacy_context() if employee else {
+            "employees_no_timeoff_write": True,
+            "employees_no_allowed_employee_ids": [],
+        }
         return super(HrEmployeeTimeoff, self.with_context(**ctx)).get_time_off_dashboard_data(
             target_date=target_date
         )
@@ -179,8 +195,11 @@ class HrEmployeeTimeoff(models.Model):
         if not employees:
             return
 
-        # Refresh computed balances to make sure values reflect reality.
-        employees._compute_time_off_summary()
+        # Refresh computed balances (sudo + time-off privacy bypass for stored fields).
+        employees.with_context(
+            employees_no_timeoff_write=True,
+            employees_no_allowed_employee_ids=employees.ids,
+        )._compute_time_off_summary()
 
         for emp in employees:
             emp.write({
@@ -241,11 +260,9 @@ class HrLeaveTimeOffSummary(models.Model):
         if not employee_id:
             return self._con_lai_zero_no_confirmation()
 
-        emp = self.env["hr.employee"].browse(employee_id)
-        emp.with_context(
-            employees_no_timeoff_write=True,
-            employees_no_allowed_employee_ids=[employee_id],
-        )._compute_time_off_summary()
+        emp = self.env["hr.employee"].search([("id", "=", employee_id)], limit=1)
+        if emp:
+            emp._compute_time_off_summary()
         if (emp.con_lai or 0.0) > 0:
             return self._con_lai_zero_no_confirmation()
 
@@ -257,6 +274,7 @@ class HrLeaveTimeOffSummary(models.Model):
 
     def _recompute_employee_time_off_summary(self):
         employees = self.mapped("employee_id").filtered(lambda e: e.id)
+        employees = employees.env["hr.employee"].search([("id", "in", employees.ids)])
         if employees:
             employees._compute_time_off_summary()
 

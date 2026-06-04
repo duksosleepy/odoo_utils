@@ -86,6 +86,8 @@ class HrEmployeeAccessMixin(models.AbstractModel):
         model_name = model_name or "hr.employee"
         if user._is_superuser() or user.has_group("hr.group_hr_manager"):
             return None
+        if user.has_group("hr_employee_hrm_detail.group_hr_employees_supporter"):
+            return None
         if user.has_group("hr_employee_hrm_detail.group_hr_employees_staff"):
             return self._hr_employee_staff_department_domain(user, model_name=model_name)
         if not user.has_group("hr.group_hr_user"):
@@ -97,3 +99,27 @@ class HrEmployeeAccessMixin(models.AbstractModel):
         return self._hr_employee_mien_match_domain(
             mien_field, dept_mien_field, allowed, user=user
         )
+
+    @api.model
+    def _hr_employee_discuss_access_applies(self, user=None):
+        """Whether Discuss partner pickers must follow HR employee visibility."""
+        user = user or self.env.user
+        if user._is_superuser() or user.has_group("hr.group_hr_manager"):
+            return False
+        return user.has_group(
+            "hr_employee_hrm_detail.group_hr_employees_staff"
+        ) or user.has_group("hr.group_hr_user")
+
+    @api.model
+    def _hr_employee_discuss_accessible_partner_domain(self, user=None):
+        """res.partner domain for Discuss search/invite; None = no HR filter."""
+        user = user or self.env.user
+        if not self._hr_employee_discuss_access_applies(user):
+            return None
+        employee_domain = self._hr_employee_apply_access_domain(
+            [], model_name="hr.employee"
+        )
+        employees = self.env["hr.employee"].with_user(user).search(employee_domain)
+        partner_ids = employees.user_id.partner_id.ids
+        partner_ids = list({user.partner_id.id, *partner_ids})
+        return Domain([("id", "in", partner_ids)])

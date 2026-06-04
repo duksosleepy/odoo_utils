@@ -150,4 +150,11 @@
       </header>
     </xpath>
   </t>
+
+  <t t-inherit="mail.ChatWindow" t-inherit-mode="extension">
+    <xpath expr="//div[hasclass('o-mail-ChatWindow-header')]//Dropdown" position="attributes">
+      <attribute name="bottomSheet">larkChatWindowUseBottomSheet</attribute>
+      <attribute name="position">larkChatWindowDropdownPosition</attribute>
+    </xpath>
+  </t>
 </templates>

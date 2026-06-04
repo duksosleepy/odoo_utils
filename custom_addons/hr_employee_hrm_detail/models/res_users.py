@@ -28,6 +28,9 @@ class ResUsers(models.Model):
             if user._is_superuser() or user.has_group("hr.group_hr_manager"):
                 user.hr_officer_mien_scope = False
                 continue
+            if user.has_group("hr_employee_hrm_detail.group_hr_employees_supporter"):
+                user.hr_officer_mien_scope = False
+                continue
             if not user.has_group("hr.group_hr_user"):
                 user.hr_officer_mien_scope = False
                 continue
@@ -47,3 +50,22 @@ class ResUsers(models.Model):
         if "group_ids" in vals:
             self.env.registry.clear_cache()
         return res
+
+    @api.depends("employee_ids")
+    def _compute_company_employee(self):
+        """Limit company employee to HR visibility scope (Discuss, mentions, etc.)."""
+        mixin = self.env["hr.employee.access.mixin"]
+        company_domain = [
+            ("user_id", "in", self.ids),
+            ("company_id", "=", self.env.company.id),
+        ]
+        if mixin._hr_employee_discuss_access_applies():
+            domain = mixin._hr_employee_apply_access_domain(
+                company_domain, model_name="hr.employee"
+            )
+            employees = self.env["hr.employee"].search(domain)
+        else:
+            employees = self.env["hr.employee"].search(company_domain)
+        employee_per_user = {employee.user_id: employee for employee in employees}
+        for user in self:
+            user.employee_id = employee_per_user.get(user)

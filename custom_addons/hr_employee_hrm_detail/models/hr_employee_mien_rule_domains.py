@@ -42,6 +42,8 @@ def employee_access_rule_domain(mien_field, dept_mien_field, ma_bo_phan_field):
         "else "
         f"({staff}) if user.has_group('hr_employee_hrm_detail.group_hr_employees_staff') "
         "else "
+        "[(1, '=', 1)] if user.has_group('hr_employee_hrm_detail.group_hr_employees_supporter') "
+        "else "
         f"({officer}) if user.has_group('hr.group_hr_user') "
         "else [(1, '=', 1)]"
     )

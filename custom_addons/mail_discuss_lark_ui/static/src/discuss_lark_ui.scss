@@ -148,26 +148,58 @@ $o-lark-apps-bar-icon-size: 1.85rem;
         overflow: hidden;
     }
 
-    // Chat mobile mặc định z-index thấp hơn navbar → click X / tên bị xuyên qua
-    $o-lark-mobile-chat-zindex: 1100;
+    // Chat: trên navbar (1020) nhưng DƯỚI overlay menu ($zindex-modal 1055)
+    $o-lark-mobile-chat-zindex: 1052;
+    $o-lark-mobile-menu-zindex: 1060;
 
-    body:has(.o-mail-ChatWindow.o-mobile) {
+    body:has(.o-mail-ChatWindow) {
         .o_navbar,
         .o_main_navbar {
             pointer-events: none !important;
         }
+
+        .o-overlay-item,
+        .o_bottom_sheet {
+            z-index: $o-lark-mobile-menu-zindex !important;
+        }
     }
 
-    .o-mail-ChatWindow.o-mobile {
+    .o-mail-ChatWindow {
         z-index: $o-lark-mobile-chat-zindex !important;
         pointer-events: auto !important;
+        bottom: calc(#{$o-lark-apps-bar-height} + env(safe-area-inset-bottom, 0px)) !important;
+        max-height: calc(100dvh - #{$o-lark-apps-bar-height} - env(safe-area-inset-bottom, 0px)) !important;
+
+        &.o-mobile {
+            height: calc(100dvh - #{$o-lark-apps-bar-height} - env(safe-area-inset-bottom, 0px)) !important;
+        }
+    }
+
+    .o-mail-ChatHub-bubbles {
+        --mail-ChatHub-bubbles-bottom: calc(#{$o-lark-apps-bar-height} + env(safe-area-inset-bottom, 0px));
+    }
+
+    .o-mail-ChatWindow-header {
+        .o-mail-ChatWindow-moreActions {
+            position: relative;
+            z-index: 3;
+            pointer-events: auto !important;
+            touch-action: manipulation;
+            min-height: 2.75rem;
+        }
+
+        > .flex-grow-1 {
+            pointer-events: none;
+        }
     }
 }
 
 @mixin o-mail-lark-apps-bar {
+    $o-lark-bar-reserve: calc(#{$o-lark-apps-bar-height} + env(safe-area-inset-bottom, 0px));
+
     body.o-mail-lark-mobile-shell {
         .o_action_manager {
-            padding-bottom: calc(#{$o-lark-apps-bar-height} + env(safe-area-inset-bottom, 0px)) !important;
+            padding-bottom: $o-lark-bar-reserve !important;
         }
     }
 

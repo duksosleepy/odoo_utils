@@ -26,5 +26,15 @@ msgid "The user can view employees who share the same department code (Mã bộ 
 msgstr "Người dùng chỉ xem được nhân viên có cùng mã bộ phận."
 
 #. module: hr_employee_hrm_detail
+#: model:res.groups,name:hr_employee_hrm_detail.group_hr_employees_supporter
+msgid "Support Staff"
+msgstr "Hỗ trợ viên"
+
+#. module: hr_employee_hrm_detail
+#: model:res.groups,comment:hr_employee_hrm_detail.group_hr_employees_supporter
+msgid "HR officer rights; can view the full employee list (all regions)."
+msgstr "Quyền như chuyên viên; được xem toàn bộ danh sách nhân viên (mọi miền)."
+
+#. module: hr_employee_hrm_detail
 msgid "HRM"
 msgstr "Nhân sự"

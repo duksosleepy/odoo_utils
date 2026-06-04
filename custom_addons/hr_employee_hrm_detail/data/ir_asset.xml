@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="asset_hr_employee_public_model" model="ir.asset">
+        <field name="name">HR Employee Public mail model</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">hr_employee_hrm_detail/static/src/js/hr_employee_public_model.js</field>
+        <field name="directive">after</field>
+        <field name="target">hr/static/src/core/common/hr_employee_model.js</field>
+    </record>
+    <record id="asset_discuss_hr_employee_public_patch" model="ir.asset">
+        <field name="name">Discuss HR employee public patch</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">hr_employee_hrm_detail/static/src/js/discuss_hr_employee_public_patch.js</field>
+        <field name="directive">after</field>
+        <field name="target">hr/static/src/core/common/res_users_model_patch.js</field>
+    </record>
+    <record id="asset_discuss_avatar_card_patch" model="ir.asset">
+        <field name="name">Discuss avatar card employee public</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">hr_employee_hrm_detail/static/src/js/discuss_avatar_card_patch.js</field>
+        <field name="directive">after</field>
+        <field name="target">hr/static/src/components/avatar_card/avatar_card_popover_patch.js</field>
+    </record>
+    <record id="asset_discuss_thread_actions_public" model="ir.asset">
+        <field name="name">Discuss thread actions employee public</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">hr_employee_hrm_detail/static/src/js/discuss_thread_actions_patch.js</field>
+        <field name="directive">after</field>
+        <field name="target">hr/static/src/core/web/thread_actions.js</field>
+    </record>
+</odoo>
