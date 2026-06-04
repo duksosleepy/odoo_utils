@@ -106,20 +106,15 @@ $o-lark-apps-bar-icon-size: 1.85rem;
 
 // Thanh cố định mọi app (main_components overlay)
 @media (max-width: 767.98px) {
-    .o-main-components-container:has(.o-mail-LarkAppsBar-globalShell) {
-        position: fixed !important;
-        inset: 0;
-        width: 100% !important;
-        height: 100% !important;
-        pointer-events: none;
-        z-index: 1045;
-    }
-
+    // Chỉ cố định shell thanh bar — KHÔNG bọc full màn hình main_components
+    // (pointer-events: none trên container sẽ chặn luôn ChatWindow)
     .o-mail-LarkAppsBar-globalShell {
         pointer-events: none;
         position: fixed;
-        inset: 0;
-        z-index: 1;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1045;
         width: 100%;
         max-width: 100vw;
         display: flex;
@@ -127,6 +122,9 @@ $o-lark-apps-bar-icon-size: 1.85rem;
         justify-content: flex-end;
 
         &:has(.o-mail-LarkAllApps) {
+            top: 0;
+            height: 100%;
+            height: 100dvh;
             justify-content: flex-start;
         }
     }
@@ -148,6 +146,21 @@ $o-lark-apps-bar-icon-size: 1.85rem;
         position: relative;
         z-index: 11;
         overflow: hidden;
+    }
+
+    // Chat mobile mặc định z-index thấp hơn navbar → click X / tên bị xuyên qua
+    $o-lark-mobile-chat-zindex: 1100;
+
+    body:has(.o-mail-ChatWindow.o-mobile) {
+        .o_navbar,
+        .o_main_navbar {
+            pointer-events: none !important;
+        }
+    }
+
+    .o-mail-ChatWindow.o-mobile {
+        z-index: $o-lark-mobile-chat-zindex !important;
+        pointer-events: auto !important;
     }
 }
 

@@ -109,7 +109,9 @@ class HrLeaveHandoverOdoobotNotify(models.Model):
                     rule = notify_leave._odoobot_notify_rule_for_employee(
                         employee, "handover"
                     )
-                    slot_key = rule._matching_remind_slot_key() if rule else False
+                    slot_key = (
+                        rule.sudo()._matching_remind_slot_key() if rule else False
+                    )
                     if not slot_key:
                         continue
                     employee_slot = "%s|e%s" % (slot_key, employee.id)

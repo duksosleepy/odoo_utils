@@ -39,11 +39,15 @@ class HrLeaveOdoobotNotifyMixin(models.Model):
             employee.ma_bo_phan_id.mien if employee.ma_bo_phan_id else False
         )
 
+    def _odoobot_notify_rule_env(self):
+        """Sudo env for reading notification rules (HR config, not end-user data)."""
+        return self.env["hr.leave.odoobot.notify.rule"].sudo()
+
     def _odoobot_notify_rule_for_employee(self, employee, bot_type):
         self.ensure_one()
         if not employee:
-            return self.env["hr.leave.odoobot.notify.rule"].browse()
-        return self.env["hr.leave.odoobot.notify.rule"]._find_rule(
+            return self._odoobot_notify_rule_env().browse()
+        return self._odoobot_notify_rule_env()._find_rule(
             company=self.company_id,
             mien=self._leave_request_mien(),
             job_title=employee.job_title,
@@ -57,6 +61,7 @@ class HrLeaveOdoobotNotifyMixin(models.Model):
 
     def _odoobot_scheduled_remind_due(self, rule, last_slot_field):
         self.ensure_one()
+        rule = rule.sudo() if rule else rule
         if not rule or not rule.remind_time_ids:
             return False
         slot_key = rule._matching_remind_slot_key()
@@ -102,14 +107,14 @@ class HrLeaveOdoobotNotifyMixin(models.Model):
 
     def _odoobot_skip_hours_for_user(self, user, bot_type):
         self.ensure_one()
-        rule = self._odoobot_notify_rule_for_user(user, bot_type)
+        rule = self._odoobot_notify_rule_for_user(user, bot_type).sudo()
         if not rule or rule.is_final_level:
             return 0.0
         return rule.skip_level_hours or 0.0
 
     def _odoobot_blocks_auto_skip_for_user(self, user, bot_type):
         self.ensure_one()
-        rule = self._odoobot_notify_rule_for_user(user, bot_type)
+        rule = self._odoobot_notify_rule_for_user(user, bot_type).sudo()
         if not rule:
             return True
         return bool(rule.is_final_level)
