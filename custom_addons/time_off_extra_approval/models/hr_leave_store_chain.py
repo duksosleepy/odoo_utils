@@ -53,11 +53,14 @@ class HrLeaveStoreChain(models.Model):
             return ""
         return (emp.job_title or "").strip().lower()
 
+    def _is_store_chain_validation_type(self):
+        self.ensure_one()
+        return self.validation_type in ("vp_chain", "employee_hr_responsibles")
+
     def _is_store_chain_flow(self):
         self.ensure_one()
-        return (
-            self.validation_type == "vp_chain"
-            and self._store_chain_employee_job_title() in _STORE_CHAIN_JOB_TITLES
+        return self._is_store_chain_validation_type() and (
+            self._store_chain_employee_job_title() in _STORE_CHAIN_JOB_TITLES
         )
 
     def _store_chain_find_user_by_badge(self, badge_id):
