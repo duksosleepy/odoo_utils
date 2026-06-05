@@ -22,6 +22,8 @@ class HrEmployeeRelatedAccess(models.Model):
 
     def _readable_related_employee(self, employee, fname):
         """Return the related employee if visible to the current user."""
+        if not employee:
+            return self.env["hr.employee"]
         rel_id = employee._related_employee_fk_superuser(fname)
         if not rel_id:
             return self.env["hr.employee"]
@@ -66,8 +68,12 @@ class HrEmployeeRelatedAccess(models.Model):
         base_fields = [name for name in fields if name not in rel_fields]
         result = super().read(base_fields or ["id"], load)
         for vals in result:
-            emp = self.browse(vals["id"])
             for fname in rel_fields:
+                emp_id = vals.get("id")
+                if not emp_id:
+                    vals[fname] = False
+                    continue
+                emp = self.browse(emp_id)
                 readable = self._readable_related_employee(emp, fname)
                 if readable:
                     vals[fname] = (readable.id, readable.display_name)
@@ -105,7 +111,11 @@ class HrEmployeeRelatedAccess(models.Model):
         if rel_fields:
             for fname in rel_fields:
                 for vals in result:
-                    emp = self.browse(vals["id"])
+                    emp_id = vals.get("id")
+                    if not emp_id:
+                        vals[fname] = False
+                        continue
+                    emp = self.browse(emp_id)
                     readable = self._readable_related_employee(emp, fname)
                     if readable:
                         vals[fname] = self._web_read_related_value(

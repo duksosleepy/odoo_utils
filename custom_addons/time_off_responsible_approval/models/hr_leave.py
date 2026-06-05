@@ -603,6 +603,12 @@ class HrLeaveResponsibleApproval(models.Model):
             return Users.browse(ids + [dept_user.id])
         return Users.browse(prefix_ids + [dept_user.id])
 
+    def _get_responsible_approval_users_override(self):
+        hook = getattr(super(), "_get_responsible_approval_users_override", None)
+        if hook:
+            return hook()
+        return None
+
     def _ensure_responsible_approval_lines(self):
         """Create approval log rows when a request is already To Approve but lines were never created.
 
@@ -793,6 +799,9 @@ class HrLeaveResponsibleApproval(models.Model):
 
     def _get_responsible_approval_users(self):
         self.ensure_one()
+        override = self._get_responsible_approval_users_override()
+        if override is not None:
+            return override
         lt = self.holiday_status_id
         core = self._employee_hr_responsible_users_core()
         if not lt or lt.leave_validation_type != "employee_hr_responsibles":

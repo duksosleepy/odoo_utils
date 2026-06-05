@@ -357,6 +357,15 @@ class HrLeaveStoreChain(models.Model):
             return self._get_store_chain_approver_users()
         return super()._get_responsible_approval_users()
 
+    def _get_responsible_approval_users_override(self):
+        hook = getattr(super(), "_get_responsible_approval_users_override", None)
+        res = hook() if hook else None
+        if res is not None:
+            return res
+        if self._is_store_chain_flow():
+            return self._get_store_chain_approver_users()
+        return None
+
     def _store_chain_notify_all_remaining_approvers(self):
         """After the Mã bộ phận (ASM) step completes, notify every still-pending approver.
 
