@@ -8,6 +8,14 @@ from .hr_employee_access import MIEN_BND
 class ResUsers(models.Model):
     _inherit = "res.users"
 
+    employee_ma_bo_phan_id = fields.Many2one(
+        "hr.store.code",
+        string="Mã bộ phận (nhân viên)",
+        compute="_compute_employee_ma_bo_phan_id",
+        store=True,
+        index=True,
+    )
+
     hr_officer_mien_scope = fields.Selection(
         selection=[
             ("vp", "VP"),
@@ -17,6 +25,12 @@ class ResUsers(models.Model):
         compute="_compute_hr_officer_mien_scope",
         store=True,
     )
+
+    @api.depends("employee_id", "employee_id.ma_bo_phan_id")
+    def _compute_employee_ma_bo_phan_id(self):
+        for user in self:
+            emp = user.sudo().employee_id
+            user.employee_ma_bo_phan_id = emp.ma_bo_phan_id if emp else False
 
     @api.depends(
         "employee_id.mien",
@@ -61,9 +75,10 @@ class ResUsers(models.Model):
         ]
         if mixin._hr_employee_discuss_access_applies():
             domain = mixin._hr_employee_apply_access_domain(
-                company_domain, model_name="hr.employee"
+                company_domain, model_name="hr.employee.public"
             )
-            employees = self.env["hr.employee"].search(domain)
+            public_emps = self.env["hr.employee.public"].search(domain)
+            employees = self.env["hr.employee"].browse(public_emps.ids)
         else:
             employees = self.env["hr.employee"].search(company_domain)
         employee_per_user = {employee.user_id: employee for employee in employees}

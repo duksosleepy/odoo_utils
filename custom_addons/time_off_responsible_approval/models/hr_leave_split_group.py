@@ -331,10 +331,13 @@ class HrLeaveSplitGroup(models.Model):
                 if notify_key in submit_cache:
                     continue
                 submit_cache.add(notify_key)
-                leave._notify_responsible_approvers_submission()
-                leave.with_context(
-                    **{_SKIP_SPLIT_GROUP_NOTIFY_DEDUP_CTX: True}
-                )._notify_responsible_current_turn()
+                if leave.handover_employee_ids and not leave._handover_ready_for_approval():
+                    leave._notify_handover_recipients_submit_via_bot()
+                else:
+                    leave._notify_responsible_approvers_submission()
+                    leave.with_context(
+                        **{_SKIP_SPLIT_GROUP_NOTIFY_DEDUP_CTX: True}
+                    )._notify_responsible_current_turn()
 
     def _notify_split_group_submission_once(self):
         """Một lần / nhóm: hoặc bàn giao trước, hoặc duyệt đơn (không gửi cả hai cùng lúc)."""

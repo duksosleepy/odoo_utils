@@ -19,11 +19,5 @@ class HrLeave(models.Model):
 
     @api.model
     def get_unusual_days(self, date_from, date_to=None):
-        employee_id = self.env.context.get("employee_id", False)
-        if employee_id:
-            employee = self.env["hr.employee"]._search_accessible_employee(employee_id)
-        else:
-            employee = self.env.user.employee_id
-        if not employee:
-            employee = self.env.user.employee_id
-        return employee.sudo(False)._get_unusual_days(date_from, date_to)
+        employee = self.env["hr.employee"]._get_contextual_employee()
+        return employee._get_unusual_days(date_from, date_to) if employee else {}

@@ -11,5 +11,27 @@
             <field name="perm_unlink" eval="False"/>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
         </record>
+
+        <record id="hr_leave_handover_acceptance_requester_rule" model="ir.rule">
+            <field name="name">Work handover acceptance: requester on own leave</field>
+            <field name="model_id" ref="model_hr_leave_handover_acceptance"/>
+            <field name="domain_force">[('leave_id.employee_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <record id="hr_leave_handover_acceptance_recipient_rule" model="ir.rule">
+            <field name="name">Work handover acceptance: assigned recipient</field>
+            <field name="model_id" ref="model_hr_leave_handover_acceptance"/>
+            <field name="domain_force">[('employee_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
     </data>
 </odoo>

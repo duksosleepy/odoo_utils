@@ -1,5 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
+    <!-- Reload on upgrade: approvers must read employees they approve time off for. -->
+    <data>
+        <record id="hr.hr_employee_comp_rule" model="ir.rule">
+            <field name="domain_force">['|', '|', '|', '|',
+                ('company_id', 'in', company_ids + [False]),
+                ('parent_id.user_id', '=', user.id),
+                ('id', '=', user.employee_id.parent_id.id),
+                ('user_id', '=', user.id),
+                ('leave_manager_id', '=', user.id)
+            ]</field>
+        </record>
+
+        <record id="hr.hr_employee_public_comp_rule" model="ir.rule">
+            <field name="domain_force">['|', '|', '|', '|',
+                ('company_id', 'in', company_ids + [False]),
+                ('parent_id.user_id', '=', user.id),
+                ('id', '=', user.employee_id.parent_id.id),
+                ('user_id', '=', user.id),
+                ('leave_manager_id', '=', user.id)
+            ]</field>
+        </record>
+    </data>
+
+    <data noupdate="1">
     <record id="hr_employee_officer_mien_rule" model="ir.rule">
         <field name="name">HR Employee: Officer filtered by Miền</field>
         <field name="model_id" ref="hr.model_hr_employee"/>
@@ -11,4 +35,5 @@
         <field name="model_id" ref="hr.model_hr_employee_public"/>
         <field name="domain_force">[(1, '=', 1)]</field>
     </record>
+    </data>
 </odoo>

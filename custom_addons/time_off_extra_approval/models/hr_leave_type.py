@@ -8,6 +8,10 @@ from odoo.addons.hr_job_title_vn.models.hr_version import JOB_TITLE_SELECTION
 
 _logger = logging.getLogger(__name__)
 
+# Allow self-service Time Off flows to flush stored computed fields on leave types
+# (e.g. multi_step_approver_employee_*_id) without granting config write rights.
+_ALLOW_WRITE_HR_LEAVE_TYPE = object()
+
 _HANDOVER_ESCALATION_MIN_JOB_TITLE_KEY = "trưởng nhóm"
 _HANDOVER_MAX_ESCALATION_JOB_TITLE_SELECTION = []
 _include = False
@@ -25,6 +29,14 @@ if not _HANDOVER_MAX_ESCALATION_JOB_TITLE_SELECTION:
 
 class HolidaysType(models.Model):
     _inherit = "hr.leave.type"
+
+    def _check_access(self, operation):
+        if (
+            operation == "write"
+            and self.env.context.get("_allow_write_hr_leave_type") is _ALLOW_WRITE_HR_LEAVE_TYPE
+        ):
+            return None
+        return super()._check_access(operation)
 
     # Multi-step approval (demo) for Time Off requests.
     leave_validation_type = fields.Selection(

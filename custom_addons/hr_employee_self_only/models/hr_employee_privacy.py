@@ -55,6 +55,8 @@ def _privacy_is_personal_tab_hidden(env):
 
 def _privacy_raise_if_employee_no_write(env, employees):
     """Edit Employee Profile = No: no create/write/unlink on hr.employee."""
+    if env.su:
+        return
     if not _privacy_is_employee_edit_forbidden(env):
         return
     if _privacy_is_timeoff_bypass_allowed(env, employees=employees):
@@ -65,12 +67,16 @@ def _privacy_raise_if_employee_no_write(env, employees):
 
 def _privacy_raise_if_hr_version_no_write(env):
     """Edit Employee Profile = No: cannot change employee versions."""
+    if env.su:
+        return
     if _privacy_is_employee_edit_forbidden(env):
         raise AccessError(_("Bạn không có quyền chỉnh sửa hồ sơ nhân viên."))
 
 
 def _privacy_raise_if_hr_employee_resource_no_write(env, resources):
     """Edit Employee Profile = No: cannot change resources linked to employees."""
+    if env.su:
+        return
     if not _privacy_is_employee_edit_forbidden(env):
         return
     if _privacy_is_timeoff_bypass_allowed(env, resources=resources):
@@ -80,6 +86,8 @@ def _privacy_raise_if_hr_employee_resource_no_write(env, resources):
 
 
 def _privacy_raise_if_employee_create_forbidden(env):
+    if env.su:
+        return
     if not _privacy_is_employee_edit_forbidden(env):
         return
     raise AccessError(_("Bạn không có quyền tạo nhân viên."))

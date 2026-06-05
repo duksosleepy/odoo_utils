@@ -16,7 +16,7 @@ class HrEmployee(models.Model):
     @api.model
     def get_time_off_dashboard_data(self, target_date=None):
         result = super().get_time_off_dashboard_data(target_date=target_date)
-        employee = self._get_contextual_employee().sudo()
+        employee = self._get_contextual_employee()._sudo_for_timeoff_access()
         result["da_su_dung"] = employee.da_su_dung if employee else 0.0
         result["con_lai"] = employee.con_lai if employee else 0.0
         return result

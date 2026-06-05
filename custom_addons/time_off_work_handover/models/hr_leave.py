@@ -12,6 +12,10 @@ from odoo.tools import sql
 from odoo.tools.misc import format_date
 from odoo.tools.translate import _
 
+from odoo.addons.hr.models.hr_employee import _ALLOW_READ_HR_EMPLOYEE
+from odoo.addons.time_off_extra_approval.models.hr_leave_type import (
+    _ALLOW_WRITE_HR_LEAVE_TYPE,
+)
 from odoo.addons.time_off_work_handover import constants as handover_constants
 from odoo.addons.hr_job_title_vn.models.hr_version import JOB_TITLE_SELECTION
 
@@ -48,6 +52,13 @@ def _job_title_rank_map():
 
 class HrLeaveHandover(models.Model):
     _inherit = "hr.leave"
+
+    def _with_timeoff_self_service_write_context(self):
+        """Handover M2M + leave-type stored computes during employee self-service."""
+        ctx = {"_allow_read_hr_employee": _ALLOW_READ_HR_EMPLOYEE}
+        if not self.env.user.has_group("hr_holidays.group_hr_holidays_user"):
+            ctx["_allow_write_hr_leave_type"] = _ALLOW_WRITE_HR_LEAVE_TYPE
+        return self.with_context(**ctx)
 
     handover_employee_ids = fields.Many2many(
         comodel_name="hr.employee",
@@ -396,13 +407,20 @@ class HrLeaveHandover(models.Model):
             if len(leave.handover_employee_ids) > 5:
                 raise ValidationError(_("Bạn chỉ có thể chọn tối đa 5 người nhận bàn giao công việc."))
 
+    def _handover_recipient_employees(self):
+        self.ensure_one()
+        recipients = self.handover_employee_ids
+        if not recipients:
+            recipients = self.handover_acceptance_ids.mapped("employee_id")
+        return recipients
+
     @api.constrains("handover_acceptance_ids", "handover_acceptance_ids.employee_id")
     def _check_handover_required_on_submit(self):
         for leave in self:
             if (
                 leave.state in ("confirm", "validate1", "validate")
                 and not leave.skip_work_handover
-                and not leave.handover_employee_ids
+                and not leave._handover_recipient_employees()
             ):
                 raise ValidationError(
                     _("Vui lòng chọn ít nhất một người nhận bàn giao công việc trước khi gửi đơn xin nghỉ phép.")
@@ -2040,13 +2058,13 @@ class HrLeaveHandover(models.Model):
                 and not l.split_group_id
             )
         self._handover_write_before(vals)
-        res = super().write(vals)
+        res = super(HrLeaveHandover, self._with_timeoff_self_service_write_context()).write(vals)
         self._handover_write_after(vals, handover_lines_changed, submit_notify_target)
         return res
 
     def action_confirm(self):
         missing_handover = self.filtered(
-            lambda leave: not leave.skip_work_handover and not leave.handover_employee_ids
+            lambda leave: not leave.skip_work_handover and not leave._handover_recipient_employees()
         )
         if missing_handover:
             raise UserError(
@@ -2059,7 +2077,10 @@ class HrLeaveHandover(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        records = super().create(vals_list)
+        records = super(HrLeaveHandover, self._with_timeoff_self_service_write_context()).create(vals_list)
+        records.filtered(
+            lambda l: l.handover_acceptance_ids and not l.handover_employee_ids
+        )._sync_handover_employees_from_acceptance()
         records._bootstrap_handover_workflow()
         records._mark_handover_requested_at()
         if not self.env.context.get("leave_fast_create"):

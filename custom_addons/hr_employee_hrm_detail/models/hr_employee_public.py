@@ -1,11 +1,32 @@
 # -*- coding: utf-8 -*-
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.fields import Domain
 
 
 class HrEmployeePublic(models.Model):
     _inherit = "hr.employee.public"
+
+    ma_bo_phan_id = fields.Many2one(
+        "hr.store.code",
+        string="Mã bộ phận",
+        readonly=True,
+    )
+    mien = fields.Selection(related="employee_id.mien", readonly=True)
+    # Time-off balance fields: exposed on public profile so employees without
+    # HR officer rights can read their own leave counters when creating requests.
+    phep_chuan = fields.Float(readonly=True)
+    tong_so_phep = fields.Float(readonly=True)
+    da_su_dung = fields.Float(readonly=True)
+    con_lai = fields.Float(readonly=True)
+    ngay_het_han = fields.Date(readonly=True)
+    con_lai_nam_truoc = fields.Float(readonly=True)
+    nam_chot_con_lai = fields.Integer(readonly=True)
+    monthly_paid_leave_cap = fields.Integer(readonly=True)
+    can_edit_monthly_paid_leave_cap = fields.Boolean(
+        related="employee_id.can_edit_monthly_paid_leave_cap",
+        readonly=True,
+    )
 
     def _hr_employee_read_is_restricted(self):
         return (
@@ -25,7 +46,8 @@ class HrEmployeePublic(models.Model):
             [("id", "in", self.ids)],
             model_name="hr.employee.public",
         )
-        return self.search(domain)
+        allowed_ids = super(HrEmployeePublic, self)._search(domain)
+        return self.browse(allowed_ids)
 
     def _filtered_access(self, operation):
         records = super()._filtered_access(operation)
@@ -74,11 +96,14 @@ class HrEmployeePublic(models.Model):
         active_test=True,
         bypass_access=False,
     ):
-        domain = list(
-            self.env["hr.employee.access.mixin"]._hr_employee_apply_access_domain(
-                domain, model_name=self._name
+        # Core hr.employee._search (no ACL) delegates here; skip mixin to avoid
+        # double-filter and employee_id.* sub-search recursion.
+        if not self.env.context.get("hr_employee_search_bridge"):
+            domain = list(
+                self.env["hr.employee.access.mixin"]._hr_employee_apply_access_domain(
+                    domain, model_name=self._name
+                )
             )
-        )
         return super()._search(
             domain,
             offset=offset,
@@ -90,11 +115,12 @@ class HrEmployeePublic(models.Model):
 
     @api.model
     def search_fetch(self, domain, field_names=None, offset=0, limit=None, order=None):
-        domain = list(
-            self.env["hr.employee.access.mixin"]._hr_employee_apply_access_domain(
-                domain, model_name=self._name
+        if not self.env.context.get("hr_employee_search_bridge"):
+            domain = list(
+                self.env["hr.employee.access.mixin"]._hr_employee_apply_access_domain(
+                    domain, model_name=self._name
+                )
             )
-        )
         return super().search_fetch(domain, field_names, offset, limit, order)
 
     @api.model

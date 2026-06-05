@@ -20,6 +20,21 @@ class HrEmployeeAccessMixin(models.AbstractModel):
         ])
 
     @api.model
+    def _hr_employee_time_off_team_domain(self, user=None, model_name=None):
+        """Narrow read for time-off approval (leave_manager_id only)."""
+        user = user or self.env.user
+        # hr.employee.public has leave_manager_id (hr_holidays); never use
+        # employee_id.* here or domain SQL sub-searches loop via hr.employee.
+        return Domain([("leave_manager_id", "=", user.id)])
+
+    @api.model
+    def _hr_employee_access_scope_domain(self, user=None, model_name=None):
+        """Own profile plus employees the user may approve time off for."""
+        return self._hr_employee_access_self_domain(user) | self._hr_employee_time_off_team_domain(
+            user, model_name=model_name
+        )
+
+    @api.model
     def _hr_employee_user_mien(self, user=None):
         user = user or self.env.user
         emp = user.employee_id
@@ -38,7 +53,9 @@ class HrEmployeeAccessMixin(models.AbstractModel):
         return []
 
     @api.model
-    def _hr_employee_mien_match_domain(self, mien_field, dept_mien_field, allowed, user=None):
+    def _hr_employee_mien_match_domain(
+        self, mien_field, dept_mien_field, allowed, user=None, model_name=None
+    ):
         user = user or self.env.user
         return Domain([
             "|",
@@ -46,7 +63,7 @@ class HrEmployeeAccessMixin(models.AbstractModel):
             "&",
             (mien_field, "=", False),
             (dept_mien_field, "in", allowed),
-        ]) | self._hr_employee_access_self_domain(user)
+        ]) | self._hr_employee_access_scope_domain(user, model_name=model_name)
 
     @api.model
     def _hr_employee_apply_access_domain(self, domain, model_name=None):
@@ -63,20 +80,27 @@ class HrEmployeeAccessMixin(models.AbstractModel):
         return "mien", "ma_bo_phan_id.mien"
 
     @api.model
+    def _hr_employee_staff_store_employee_ids(self, user=None):
+        """Same-store employee ids (SQL) for staff; avoids hr.employee _search loops."""
+        user = user or self.env.user
+        emp = user.sudo().employee_id
+        if not emp or not emp.ma_bo_phan_id:
+            return []
+        self.env.cr.execute(
+            "SELECT id FROM hr_employee WHERE ma_bo_phan_id = %s",
+            (emp.ma_bo_phan_id.id,),
+        )
+        return [row[0] for row in self.env.cr.fetchall()]
+
+    @api.model
     def _hr_employee_staff_department_domain(self, user=None, model_name=None):
         """Employees privilege = Employee: same ma_bo_phan_id (+ own profile)."""
         user = user or self.env.user
-        model_name = model_name or "hr.employee"
-        ma_field = (
-            "employee_id.ma_bo_phan_id"
-            if model_name == "hr.employee.public"
-            else "ma_bo_phan_id"
-        )
-        emp = user.employee_id
-        if not emp or not emp.ma_bo_phan_id:
-            return self._hr_employee_access_self_domain(user)
-        return Domain([(ma_field, "=", emp.ma_bo_phan_id.id)]) | self._hr_employee_access_self_domain(
-            user
+        store_ids = self._hr_employee_staff_store_employee_ids(user)
+        if not store_ids:
+            return self._hr_employee_access_scope_domain(user, model_name=model_name)
+        return Domain([("id", "in", store_ids)]) | self._hr_employee_access_scope_domain(
+            user, model_name=model_name
         )
 
     @api.model
@@ -94,10 +118,10 @@ class HrEmployeeAccessMixin(models.AbstractModel):
             return None
         allowed = self._hr_employee_allowed_miens(user)
         if not allowed:
-            return self._hr_employee_access_self_domain(user)
+            return self._hr_employee_access_scope_domain(user, model_name=model_name)
         mien_field, dept_mien_field = self._hr_employee_access_field_names(model_name)
         return self._hr_employee_mien_match_domain(
-            mien_field, dept_mien_field, allowed, user=user
+            mien_field, dept_mien_field, allowed, user=user, model_name=model_name
         )
 
     @api.model
@@ -117,9 +141,9 @@ class HrEmployeeAccessMixin(models.AbstractModel):
         if not self._hr_employee_discuss_access_applies(user):
             return None
         employee_domain = self._hr_employee_apply_access_domain(
-            [], model_name="hr.employee"
+            [], model_name="hr.employee.public"
         )
-        employees = self.env["hr.employee"].with_user(user).search(employee_domain)
+        employees = self.env["hr.employee.public"].with_user(user).search(employee_domain)
         partner_ids = employees.user_id.partner_id.ids
         partner_ids = list({user.partner_id.id, *partner_ids})
         return Domain([("id", "in", partner_ids)])

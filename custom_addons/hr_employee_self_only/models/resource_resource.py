@@ -15,7 +15,7 @@ class ResourceResource(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
-        if _privacy_is_employee_edit_forbidden(self.env):
+        if not self.env.su and _privacy_is_employee_edit_forbidden(self.env):
             linked = records.filtered(lambda r: r.employee_id)
             if linked:
                 linked.sudo().unlink()

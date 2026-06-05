@@ -734,7 +734,7 @@ class HolidaysRequest(models.Model):
 
     def action_confirm(self):
         try:
-            return super(
+            res = super(
                 HolidaysRequest,
                 self.with_context(
                     **{
@@ -745,6 +745,19 @@ class HolidaysRequest(models.Model):
             ).action_confirm()
         except AttributeError:
             return True
+        # Split / monthly-mien flows finish inside super(); dispatch bots once here
+        # (SKIP_* above avoids duplicate pings during intermediate writes).
+        to_notify = self.filtered(
+            lambda l: l.state == "confirm"
+            and l.validation_type == "employee_hr_responsibles"
+        )
+        if to_notify and hasattr(to_notify, "_split_group_notify_submission_for_records"):
+            to_notify._ensure_responsible_approval_lines()
+            to_notify._responsible_backfill_pending_since_if_missing()
+            to_notify._split_group_notify_submission_for_records()
+        elif to_notify:
+            to_notify.filtered("handover_employee_ids")._notify_handover_recipients_submit_via_bot()
+        return res
 
     @api.model_create_multi
     def create(self, vals_list):

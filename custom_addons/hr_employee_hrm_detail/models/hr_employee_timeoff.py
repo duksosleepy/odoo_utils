@@ -1,7 +1,10 @@
 import logging
-from datetime import date
+from datetime import date, datetime, time
+
+import pytz
 
 from odoo import api, fields, models
+from odoo.addons.hr.models.hr_employee import _ALLOW_READ_HR_EMPLOYEE
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tools.translate import _
 
@@ -14,6 +17,9 @@ _LEAVES_BUDGET_STATES = ("confirm", "validate1", "validate")
 _CON_LAI_ZERO_CONFIRMED_CTX = "con_lai_zero_confirmed"
 _SKIP_CON_LAI_ZERO_CHECK_CTX = "skip_con_lai_zero_check"
 _SKIP_CON_LAI_NEGATIVE_CHECK_CTX = "skip_con_lai_negative_check"
+_TIMEOFF_SELF_SERVICE_CTX = "hr_employee_timeoff_self_service"
+# HR-only fields that time-off logic must read on the user's own employee record.
+_TIMEOFF_SELF_READ_FIELDS = frozenset({"version_id", "mien", "ma_bo_phan_id"})
 # Tên Job Position được phép chỉnh `monthly_paid_leave_cap`.
 _MONTHLY_CAP_EDITOR_JOB_POSITION = "sale admin"
 
@@ -51,19 +57,138 @@ class HrEmployeeTimeoff(models.Model):
         return self.env["hr.employee"].search([("id", "in", self.ids)])
 
     @api.model
+    def _timeoff_self_service_context(self):
+        return {_TIMEOFF_SELF_SERVICE_CTX: True}
+
+    def _check_access(self, operation):
+        if (
+            operation == "read"
+            and not self.env.su
+            and self.env.context.get("_allow_read_hr_employee") is _ALLOW_READ_HR_EMPLOYEE
+        ):
+            return None
+        return super()._check_access(operation)
+
+    @api.model
+    def _has_field_access(self, field, operation):
+        if (
+            operation == "read"
+            and not self.env.su
+            and self.env.context.get("_allow_read_hr_employee") is _ALLOW_READ_HR_EMPLOYEE
+        ):
+            return True
+        if (
+            field.name in _TIMEOFF_SELF_READ_FIELDS
+            and operation == "read"
+            and not self.env.su
+            and not self.env.user.has_group("hr.group_hr_user")
+        ):
+            own = self.env.user.employee_id
+            if own and self.ids and set(self.ids) <= set(own.ids):
+                return True
+            if self.env.context.get(_TIMEOFF_SELF_SERVICE_CTX):
+                return True
+        return super()._has_field_access(field, operation)
+
+    def _employee_for_timeoff_calendar(self):
+        """Sudo + self-service context for calendar helpers (mandatory/unusual days)."""
+        if self.env.user.has_group("hr.group_hr_user"):
+            return self
+        return self._sudo_for_timeoff_access().with_context(
+            **self._timeoff_self_service_context()
+        )
+
+    def _get_mandatory_days(self, start_date, end_date):
+        return super(
+            HrEmployeeTimeoff, self._employee_for_timeoff_calendar()
+        )._get_mandatory_days(start_date, end_date)
+
+    def _get_unusual_days(self, date_from, date_to=None):
+        if self.env.user.has_group("hr.group_hr_user"):
+            return super()._get_unusual_days(date_from, date_to)
+        self = self._employee_for_timeoff_calendar().sudo()
+        date_from_date = datetime.strptime(date_from, "%Y-%m-%d %H:%M:%S").date()
+        date_to_date = (
+            datetime.strptime(date_to, "%Y-%m-%d %H:%M:%S").date() if date_to else None
+        )
+        employee_versions = self.env["hr.version"].search(
+            [("employee_id", "=", self.id)]
+        ).filtered(lambda version: version._is_overlapping_period(date_from_date, date_to_date))
+        if not employee_versions:
+            calendar = self.resource_calendar_id or self.env.company.resource_calendar_id
+            return calendar._get_unusual_days(
+                datetime.combine(fields.Date.from_string(date_from), time.min).replace(
+                    tzinfo=pytz.UTC
+                ),
+                datetime.combine(fields.Date.from_string(date_to), time.max).replace(
+                    tzinfo=pytz.UTC
+                ),
+                self.company_id,
+            )
+        unusual_days = {}
+        for version in employee_versions:
+            tmp_date_from = max(date_from_date, version.date_start)
+            tmp_date_to = (
+                min(date_to_date, version.date_end) if version.date_end else date_to_date
+            )
+            calendar = version.resource_calendar_id
+            if not calendar:
+                continue
+            unusual_days.update(
+                calendar._get_unusual_days(
+                    datetime.combine(
+                        fields.Date.from_string(tmp_date_from), time.min
+                    ).replace(tzinfo=pytz.UTC),
+                    datetime.combine(
+                        fields.Date.from_string(tmp_date_to), time.max
+                    ).replace(tzinfo=pytz.UTC),
+                    self.company_id,
+                )
+            )
+        return unusual_days
+
+    def _get_public_holidays(self, date_start, date_end):
+        return super(
+            HrEmployeeTimeoff, self._employee_for_timeoff_calendar()
+        )._get_public_holidays(date_start, date_end)
+
+    @api.model
     def _get_contextual_employee(self):
         ctx = self.env.context
+        employee = self.env["hr.employee"]
         for key in ("employee_id", "default_employee_id"):
             if ctx.get(key) is not None:
-                employee = self._search_accessible_employee(ctx.get(key))
-                if employee:
-                    return employee
-        return self.env.user.employee_id
+                found = self._search_accessible_employee(ctx.get(key))
+                if found:
+                    employee = found
+                    break
+        if not employee:
+            employee = self.env.user.employee_id
+        if employee:
+            employee = employee.with_context(**self._timeoff_self_service_context())
+        return employee._sudo_for_timeoff_access() if employee else employee
+
+    def _sudo_for_timeoff_access(self):
+        """Read version-linked employee fields for permitted time-off UI without HR officer."""
+        if self.env.user.has_group("hr.group_hr_user"):
+            return self
+        if not self:
+            return self
+        own = self.env.user.employee_id
+        if own and set(self.ids) <= set(own.ids):
+            return self.sudo()
+        accessible = self.env["hr.employee"].search([("id", "in", self.ids)])
+        if set(accessible.ids) != set(self.ids):
+            return self
+        return accessible.sudo()
 
     def get_mandatory_days(self, start_date, end_date):
+        self = self.with_context(**self._timeoff_self_service_context())
         if self:
             self = self.env["hr.employee"].search([("id", "in", self.ids)])
-        return super().get_mandatory_days(start_date, end_date)
+        if not self:
+            self = self._get_contextual_employee()
+        return super(HrEmployeeTimeoff, self).get_mandatory_days(start_date, end_date)
 
     phep_chuan = fields.Float(string="Phép chuẩn")
     tong_so_phep = fields.Float(string="Tổng số phép")
@@ -175,11 +300,12 @@ class HrEmployeeTimeoff(models.Model):
         """Làm mới số phép HRM trước khi dashboard đọc da_su_dung / con_lai."""
         employee = self._get_contextual_employee()
         if employee:
-            employee._compute_time_off_summary()
+            employee.with_context(**employee._timeoff_summary_privacy_context())._compute_time_off_summary()
         ctx = employee._timeoff_summary_privacy_context() if employee else {
             "employees_no_timeoff_write": True,
             "employees_no_allowed_employee_ids": [],
         }
+        ctx.update(self._timeoff_self_service_context())
         return super(HrEmployeeTimeoff, self.with_context(**ctx)).get_time_off_dashboard_data(
             target_date=target_date
         )
@@ -262,7 +388,8 @@ class HrLeaveTimeOffSummary(models.Model):
 
         emp = self.env["hr.employee"].search([("id", "=", employee_id)], limit=1)
         if emp:
-            emp._compute_time_off_summary()
+            emp = emp._sudo_for_timeoff_access()
+            emp.with_context(**emp._timeoff_summary_privacy_context())._compute_time_off_summary()
         if (emp.con_lai or 0.0) > 0:
             return self._con_lai_zero_no_confirmation()
 
@@ -276,7 +403,10 @@ class HrLeaveTimeOffSummary(models.Model):
         employees = self.mapped("employee_id").filtered(lambda e: e.id)
         employees = employees.env["hr.employee"].search([("id", "in", employees.ids)])
         if employees:
-            employees._compute_time_off_summary()
+            employees = employees._sudo_for_timeoff_access()
+            employees.with_context(
+                **employees._timeoff_summary_privacy_context()
+            )._compute_time_off_summary()
 
     @api.model
     def _con_lai_negative_check_skipped(self):
@@ -393,7 +523,9 @@ class HrLeaveTimeOffSummary(models.Model):
                 employee = Employee.browse(emp_id)
                 if not employee.exists():
                     continue
-                self._assert_con_lai_not_negative(employee, projected)
+                self._assert_con_lai_not_negative(
+                    employee._sudo_for_timeoff_access(), projected
+                )
         records = super().create(vals_list)
         if not self.env.context.get("leave_fast_create"):
             records._recompute_employee_time_off_summary()
@@ -423,7 +555,9 @@ class HrLeaveTimeOffSummary(models.Model):
                 if not employee.exists():
                     continue
                 self._assert_con_lai_not_negative(
-                    employee, projected, exclude_leave_ids=[leave.id]
+                    employee._sudo_for_timeoff_access(),
+                    projected,
+                    exclude_leave_ids=[leave.id],
                 )
         res = super().write(vals)
         if not self.env.context.get("leave_fast_create") and {
@@ -456,3 +590,15 @@ class HrLeaveTimeOffSummary(models.Model):
         res = super().action_draft()
         self._recompute_employee_time_off_summary()
         return res
+
+
+class HrLeaveTypeTimeoff(models.Model):
+    _inherit = "hr.leave.type"
+
+    @api.model
+    def get_allocation_data_request(self, target_date=None, hidden_allocations=True):
+        ctx = self.env["hr.employee"]._timeoff_self_service_context()
+        return super(HrLeaveTypeTimeoff, self.with_context(**ctx)).get_allocation_data_request(
+            target_date=target_date,
+            hidden_allocations=hidden_allocations,
+        )

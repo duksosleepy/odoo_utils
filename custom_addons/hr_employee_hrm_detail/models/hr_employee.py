@@ -1,9 +1,11 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
+from odoo.fields import Domain
 from odoo.tools.translate import _
 
 
 MIEN_ACCESS_FIELDS = frozenset({'mien', 'ma_bo_phan_id'})
+
 
 
 class HrEmployee(models.Model):
@@ -19,14 +21,48 @@ class HrEmployee(models.Model):
         *,
         active_test=True,
         bypass_access=False,
+        **kwargs,
     ):
-        domain = self.env['hr.employee.access.mixin']._hr_employee_apply_access_domain(
-            domain, model_name=self._name
+        if self.browse().has_access("read") or bypass_access:
+            domain = self.env["hr.employee.access.mixin"]._hr_employee_apply_access_domain(
+                domain, model_name=self._name
+            )
+            return super()._search(
+                domain,
+                offset=offset,
+                limit=limit,
+                order=order,
+                active_test=active_test,
+                bypass_access=bypass_access,
+                **kwargs,
+            )
+        # Mirror core HR redirect; bridge context skips mixin on public._search.
+        domain = Domain(domain)
+        domain = domain.map_conditions(
+            lambda cond: Domain("id", cond.operator, cond.value)
+            if cond.field_expr == "current_version_id"
+            else cond
         )
-        return super()._search(
-            domain,
-            offset=offset,
-            limit=limit,
+        try:
+            ids = (
+                self.env["hr.employee.public"]
+                .with_context(hr_employee_search_bridge=True)
+                ._search(
+                    domain,
+                    offset=offset,
+                    limit=limit,
+                    order=order,
+                    active_test=active_test,
+                    bypass_access=bypass_access,
+                    **kwargs,
+                )
+            )
+        except ValueError as e:
+            raise AccessError(
+                self.env._("You do not have access to this document.")
+            ) from e
+        return super(HrEmployee, self.sudo())._search(
+            [("id", "in", ids)],
             order=order,
             active_test=active_test,
             bypass_access=bypass_access,
@@ -34,9 +70,10 @@ class HrEmployee(models.Model):
 
     @api.model
     def search_fetch(self, domain, field_names=None, offset=0, limit=None, order=None):
-        domain = self.env['hr.employee.access.mixin']._hr_employee_apply_access_domain(
-            domain, model_name=self._name
-        )
+        if self.browse().has_access("read"):
+            domain = self.env["hr.employee.access.mixin"]._hr_employee_apply_access_domain(
+                domain, model_name=self._name
+            )
         return super().search_fetch(domain, field_names, offset, limit, order)
 
     def _get_id_hrm_duplicate(self, id_hrm):

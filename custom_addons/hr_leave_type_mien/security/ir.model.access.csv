@@ -1,5 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_hr_leave_mien_config_manager,hr.leave.mien.config.manager,model_hr_leave_mien_config,hr_holidays.group_hr_holidays_manager,1,1,1,1
 access_hr_leave_mien_config_user,hr.leave.mien.config.user,model_hr_leave_mien_config,hr_holidays.group_hr_holidays_user,1,0,0,0
+access_hr_leave_mien_config_employee,hr.leave.mien.config.employee,model_hr_leave_mien_config,base.group_user,1,0,0,0
 access_hr_leave_mien_line_manager,hr.leave.mien.line.manager,model_hr_leave_mien_line,hr_holidays.group_hr_holidays_manager,1,1,1,1
 access_hr_leave_mien_line_user,hr.leave.mien.line.user,model_hr_leave_mien_line,hr_holidays.group_hr_holidays_user,1,0,0,0
+access_hr_leave_mien_line_employee,hr.leave.mien.line.employee,model_hr_leave_mien_line,base.group_user,1,0,0,0
