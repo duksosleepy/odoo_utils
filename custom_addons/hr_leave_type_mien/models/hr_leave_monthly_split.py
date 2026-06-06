@@ -15,6 +15,9 @@ _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX = "skip_responsible_submit_notify"
 _logger = logging.getLogger(__name__)
 
 _SKIP_MONTHLY_MIEN_SPLIT_CTX = "skip_monthly_mien_split"
+# Khi bật: bỏ qua việc tự cân bằng lại P1/P2/O cả tháng (tránh đệ quy khi
+# chính cơ chế cân bằng đang ghi/ tạo bản ghi).
+_SKIP_MONTHLY_MIEN_REBALANCE_CTX = "skip_monthly_mien_rebalance"
 
 
 class HrLeaveMonthlySplit(models.Model):
@@ -195,10 +198,11 @@ class HrLeaveMonthlySplit(models.Model):
         cursor = date_from
         while cursor <= date_to:
             month_end = min(date_to, self._month_end_date(cursor))
-            days_before = self._count_leave_days_in_calendar_month(
+            days_before = self._count_active_leave_days_in_month_before(
                 employee,
                 cursor.year,
                 cursor.month,
+                cursor,
                 exclude_leave_ids,
             )
             month_segments, paid_used = self._monthly_mien_split_plan_for_month(
@@ -449,7 +453,10 @@ class HrLeaveMonthlySplit(models.Model):
         }
         if "split_group_id" in leave._fields:
             write_vals["split_group_id"] = group_id
-        leave.with_context(leave_skip_state_check=True).write(write_vals)
+        leave.with_context(
+            leave_skip_state_check=True,
+            **{_SKIP_MONTHLY_MIEN_REBALANCE_CTX: True},
+        ).write(write_vals)
 
         companions = []
         for kind, seg_from, seg_to in plan[1:]:
@@ -471,6 +478,7 @@ class HrLeaveMonthlySplit(models.Model):
         if companions:
             create_ctx = {
                 _SKIP_MONTHLY_MIEN_SPLIT_CTX: True,
+                _SKIP_MONTHLY_MIEN_REBALANCE_CTX: True,
                 "leave_fast_create": True,
                 "mail_activity_automation_skip": True,
                 _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX: True,
@@ -500,3 +508,271 @@ class HrLeaveMonthlySplit(models.Model):
             leave.request_date_from,
             leave.request_date_to,
         )
+
+    # ------------------------------------------------------------------
+    # Cân bằng lại P1/P2/O cả tháng theo thứ tự ngày (ngày sớm nhất = P1)
+    # ------------------------------------------------------------------
+
+    def _monthly_mien_kind_of_leave_type(self, leave_type):
+        """'p1' | 'p2' | 'o' | None — suy ra loại quy tắc từ mã trong tên loại phép."""
+        from .hr_leave_mien_config import (
+            O_LEAVE_TYPE_CODE,
+            P1_LEAVE_TYPE_CODE,
+            P2_LEAVE_TYPE_CODE,
+        )
+
+        if not leave_type:
+            return None
+        code = (self.env["hr.leave.type"].code_from_name(leave_type.name) or "").upper()
+        if code == P1_LEAVE_TYPE_CODE.upper():
+            return "p1"
+        if code == P2_LEAVE_TYPE_CODE.upper():
+            return "p2"
+        if code == O_LEAVE_TYPE_CODE.upper():
+            return "o"
+        return None
+
+    @api.model
+    def _monthly_mien_active_leaves_in_month(self, employee, year, month):
+        month_start, month_end = self._month_date_bounds(year, month)
+        return self.search(
+            [
+                ("employee_id", "=", employee.id),
+                ("state", "not in", ("cancel", "refuse")),
+                ("request_date_from", "<=", month_end),
+                ("request_date_to", ">=", month_start),
+            ],
+            order="request_date_from, id",
+        )
+
+    @api.model
+    def _monthly_mien_desired_day_kinds(self, employee, year, month):
+        """{date: 'p1'|'p2'|'o'} cho mọi ngày nghỉ (chưa hủy/từ chối) trong tháng.
+
+        Sắp xếp theo ngày: ngày sớm nhất → P1, 2 ngày kế → P2, còn lại → O,
+        có giới hạn bởi hạn mức tháng và ngân sách phép có lương còn lại.
+        """
+        month_start, month_end = self._month_date_bounds(year, month)
+        leaves = self._monthly_mien_active_leaves_in_month(employee, year, month)
+        day_set = set()
+        for leave in leaves:
+            if not leave.request_date_from or not leave.request_date_to:
+                continue
+            cursor = max(leave.request_date_from, month_start)
+            stop = min(leave.request_date_to, month_end)
+            while cursor <= stop:
+                day_set.add(cursor)
+                cursor += timedelta(days=1)
+        if not day_set:
+            return {}
+        cap = self._monthly_mien_employee_monthly_cap(employee)
+        # Ngân sách phép có lương dành cho tháng này = Còn lại sau khi loại trừ
+        # mọi đơn của chính tháng này (vì ta đang gán lại loại cho chúng).
+        budget = self._monthly_mien_paid_budget_for_employee(
+            employee, exclude_leave_ids=leaves.ids
+        )
+        result = {}
+        paid_used = 0
+        for day in sorted(day_set):
+            can_paid = paid_used < cap and (budget is None or paid_used < budget)
+            if can_paid:
+                result[day] = "p1" if paid_used == 0 else "p2"
+                paid_used += 1
+            else:
+                result[day] = "o"
+        return result
+
+    def _rebalance_write_ctx(self):
+        return {
+            _SKIP_MONTHLY_MIEN_REBALANCE_CTX: True,
+            _SKIP_MONTHLY_MIEN_SPLIT_CTX: True,
+            "leave_skip_state_check": True,
+            "leave_skip_date_check": True,
+            "leave_fast_create": True,
+            # Đây là gán lại loại phép tự động trên đơn đã có — không áp dụng
+            # giới hạn ngày quá khứ / nghỉ khẩn cấp như khi người dùng nhập tay.
+            "skip_past_leave_limit_check": True,
+            "skip_emergency_leave_check": True,
+        }
+
+    def _rebalance_create_ctx(self):
+        return {
+            _SKIP_MONTHLY_MIEN_REBALANCE_CTX: True,
+            _SKIP_MONTHLY_MIEN_SPLIT_CTX: True,
+            "leave_fast_create": True,
+            "mail_activity_automation_skip": True,
+            _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX: True,
+            "skip_past_leave_limit_check": True,
+            "skip_emergency_leave_check": True,
+            "leave_skip_state_check": True,
+            "leave_skip_date_check": True,
+        }
+
+    def _rebalance_record_segments(self, leave, desired):
+        """List (kind, date_from, date_to) cho từng ngày của đơn theo bản đồ ``desired``.
+
+        Trả về None nếu thiếu thông tin (an toàn, bỏ qua bản ghi).
+        """
+        dates = []
+        cursor = leave.request_date_from
+        while cursor <= leave.request_date_to:
+            dates.append(cursor)
+            cursor += timedelta(days=1)
+        if not dates:
+            return None
+        kinds = []
+        for day in dates:
+            kind = desired.get(day)
+            if not kind:
+                return None
+            kinds.append(kind)
+        segments = []
+        seg_kind = kinds[0]
+        seg_from = dates[0]
+        seg_prev = dates[0]
+        for day, kind in zip(dates[1:], kinds[1:]):
+            if kind == seg_kind:
+                seg_prev = day
+                continue
+            segments.append((seg_kind, seg_from, seg_prev))
+            seg_kind = kind
+            seg_from = day
+            seg_prev = day
+        segments.append((seg_kind, seg_from, seg_prev))
+        return segments
+
+    def _rebalance_split_record_into_segments(self, leave, segments):
+        group_id = (
+            leave.split_group_id
+            if "split_group_id" in leave._fields and leave.split_group_id
+            else str(uuid.uuid4())
+        )
+        first_kind, first_from, first_to = segments[0]
+        first_type = self._monthly_mien_leave_type_for_kind(
+            first_kind, employee=leave.employee_id
+        )
+        if not first_type:
+            return self.env["hr.leave"]
+        write_vals = {
+            "holiday_status_id": first_type.id,
+            "request_date_from": first_from,
+            "request_date_to": first_to,
+        }
+        if "split_group_id" in leave._fields:
+            write_vals["split_group_id"] = group_id
+        leave.with_context(**self._rebalance_write_ctx()).write(write_vals)
+
+        companion_vals = []
+        for kind, seg_from, seg_to in segments[1:]:
+            leave_type = self._monthly_mien_leave_type_for_kind(
+                kind, employee=leave.employee_id
+            )
+            if not leave_type:
+                continue
+            vals = self._monthly_mien_make_companion_vals(
+                leave, leave_type, seg_from, seg_to, group_id
+            )
+            # Tạo companion ở confirm rồi validate sau — tránh constraint trên
+            # đơn đã duyệt khi create trực tiếp với state=validate.
+            if leave.state == "validate":
+                vals["state"] = "confirm"
+            companion_vals.append(vals)
+        companions = self.env["hr.leave"]
+        if companion_vals:
+            Leave = self.with_context(**self._rebalance_create_ctx())
+            for vals in companion_vals:
+                companions |= Leave.create([vals])
+            to_validate = companions.filtered(
+                lambda l: l.state == "confirm" and leave.state == "validate"
+            )
+            if to_validate:
+                to_validate.with_context(**self._rebalance_write_ctx()).write(
+                    {"state": "validate"}
+                )
+        return leave | companions
+
+    def _reconcile_monthly_mien_record(self, leave, desired):
+        """Đưa loại phép của ``leave`` về đúng theo ``desired``. Trả về các bản ghi đã đụng tới."""
+        segments = self._rebalance_record_segments(leave, desired)
+        if not segments:
+            return self.env["hr.leave"]
+        if len(segments) == 1:
+            target_kind = segments[0][0]
+            if self._monthly_mien_kind_of_leave_type(leave.holiday_status_id) == target_kind:
+                return self.env["hr.leave"]
+            new_type = self._monthly_mien_leave_type_for_kind(
+                target_kind, employee=leave.employee_id
+            )
+            if not new_type or new_type == leave.holiday_status_id:
+                return self.env["hr.leave"]
+            leave.with_context(**self._rebalance_write_ctx()).write(
+                {"holiday_status_id": new_type.id}
+            )
+            return leave
+        return self._rebalance_split_record_into_segments(leave, segments)
+
+    def _rebalance_monthly_mien_month(self, employee, year, month):
+        touched = self.env["hr.leave"]
+        if not employee or not self._monthly_p1p2_mien_applies(employee):
+            return touched
+        desired = self._monthly_mien_desired_day_kinds(employee, year, month)
+        if not desired:
+            return touched
+        for leave in self._monthly_mien_active_leaves_in_month(employee, year, month):
+            if not leave.request_date_from or not leave.request_date_to:
+                continue
+            # Chỉ xử lý bản ghi nằm gọn trong tháng (đơn nhiều tháng đã được
+            # tách theo ranh giới tháng lúc tạo).
+            if (leave.request_date_from.year, leave.request_date_from.month) != (year, month):
+                continue
+            if (leave.request_date_to.year, leave.request_date_to.month) != (year, month):
+                continue
+            try:
+                touched |= self._reconcile_monthly_mien_record(leave, desired)
+            except Exception:
+                _logger.exception(
+                    "monthly_mien_rebalance: reconcile failed leave_id=%s", leave.id
+                )
+        return touched
+
+    def _collect_monthly_mien_rebalance_targets(self):
+        """Tập (employee_id, year, month) cần cân bằng lại theo các đơn trong ``self``."""
+        targets = set()
+        for leave in self:
+            employee = leave.employee_id
+            if not employee or not self._monthly_p1p2_mien_applies(employee):
+                continue
+            date_from = leave._get_leave_start_date()
+            date_to = leave._get_leave_end_date()
+            if not date_from or not date_to:
+                continue
+            if date_to < date_from:
+                date_from, date_to = date_to, date_from
+            year, month = date_from.year, date_from.month
+            while (year, month) <= (date_to.year, date_to.month):
+                targets.add((employee.id, year, month))
+                if month == 12:
+                    year += 1
+                    month = 1
+                else:
+                    month += 1
+        return targets
+
+    def _run_monthly_mien_rebalance(self, targets):
+        if not targets or self.env.context.get(_SKIP_MONTHLY_MIEN_REBALANCE_CTX):
+            return self.env["hr.leave"]
+        Employee = self.env["hr.employee"]
+        touched = self.env["hr.leave"]
+        for employee_id, year, month in targets:
+            employee = Employee.browse(employee_id)
+            if not employee.exists():
+                continue
+            touched |= self._rebalance_monthly_mien_month(employee, year, month)
+        if touched and hasattr(touched, "_recompute_employee_time_off_summary"):
+            try:
+                touched._recompute_employee_time_off_summary()
+            except Exception:
+                _logger.exception(
+                    "monthly_mien_rebalance: time-off summary recompute failed"
+                )
+        return touched

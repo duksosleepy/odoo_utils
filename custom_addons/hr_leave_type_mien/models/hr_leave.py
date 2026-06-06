@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import calendar
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
@@ -17,6 +17,7 @@ from .hr_leave_mien_config import (
     P2_LEAVE_TYPE_CODE,
 )
 from .hr_leave_monthly_split import (
+    _SKIP_MONTHLY_MIEN_REBALANCE_CTX,
     _SKIP_MONTHLY_MIEN_SPLIT_CTX,
     _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX,
 )
@@ -169,6 +170,44 @@ class HrLeave(models.Model):
         return total
 
     @api.model
+    def _leave_days_overlapping_range(self, leave, start, end):
+        if not leave.request_date_from or not leave.request_date_to:
+            return 0
+        a = max(leave.request_date_from, start)
+        b = min(leave.request_date_to, end)
+        if a > b:
+            return 0
+        return (b - a).days + 1
+
+    @api.model
+    def _count_active_leave_days_in_month_before(
+        self, employee, year, month, before_date, exclude_leave_ids=None
+    ):
+        """Số ngày nghỉ (đơn không hủy/từ chối) trong tháng có ngày *sớm hơn* ``before_date``.
+
+        Dùng để gán P1/P2/O theo thứ tự ngày: ngày nghỉ sớm nhất trong tháng → P1.
+        """
+        before_date = self._coerce_to_date(before_date)
+        if not before_date:
+            return 0
+        month_start, month_end = self._month_date_bounds(year, month)
+        window_end = min(before_date - timedelta(days=1), month_end)
+        if window_end < month_start:
+            return 0
+        domain = [
+            ("employee_id", "=", employee.id),
+            ("state", "not in", ("cancel", "refuse")),
+            ("request_date_from", "<=", window_end),
+            ("request_date_to", ">=", month_start),
+        ]
+        if exclude_leave_ids:
+            domain.append(("id", "not in", list(exclude_leave_ids)))
+        total = 0
+        for leave in self.search(domain):
+            total += self._leave_days_overlapping_range(leave, month_start, window_end)
+        return total
+
+    @api.model
     def _employee_has_leave_in_calendar_month(
         self, employee, year, month, exclude_leave_ids=None
     ):
@@ -246,8 +285,8 @@ class HrLeave(models.Model):
         if not self._monthly_p1p2_mien_applies(employee) or not start_date:
             return None
         exclude = [leave.id] if leave and leave.id else []
-        days_before = self._count_leave_days_in_calendar_month(
-            employee, start_date.year, start_date.month, exclude
+        days_before = self._count_active_leave_days_in_month_before(
+            employee, start_date.year, start_date.month, start_date, exclude
         )
         cap = self._monthly_mien_employee_monthly_cap(employee)
         if days_before >= cap:
@@ -610,8 +649,12 @@ class HrLeave(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        rebalance_skip = self.env.context.get(_SKIP_MONTHLY_MIEN_REBALANCE_CTX)
         new_vals_list = []
         for vals in vals_list:
+            if rebalance_skip:
+                new_vals_list.append(vals)
+                continue
             employee = (
                 self.env["hr.employee"].browse(vals["employee_id"])
                 if vals.get("employee_id")
@@ -624,21 +667,49 @@ class HrLeave(models.Model):
                 )
             new_vals_list.append(vals)
         ctx = dict(self.env.context)
-        if self._monthly_mien_any_will_split_vals_list(new_vals_list):
+        if not rebalance_skip and self._monthly_mien_any_will_split_vals_list(
+            new_vals_list
+        ):
             ctx[_SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX] = True
         records = super(HrLeave, self.with_context(ctx)).create(new_vals_list)
         if not self.env.context.get(_SKIP_MONTHLY_MIEN_SPLIT_CTX):
             for leave in records:
                 if leave._monthly_mien_should_split(leave):
                     leave._monthly_mien_do_split(leave)
+            records._run_monthly_mien_rebalance(
+                records._collect_monthly_mien_rebalance_targets()
+            )
         return records
 
     def write(self, vals):
-        if not {"employee_id", "request_date_from", "request_date_to", "date_from", "date_to"} & set(
-            vals
-        ):
+        if self.env.context.get(_SKIP_MONTHLY_MIEN_REBALANCE_CTX):
             return super().write(vals)
-        if len(self) == 1:
+        date_emp_change = bool(
+            {
+                "employee_id",
+                "request_date_from",
+                "request_date_to",
+                "date_from",
+                "date_to",
+            }
+            & set(vals)
+        )
+        # Hủy/từ chối (đổi state) cũng phải kích hoạt cân bằng lại để ngày nghỉ
+        # sớm nhất còn lại trong tháng được gán P1. Chỉ quan tâm khi đơn vào/ra
+        # khỏi trạng thái cancel/refuse (các bước duyệt confirm→validate không
+        # đổi tập đơn đang hiệu lực nên bỏ qua cho nhẹ).
+        state_change = "state" in vals and (
+            vals.get("state") in ("cancel", "refuse")
+            or any(leave.state in ("cancel", "refuse") for leave in self)
+        )
+        if not date_emp_change and not state_change:
+            return super().write(vals)
+
+        targets = self._collect_monthly_mien_rebalance_targets()
+
+        if not date_emp_change:
+            res = super().write(vals)
+        elif len(self) == 1:
             leave = self
             employee = (
                 self.env["hr.employee"].browse(vals["employee_id"])
@@ -651,23 +722,36 @@ class HrLeave(models.Model):
             )
             res = super().write(vals)
             if not self.env.context.get(_SKIP_MONTHLY_MIEN_SPLIT_CTX):
-                leave = self
                 if leave._monthly_mien_should_split(leave):
                     leave._monthly_mien_do_split(leave)
-            return res
-        for leave in self:
-            row_vals = dict(vals)
-            employee = (
-                self.env["hr.employee"].browse(row_vals["employee_id"])
-                if "employee_id" in row_vals
-                else leave.employee_id
-            )
-            start_date = self._parse_start_date_from_vals(row_vals, leave=leave)
-            row_vals = self._apply_monthly_leave_rule_to_vals(
-                row_vals, employee, start_date, leave=leave
-            )
-            super(HrLeave, leave).write(row_vals)
-        return True
+        else:
+            for leave in self:
+                row_vals = dict(vals)
+                employee = (
+                    self.env["hr.employee"].browse(row_vals["employee_id"])
+                    if "employee_id" in row_vals
+                    else leave.employee_id
+                )
+                start_date = self._parse_start_date_from_vals(row_vals, leave=leave)
+                row_vals = self._apply_monthly_leave_rule_to_vals(
+                    row_vals, employee, start_date, leave=leave
+                )
+                super(HrLeave, leave).write(row_vals)
+            res = True
+
+        if not self.env.context.get(_SKIP_MONTHLY_MIEN_SPLIT_CTX):
+            targets |= self._collect_monthly_mien_rebalance_targets()
+            self._run_monthly_mien_rebalance(targets)
+        return res
+
+    def unlink(self):
+        targets = set()
+        if not self.env.context.get(_SKIP_MONTHLY_MIEN_REBALANCE_CTX):
+            targets = self._collect_monthly_mien_rebalance_targets()
+        res = super().unlink()
+        if targets:
+            self.env["hr.leave"]._run_monthly_mien_rebalance(targets)
+        return res
 
     def _split_group_notify_submission_for_records(self):
         self._monthly_mien_ensure_split_before_notify()

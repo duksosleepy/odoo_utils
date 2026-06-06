@@ -261,14 +261,36 @@ class HrEmployeeTimeoff(models.Model):
                 )
         return super().write(vals)
 
+    @api.model
+    def _summary_unpaid_leave_type_ids(self):
+        """ID loại phép không lương (mã O) — chỉ loại này không trừ quỹ phép."""
+        LeaveType = self.env["hr.leave.type"]
+        if hasattr(LeaveType, "search_by_code"):
+            try:
+                o_types = LeaveType.search_by_code("O", limit=None)
+                if o_types:
+                    return o_types.ids
+            except Exception:  # pragma: no cover
+                _logger.debug(
+                    "summary: cannot resolve Unpaid Leave (O) type", exc_info=True
+                )
+        return []
+
     def _get_leave_days_used_for_summary(self):
-        """Tổng ngày nghỉ đã được phê duyệt (state = validate)."""
+        """Tổng ngày phép có lương đã được phê duyệt (state = validate).
+
+        Không tính ngày nghỉ không lương (mã O) vì chúng không trừ vào quỹ phép.
+        """
         self.ensure_one()
+        domain = [
+            ("employee_id", "=", self.id),
+            ("state", "in", _LEAVES_DEDUCT_STATES),
+        ]
+        unpaid_ids = self._summary_unpaid_leave_type_ids()
+        if unpaid_ids:
+            domain.append(("holiday_status_id", "not in", unpaid_ids))
         groups = self.env["hr.leave"].sudo().read_group(
-            domain=[
-                ("employee_id", "=", self.id),
-                ("state", "in", _LEAVES_DEDUCT_STATES),
-            ],
+            domain=domain,
             fields=["number_of_days:sum"],
             groupby=[],
         )
