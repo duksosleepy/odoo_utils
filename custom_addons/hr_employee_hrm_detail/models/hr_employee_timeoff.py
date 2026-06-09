@@ -524,14 +524,18 @@ class HrLeaveTimeOffSummary(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        if not self.env.context.get("leave_fast_create") and {
+        summary_fields_changed = bool({
             "employee_id",
             "holiday_status_id",
             "number_of_days",
             "request_date_from",
             "request_date_to",
             "state",
-        }.intersection(vals):
+        }.intersection(vals))
+        terminal_state_change = vals.get("state") in ("refuse", "cancel")
+        if summary_fields_changed and (
+            terminal_state_change or not self.env.context.get("leave_fast_create")
+        ):
             self._recompute_employee_time_off_summary()
         return res
 

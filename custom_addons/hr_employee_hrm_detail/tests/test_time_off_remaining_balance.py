@@ -65,6 +65,10 @@ class TestTimeOffRemainingBalance(TransactionCase):
 
         self.assertEqual(used, 4)
         self.assertIn(
+            ("state", "in", ("confirm", "validate1", "validate")),
+            read_group.call_args.kwargs["domain"],
+        )
+        self.assertIn(
             ("holiday_status_id", "in", [11, 12]),
             read_group.call_args.kwargs["domain"],
         )
@@ -90,6 +94,10 @@ class TestTimeOffRemainingBalance(TransactionCase):
             )
 
         self.assertEqual(committed, 3)
+        self.assertIn(
+            ("state", "in", ("confirm", "validate1", "validate")),
+            read_group.call_args.kwargs["domain"],
+        )
         self.assertIn(
             ("holiday_status_id", "in", [11, 12]),
             read_group.call_args.kwargs["domain"],

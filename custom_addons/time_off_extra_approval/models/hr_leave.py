@@ -548,6 +548,7 @@ class HolidaysRequest(models.Model):
         ).write(
             {"state": "refuse", "second_approver_id": current_employee.id}
         )
+        self._recompute_employee_time_off_summary()
         self.mapped("meeting_id").write({"active": False})
         if reason_text:
             for leave in self:
