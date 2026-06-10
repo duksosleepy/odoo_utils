@@ -72,12 +72,47 @@ class HrLeaveHandover(models.Model):
             for field_name in (field_names or ())
         )
 
+    @api.model
+    def _handover_onchange_fields_spec(self, fields_spec):
+        """Preserve trusted employee reads in nested onchange serialization."""
+        result = {name: dict(spec) for name, spec in fields_spec.items()}
+        employee_fields = {
+            "handover_employee_ids",
+            "unavailable_handover_employee_ids",
+            "handover_refused_recipient_ids",
+            "handover_replaceable_recipient_ids",
+        }
+        for field_name in employee_fields & result.keys():
+            field_spec = result[field_name]
+            field_spec["context"] = {
+                **field_spec.get("context", {}),
+                "_allow_read_hr_employee": _ALLOW_READ_HR_EMPLOYEE,
+            }
+
+        acceptance_spec = result.get("handover_acceptance_ids")
+        if acceptance_spec is not None:
+            acceptance_spec["context"] = {
+                **acceptance_spec.get("context", {}),
+                "_allow_read_hr_employee": _ALLOW_READ_HR_EMPLOYEE,
+            }
+            line_fields = {
+                name: dict(spec)
+                for name, spec in acceptance_spec.get("fields", {}).items()
+            }
+            employee_spec = line_fields.get("employee_id")
+            if employee_spec is not None:
+                employee_spec["context"] = {
+                    **employee_spec.get("context", {}),
+                    "_allow_read_hr_employee": _ALLOW_READ_HR_EMPLOYEE,
+                }
+            acceptance_spec["fields"] = line_fields
+        return result
+
     def onchange(self, values, field_names, fields_spec):
-        target = (
-            self._with_handover_employee_read_context()
-            if self._is_handover_onchange(field_names)
-            else self
-        )
+        is_handover = self._is_handover_onchange(field_names)
+        target = self._with_handover_employee_read_context() if is_handover else self
+        if is_handover:
+            fields_spec = self._handover_onchange_fields_spec(fields_spec)
         return super(HrLeaveHandover, target).onchange(
             values, field_names, fields_spec
         )

@@ -61,3 +61,42 @@ class TestHandoverEmployeeRead(TransactionCase):
                 internal_recipient.name,
                 self.recipient.name,
             )
+
+    def test_handover_onchange_marks_nested_employee_serialization(self):
+        Leave = self.env["hr.leave"]
+        original = {
+            "handover_employee_ids": {"fields": {"display_name": {}}},
+            "handover_acceptance_ids": {
+                "fields": {
+                    "employee_id": {"fields": {"display_name": {}}},
+                    "handover_work_content": {},
+                }
+            },
+            "name": {},
+        }
+
+        prepared = Leave._handover_onchange_fields_spec(original)
+
+        self.assertIs(
+            prepared["handover_employee_ids"]["context"][
+                "_allow_read_hr_employee"
+            ],
+            _ALLOW_READ_HR_EMPLOYEE,
+        )
+        self.assertIs(
+            prepared["handover_acceptance_ids"]["context"][
+                "_allow_read_hr_employee"
+            ],
+            _ALLOW_READ_HR_EMPLOYEE,
+        )
+        self.assertIs(
+            prepared["handover_acceptance_ids"]["fields"]["employee_id"][
+                "context"
+            ]["_allow_read_hr_employee"],
+            _ALLOW_READ_HR_EMPLOYEE,
+        )
+        self.assertNotIn("context", original["handover_employee_ids"])
+        self.assertNotIn(
+            "context",
+            original["handover_acceptance_ids"]["fields"]["employee_id"],
+        )
