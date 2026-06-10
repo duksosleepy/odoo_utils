@@ -53,12 +53,34 @@ def _job_title_rank_map():
 class HrLeaveHandover(models.Model):
     _inherit = "hr.leave"
 
+    def _with_handover_employee_read_context(self):
+        """Allow internal relational reads while processing handover data."""
+        return self.with_context(_allow_read_hr_employee=_ALLOW_READ_HR_EMPLOYEE)
+
     def _with_timeoff_self_service_write_context(self):
         """Handover M2M + leave-type stored computes during employee self-service."""
         ctx = {"_allow_read_hr_employee": _ALLOW_READ_HR_EMPLOYEE}
         if not self.env.user.has_group("hr_holidays.group_hr_holidays_user"):
             ctx["_allow_write_hr_leave_type"] = _ALLOW_WRITE_HR_LEAVE_TYPE
         return self.with_context(**ctx)
+
+    @api.model
+    def _is_handover_onchange(self, field_names):
+        handover_fields = {"handover_acceptance_ids", "handover_employee_ids"}
+        return any(
+            (field_name or "").split(".", 1)[0] in handover_fields
+            for field_name in (field_names or ())
+        )
+
+    def onchange(self, values, field_names, fields_spec):
+        target = (
+            self._with_handover_employee_read_context()
+            if self._is_handover_onchange(field_names)
+            else self
+        )
+        return super(HrLeaveHandover, target).onchange(
+            values, field_names, fields_spec
+        )
 
     handover_employee_ids = fields.Many2many(
         comodel_name="hr.employee",
@@ -388,7 +410,7 @@ class HrLeaveHandover(models.Model):
             if len(employees.ids) != len(set(employees.ids)):
                 raise ValidationError(_("Mỗi người nhận bàn giao chỉ được xuất hiện một lần."))
 
-    @api.constrains("state", "handover_acceptance_ids", "handover_acceptance_ids.handover_work_content")
+    @api.constrains("state", "handover_acceptance_ids")
     def _check_handover_employee_availability(self):
         for leave in self.filtered("handover_employee_ids"):
             unavailable = leave._get_unavailable_handover_employees()
@@ -414,7 +436,7 @@ class HrLeaveHandover(models.Model):
             recipients = self.handover_acceptance_ids.mapped("employee_id")
         return recipients
 
-    @api.constrains("handover_acceptance_ids", "handover_acceptance_ids.employee_id")
+    @api.constrains("handover_acceptance_ids")
     def _check_handover_required_on_submit(self):
         for leave in self:
             if (
@@ -429,7 +451,6 @@ class HrLeaveHandover(models.Model):
     @api.constrains(
         "skip_work_handover",
         "employee_id",
-        "employee_id.job_title",
     )
     def _check_skip_work_handover_permission(self):
         for leave in self.filtered("skip_work_handover"):
@@ -1432,7 +1453,7 @@ class HrLeaveHandover(models.Model):
                 requester_user.id,
             )
 
-    @api.onchange("handover_acceptance_ids", "handover_acceptance_ids.employee_id")
+    @api.onchange("handover_acceptance_ids")
     def _onchange_handover_acceptance_ids(self):
         for leave in self:
             for idx, line in enumerate(leave.handover_acceptance_ids, start=1):
