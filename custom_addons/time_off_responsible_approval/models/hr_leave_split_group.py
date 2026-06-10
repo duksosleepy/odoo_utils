@@ -222,15 +222,19 @@ class HrLeaveSplitGroup(models.Model):
         approve_style = style + "background-color:#714B67;"
         refuse_style = style + "background-color:#6c757d;"
         pid = primary_leave.id
+        split_group_id = primary_leave.split_group_id or ""
         return Markup(
             '<a class="o_timeoff_leave_pill o_timeoff_split_approve_all" href="#" '
             'data-oe-model="hr.leave" data-oe-id="{pid}" data-oe-type="approval_group" '
-            'data-oe-action="approve_all" style="{approve_style}">{approve_label}</a>'
+            'data-oe-split-group="{split_group_id}" data-oe-action="approve_all" '
+            'style="{approve_style}">{approve_label}</a>'
             '<a class="o_timeoff_leave_pill o_timeoff_split_refuse_all" href="#" '
             'data-oe-model="hr.leave" data-oe-id="{pid}" data-oe-type="approval_group" '
-            'data-oe-action="refuse_all" style="{refuse_style}">{refuse_label}</a>'
+            'data-oe-split-group="{split_group_id}" data-oe-action="refuse_all" '
+            'style="{refuse_style}">{refuse_label}</a>'
         ).format(
             pid=pid,
+            split_group_id=escape(split_group_id),
             approve_style=approve_style,
             refuse_style=refuse_style,
             approve_label=escape(_("Phê duyệt tất cả")),
@@ -544,6 +548,30 @@ class HrLeaveSplitGroup(models.Model):
         # action_responsible_approve cascades to siblings in the same split group.
         return primary.action_responsible_approve()
 
+    @api.model
+    def _resolve_discuss_split_group_leave(self, leave_id, split_group_id=False):
+        """Resolve a current split segment from a potentially stale bot message."""
+        leave = self.browse(int(leave_id or 0)).exists()
+        if split_group_id and (not leave or leave.split_group_id != split_group_id):
+            leave = self.search(
+                [("split_group_id", "=", split_group_id)],
+                order="id",
+                limit=1,
+            )
+        return leave
+
+    @api.model
+    def action_discuss_split_group_approve_by_reference(
+        self, leave_id, split_group_id=False
+    ):
+        """Resolve a surviving split segment when a bot message contains a stale leave ID."""
+        leave = self._resolve_discuss_split_group_leave(leave_id, split_group_id)
+        if not leave:
+            raise UserError(
+                _("Không tìm thấy phần đơn nghỉ còn hiệu lực để phê duyệt.")
+            )
+        return leave.action_discuss_split_group_approve_all()
+
     def action_discuss_split_group_refuse_all(self):
         """RPC/Discuss: từ chối cả nhóm (P1/P2 cascade refuse đã có sẵn)."""
         self.ensure_one()
@@ -552,11 +580,30 @@ class HrLeaveSplitGroup(models.Model):
             return primary.action_responsible_refuse(reason=self._split_group_refuse_reason())
         return primary.action_responsible_refuse(reason=self._split_group_refuse_reason())
 
+    @api.model
+    def action_discuss_split_group_refuse_by_reference(
+        self, leave_id, split_group_id=False
+    ):
+        """Resolve a surviving split segment when a bot message contains a stale leave ID."""
+        leave = self._resolve_discuss_split_group_leave(leave_id, split_group_id)
+        if not leave:
+            raise UserError(
+                _("Không tìm thấy phần đơn nghỉ còn hiệu lực để từ chối.")
+            )
+        return leave.action_discuss_split_group_refuse_all()
+
     def action_responsible_approve(self):
+        group_id = self.split_group_id if len(self) == 1 else False
+        group_leave_ids = (
+            self._get_split_group_leaves().ids
+            if len(self) == 1 and group_id
+            else self.ids
+        )
         res = super().action_responsible_approve()
         if self.env.context.get(_SKIP_SPLIT_GROUP_APPROVE_CASCADE_CTX):
             return res
-        for leave in self:
+        surviving = self.browse(group_leave_ids).exists()
+        for leave in surviving:
             if not leave._split_group_is_multi_segment():
                 continue
             siblings = leave._get_split_group_leaves().filtered(

@@ -81,6 +81,7 @@ async function handleApprovalGroupAction(ev, store) {
     }
     const resId = resolveLeaveId(link);
     const action = link.dataset.oeAction;
+    const splitGroupId = link.dataset.oeSplitGroup || false;
     if (!resId || !action) {
         return false;
     }
@@ -91,7 +92,11 @@ async function handleApprovalGroupAction(ev, store) {
 
     const runApprove = async () => {
         try {
-            await orm.call("hr.leave", "action_discuss_split_group_approve_all", [[resId]]);
+            await orm.call(
+                "hr.leave",
+                "action_discuss_split_group_approve_by_reference",
+                [resId, splitGroupId]
+            );
             notification.add(_t("Đã phê duyệt toàn bộ đơn nghỉ."), { type: "success" });
         } catch (e) {
             notification.add(e.data?.message || e.message, { type: "danger" });
@@ -100,7 +105,11 @@ async function handleApprovalGroupAction(ev, store) {
 
     const runRefuse = async () => {
         try {
-            await orm.call("hr.leave", "action_discuss_split_group_refuse_all", [[resId]]);
+            await orm.call(
+                "hr.leave",
+                "action_discuss_split_group_refuse_by_reference",
+                [resId, splitGroupId]
+            );
             notification.add(_t("Đã từ chối toàn bộ đơn nghỉ."), { type: "warning" });
         } catch (e) {
             notification.add(e.data?.message || e.message, { type: "danger" });

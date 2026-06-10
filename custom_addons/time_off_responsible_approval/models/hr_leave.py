@@ -387,6 +387,7 @@ class HrLeaveResponsibleApproval(models.Model):
                     can = leave.env.user in leave._get_multi_step_approvers()
             leave.can_multi_step_approve = can
 
+    @api.depends_context("uid")
     @api.depends(
         "state",
         "employee_id",
@@ -1628,6 +1629,19 @@ class HrLeaveResponsibleApproval(models.Model):
             return hook(approved_line=approved_line)
         return None
 
+    def _refresh_responsible_actionable_users(self):
+        """Persist the next approver before their Waiting For Me search runs."""
+        leaves = self.sudo()
+        leaves.invalidate_recordset(
+            [
+                "approval_actionable_user_ids",
+                "can_responsible_approve",
+                "approval_current_step_label",
+            ]
+        )
+        leaves._compute_approval_actionable_user_ids()
+        leaves.flush_recordset(["approval_actionable_user_ids"])
+
     def action_responsible_approve(self):
         self.ensure_one()
         if self.validation_type != "employee_hr_responsibles":
@@ -1679,6 +1693,7 @@ class HrLeaveResponsibleApproval(models.Model):
                         missing_since = next_wave.filtered(lambda ln: not ln.pending_since)
                         if missing_since:
                             missing_since.write({"pending_since": fields.Datetime.now()})
+                    self._refresh_responsible_actionable_users()
                     self._notify_responsible_current_turn()
             self._responsible_approval_after_approve(approved_line=user_line)
 
