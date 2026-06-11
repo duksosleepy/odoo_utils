@@ -48,10 +48,16 @@ class HrLeaveStoreChain(models.Model):
     # Helpers
     # ------------------------------------------------------------------
 
+    def _store_chain_requester_employee(self):
+        """Requester on sudo so job_title/mien reads work for Time Off Responsible users."""
+        self.ensure_one()
+        emp = self.employee_id
+        return emp.sudo() if emp else emp
+
     def _store_chain_employee_job_title(self):
         """Return the raw (lowercase, stripped) job_title key of the leave's employee."""
         self.ensure_one()
-        emp = self.employee_id
+        emp = self._store_chain_requester_employee()
         if not emp:
             return ""
         return (emp.job_title or "").strip().lower()

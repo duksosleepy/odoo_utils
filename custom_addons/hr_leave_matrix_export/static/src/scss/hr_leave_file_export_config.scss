@@ -1,0 +1,181 @@
+// Compact, color-coded layout — left-aligned Excel-style grid.
+
+$o-export-config-stt-bg: #eef1f4;
+$o-export-config-stt-head: #d5dbe1;
+
+$o-export-config-id-bg: #e8f4fc;
+$o-export-config-id-head: #bdd7ee;
+
+$o-export-config-leave-ch-bg: #e8f8ef;
+$o-export-config-leave-ch-head: #a9dfbf;
+
+$o-export-config-leave-vp-bg: #e3f0fb;
+$o-export-config-leave-vp-head: #85c1e9;
+
+$o-export-config-import-ch-bg: #fef9e7;
+$o-export-config-import-ch-head: #f9e79f;
+
+$o-export-config-import-vp-bg: #f4ecf7;
+$o-export-config-import-vp-head: #d2b4de;
+
+$o-export-config-checked: #27ae60;
+$o-export-config-border: #b4b4b4;
+
+.o_list_view.o_hr_leave_file_export_config_list {
+    --ListRenderer-margin-x: 0;
+
+    .o_list_renderer {
+        display: block;
+        width: max-content;
+        max-width: 100%;
+        margin: 0;
+        padding: 0.25rem 0 0;
+    }
+
+    .o_list_table {
+        width: 620px !important;
+        min-width: 620px;
+        max-width: 620px;
+        table-layout: fixed;
+        border-collapse: collapse;
+        border: 1px solid $o-export-config-border;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .o_list_table th,
+    .o_list_table td {
+        white-space: normal;
+        vertical-align: middle;
+        padding: 0.35rem 0.5rem;
+        border: 1px solid $o-export-config-border;
+        text-align: center;
+    }
+
+    .o_list_table th {
+        font-size: 0.8125rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #1f2933;
+    }
+
+    .o_list_table tbody tr:hover td {
+        filter: brightness(0.98);
+    }
+
+    .o_list_table th.o_list_record_selector,
+    .o_list_table td.o_list_record_selector {
+        width: 2rem !important;
+        min-width: 2rem !important;
+        max-width: 2rem !important;
+        background-color: #f3f3f3;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+
+    .o_list_table th[data-name="sequence"],
+    .o_list_table td.o_list_number {
+        width: 3rem !important;
+        min-width: 3rem !important;
+        max-width: 3rem !important;
+        text-align: center;
+        background-color: $o-export-config-stt-bg;
+    }
+
+    .o_list_table th[data-name="sequence"] {
+        background-color: $o-export-config-stt-head;
+    }
+
+    .o_list_table th[data-name="employee_hrm_id"],
+    .o_list_table td.o_data_cell[name="employee_hrm_id"] {
+        width: 7.5rem !important;
+        min-width: 7.5rem !important;
+        max-width: 7.5rem !important;
+        text-align: left;
+        background-color: $o-export-config-id-bg;
+    }
+
+    .o_list_table th[data-name="employee_hrm_id"] {
+        background-color: $o-export-config-id-head;
+        text-align: center;
+    }
+
+    .o_list_table th[data-name="export_leave_ch"] {
+        background-color: $o-export-config-leave-ch-head;
+    }
+
+    .o_list_table th[data-name="export_leave_vp"] {
+        background-color: $o-export-config-leave-vp-head;
+    }
+
+    .o_list_table th[data-name="export_import_capnhatcong_ch"] {
+        background-color: $o-export-config-import-ch-head;
+    }
+
+    .o_list_table th[data-name="export_import_capnhatcong_vp"] {
+        background-color: $o-export-config-import-vp-head;
+    }
+
+    .o_list_table th[data-name="export_leave_ch"],
+    .o_list_table th[data-name="export_leave_vp"],
+    .o_list_table th[data-name="export_import_capnhatcong_ch"],
+    .o_list_table th[data-name="export_import_capnhatcong_vp"] {
+        width: 6.75rem !important;
+        min-width: 6.75rem !important;
+        max-width: 6.75rem !important;
+        text-align: center;
+    }
+
+    .o_list_table td.o_data_cell[name="export_leave_ch"] {
+        background-color: $o-export-config-leave-ch-bg;
+    }
+
+    .o_list_table td.o_data_cell[name="export_leave_vp"] {
+        background-color: $o-export-config-leave-vp-bg;
+    }
+
+    .o_list_table td.o_data_cell[name="export_import_capnhatcong_ch"] {
+        background-color: $o-export-config-import-ch-bg;
+    }
+
+    .o_list_table td.o_data_cell[name="export_import_capnhatcong_vp"] {
+        background-color: $o-export-config-import-vp-bg;
+    }
+
+    .o_list_table td.o_boolean_toggle_cell,
+    .o_list_table td.o_boolean_cell {
+        width: 6.75rem !important;
+        min-width: 6.75rem !important;
+        max-width: 6.75rem !important;
+        text-align: center;
+    }
+
+    .o_list_table td.o_data_cell[name^="export_"] {
+        .form-check-input:checked {
+            background-color: $o-export-config-checked;
+            border-color: $o-export-config-checked;
+        }
+    }
+
+    .o_list_table th.o_list_open_form_view,
+    .o_list_table td.o_list_record_open_form_view {
+        width: 2.25rem !important;
+        min-width: 2.25rem !important;
+        max-width: 2.25rem !important;
+        background-color: #f3f3f3;
+    }
+
+    .o_list_table .o_field_widget.o_field_char {
+        width: 100%;
+    }
+
+    .o_list_table .o_field_widget.o_field_char input {
+        width: 100%;
+        max-width: 100%;
+        text-align: left;
+        background-color: #fff;
+        border: 1px solid #c8c8c8;
+        border-radius: 0;
+        padding: 0.15rem 0.35rem;
+    }
+}

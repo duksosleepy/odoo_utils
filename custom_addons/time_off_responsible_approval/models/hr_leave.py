@@ -529,7 +529,7 @@ class HrLeaveResponsibleApproval(models.Model):
         if self.validation_type != "employee_hr_responsibles":
             return False
         user = user or self.env.user
-        emp = self.employee_id
+        emp = self.employee_id.sudo()
         if not emp or not emp.user_id or emp.user_id != user:
             return False
         return (emp.job_title or "") != _DIRECTOR_JOB_TITLE_KEY

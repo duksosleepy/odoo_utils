@@ -29,6 +29,12 @@ patch(ExportAll, {
             <i class="fa fa-fw fa-file-excel-o me-1"/>Kết xuất nghỉ phép CH
         </DropdownItem>
         <DropdownItem
+            t-if="showHrLeaveMatrixExport and (matrixExportAccess.show_vp || matrixExportAccess.show_import_capnhatcong_vp)"
+            class="'o_hr_leave_import_capnhatcong_vp_menu'"
+            onSelected.bind="onImportCapnhatcongVpExport">
+            <i class="fa fa-fw fa-file-excel-o me-1"/>import_capnhatcong VP
+        </DropdownItem>
+        <DropdownItem
             t-if="showHrLeaveMatrixExport and matrixExportAccess.show_ch"
             class="'o_hr_leave_import_capnhatcong_menu'"
             onSelected.bind="onImportCapnhatcongExport">
@@ -41,7 +47,7 @@ patch(ExportAll.prototype, {
     setup() {
         super.setup(...arguments);
         this.orm = useService("orm");
-        this.matrixExportAccess = { show_vp: false, show_ch: false };
+        this.matrixExportAccess = { show_vp: false, show_ch: false, show_import_capnhatcong_vp: false };
         this.showHrLeaveMatrixExport = false;
         onWillStart(async () => {
             if (this.env.model?.root?.resModel === "hr.leave") {
@@ -73,6 +79,16 @@ patch(ExportAll.prototype, {
             _t("import_capnhatcong CUA HANG"),
             {
                 form_view_ref: "hr_leave_matrix_export.view_hr_leave_import_capnhatcong_wizard_form",
+            }
+        );
+    },
+
+    async onImportCapnhatcongVpExport() {
+        await this._openLeaveExportWizard(
+            "hr.leave.matrix.export.wizard",
+            _t("import_capnhatcong VP"),
+            {
+                form_view_ref: "hr_leave_matrix_export.view_hr_leave_import_capnhatcong_vp_wizard_form",
             }
         );
     },

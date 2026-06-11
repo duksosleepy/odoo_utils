@@ -90,6 +90,10 @@ class HrEmployeeTimeoff(models.Model):
                 return True
             if self.env.context.get(_TIMEOFF_SELF_SERVICE_CTX):
                 return True
+            if self.env.user.has_group("hr_holidays.group_hr_holidays_responsible"):
+                accessible = self.env["hr.employee"].search([("id", "in", self.ids)])
+                if self.ids and set(accessible.ids) == set(self.ids):
+                    return True
         return super()._has_field_access(field, operation)
 
     def _employee_for_timeoff_calendar(self):

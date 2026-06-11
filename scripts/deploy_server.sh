@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Chay TREN SERVER cong ty.
+# Chay TREN SERVER cong ty (goi tu deploy_server_company.bat tren Windows).
 set -eu
 
 ODOO_CONTAINER="${ODOO_CONTAINER:-odoo-odoo19-1}"

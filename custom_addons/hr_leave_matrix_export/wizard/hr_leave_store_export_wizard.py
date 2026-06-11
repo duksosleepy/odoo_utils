@@ -200,16 +200,54 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
     def _get_current_user_leave_mien(self):
         return self._employee_mien(self.env.user.employee_id)
 
+    def _get_current_user_export_file_types(self):
+        employee = self.env.user.employee_id
+        return self.env["hr.leave.file.export.config"].get_export_file_types_for_employee(
+            employee
+        )
+
     @api.model
     def _get_matrix_export_menu_access(self):
-        """Menu kết xuất theo miền user (cần quyền export)."""
+        """Menu kết xuất theo cấu hình trích xuất file hoặc miền user (cần quyền export)."""
         if not self.env.user.has_group("base.group_allow_export"):
-            return {"show_vp": False, "show_ch": False}
+            return {"show_vp": False, "show_ch": False, "show_import_capnhatcong_vp": False}
+        configured_types = self._get_current_user_export_file_types()
+        if configured_types:
+            return {
+                "show_vp": "leave_vp" in configured_types,
+                "show_ch": "leave_ch" in configured_types
+                or "import_capnhatcong" in configured_types,
+                "show_import_capnhatcong_vp": "import_capnhatcong_vp" in configured_types
+                or "leave_vp" in configured_types,
+            }
         mien = self._get_current_user_leave_mien()
         return {
             "show_vp": mien in self.MIEN_VP_CODES,
             "show_ch": mien in self.MIEN_CH_CODES,
+            "show_import_capnhatcong_vp": mien in self.MIEN_VP_CODES,
         }
+
+    def _check_matrix_export_file_type(self, export_file_type):
+        if not self.env.user.has_group("base.group_allow_export"):
+            raise UserError(_("You need export permissions to download this file."))
+        configured_types = self._get_current_user_export_file_types()
+        if configured_types:
+            allowed = set(configured_types)
+            if export_file_type == "import_capnhatcong_vp" and "leave_vp" in allowed:
+                allowed.add("import_capnhatcong_vp")
+            if export_file_type == "import_capnhatcong" and "leave_ch" in allowed:
+                allowed.add("import_capnhatcong")
+            if export_file_type not in allowed:
+                raise UserError(
+                    _("Bạn không có quyền trích xuất loại file này. Vui lòng liên hệ HR.")
+                )
+            return
+        allowed_miens = (
+            self.MIEN_VP_CODES
+            if export_file_type in ("leave_vp", "import_capnhatcong_vp")
+            else self.MIEN_CH_CODES
+        )
+        self._check_matrix_export_mien(allowed_miens)
 
     def _check_matrix_export_mien(self, allowed_miens):
         if not self.env.user.has_group("base.group_allow_export"):
@@ -587,7 +625,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
 
     def action_export_store_excel(self):
         self.ensure_one()
-        self._check_matrix_export_mien(self.MIEN_CH_CODES)
+        self._check_matrix_export_file_type("leave_ch")
 
         year, month = int(self.year), int(self.month)
         last_day = calendar.monthrange(year, month)[1]
@@ -675,7 +713,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         date_cell = xlwt_module.easyxf(borders, num_format_str="M/D/YY")
         return header, cell, red, red_int, date_cell
 
-    def _build_import_capnhatcong_xls(self, payloads):
+    def _build_import_capnhatcong_xls(self, payloads, sheet_name="import_capnhatcong CUA HANG"):
         try:
             import xlwt  # noqa: PLC0415
         except ImportError as err:
@@ -687,7 +725,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             self._import_capnhatcong_xlwt_styles(xlwt)
         )
         workbook = xlwt.Workbook()
-        sheet = workbook.add_sheet("import_capnhatcong CUA HANG"[:31])
+        sheet = workbook.add_sheet(sheet_name[:31])
 
         for col, title in enumerate(IMPORT_CAPNHATCONG_HEADERS):
             sheet.write(0, col, title, header_style)
@@ -731,7 +769,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
     def action_export_import_capnhatcong_ch_excel(self):
         """File import cập nhật công cửa hàng (miền Bắc / Nam / ĐTT) — định dạng .xls."""
         self.ensure_one()
-        self._check_matrix_export_mien(self.MIEN_CH_CODES)
+        self._check_matrix_export_file_type("import_capnhatcong")
 
         year, month = int(self.year), int(self.month)
         last_day = calendar.monthrange(year, month)[1]
@@ -753,6 +791,49 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
 
         data = self._build_import_capnhatcong_xls(payloads)
         filename = "import_capnhatcong CUA HANG_%s-%02d.xls" % (year, month)
+
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": filename,
+                "mimetype": "application/vnd.ms-excel",
+                "raw": data,
+                "res_model": self._name,
+                "res_id": self.id,
+            }
+        )
+        return {
+            "type": "ir.actions.act_url",
+            "url": "/web/content/%s?download=true" % attachment.id,
+            "target": "self",
+        }
+
+    def action_export_import_capnhatcong_vp_excel(self):
+        """File import cập nhật công văn phòng (miền VP) — định dạng .xls."""
+        self.ensure_one()
+        self._check_matrix_export_file_type("import_capnhatcong_vp")
+
+        year, month = int(self.year), int(self.month)
+        last_day = calendar.monthrange(year, month)[1]
+        month_start = date(year, month, 1)
+        month_end = date(year, month, last_day)
+        leaves = self._search_leaves_in_mien(
+            year, month, self._parse_domain(), self.MIEN_VP_CODES
+        )
+
+        payloads = []
+        for leave in self._iter_export_root_leaves(leaves):
+            for segment in self._iter_leave_export_segments_merged(leave, month_start, month_end):
+                payloads.append(
+                    self._import_capnhatcong_row_payload(
+                        segment["leave"],
+                        segment["ngay_bd"],
+                        segment["ngay_kt"],
+                        ma_khieu=segment["ma_khieu"],
+                    )
+                )
+
+        data = self._build_import_capnhatcong_xls(payloads, sheet_name="import_capnhatcong VP")
+        filename = "import_capnhatcong VP_%s-%02d.xls" % (year, month)
 
         attachment = self.env["ir.attachment"].create(
             {
