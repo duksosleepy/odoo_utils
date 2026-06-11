@@ -100,11 +100,14 @@ class HrLeaveStoreChain(models.Model):
     def _store_chain_handover_asm_employee(self):
         """ASM explicitly selected on Work Handover To, if any."""
         self.ensure_one()
-        employees = (
-            self.handover_acceptance_ids.mapped("employee_id")
-            | self.handover_employee_ids
+        if "handover_employee_ids" not in self._fields:
+            return self.env["hr.employee"]
+        employee_ids = set(self.handover_employee_ids.ids)
+        employee_ids.update(
+            self.handover_acceptance_ids.sudo().mapped("employee_id").ids
         )
-        return employees.sudo().filtered(
+        employees = self.env["hr.employee"].sudo().browse(employee_ids)
+        return employees.filtered(
             lambda emp: (emp.job_title or "").strip().lower() == "asm"
             and emp.user_id
             and not emp.user_id.share

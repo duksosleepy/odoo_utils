@@ -28,13 +28,17 @@ class HrEmployee(models.Model):
             self.env.context.get("_allow_read_hr_employee")
             is _ALLOW_READ_HR_EMPLOYEE
         ):
+            # The internal read flag must also skip record rules: the base ORM
+            # applies ir.rule directly in _search (not via _check_access), so
+            # without bypass_access a scoped user could not fetch colleague
+            # rows referenced by trusted handover/approval code paths.
             return super()._search(
                 domain,
                 offset=offset,
                 limit=limit,
                 order=order,
                 active_test=active_test,
-                bypass_access=bypass_access,
+                bypass_access=True,
                 **kwargs,
             )
         if self.browse().has_access("read") or bypass_access:

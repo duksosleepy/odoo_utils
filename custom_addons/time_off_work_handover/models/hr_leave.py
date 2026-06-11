@@ -50,12 +50,42 @@ def _job_title_rank_map():
     return rank_map
 
 
+_HANDOVER_ONCHANGE_TRIGGER_FIELDS = frozenset(
+    {
+        "handover_acceptance_ids",
+        "handover_employee_ids",
+        "request_date_from",
+        "request_date_to",
+        "date_from",
+        "date_to",
+        "request_hour_from",
+        "request_hour_to",
+        "request_date_from_period",
+        "request_date_to_period",
+    }
+)
+_HANDOVER_ONCHANGE_SPEC_FIELDS = frozenset(
+    {
+        "handover_employee_ids",
+        "unavailable_handover_employee_ids",
+        "handover_refused_recipient_ids",
+        "handover_replaceable_recipient_ids",
+        "handover_acceptance_ids",
+    }
+)
+
+
 class HrLeaveHandover(models.Model):
     _inherit = "hr.leave"
 
     def _with_handover_employee_read_context(self):
         """Allow internal relational reads while processing handover data."""
         return self.with_context(_allow_read_hr_employee=_ALLOW_READ_HR_EMPLOYEE)
+
+    def _handover_employee_browse(self, employee_ids):
+        """Browse colleagues for handover logic without tripping HR employee ACL."""
+        Employee = self._with_handover_employee_read_context().env["hr.employee"]
+        return Employee.sudo().browse(employee_ids)
 
     def _with_timeoff_self_service_write_context(self):
         """Handover M2M + leave-type stored computes during employee self-service."""
@@ -73,16 +103,22 @@ class HrLeaveHandover(models.Model):
         )
 
     @api.model
+    def _needs_handover_read_context(self, field_names, fields_spec):
+        """True when onchange may read colleague hr.employee rows for handover."""
+        if any(
+            (field_name or "").split(".", 1)[0] in _HANDOVER_ONCHANGE_TRIGGER_FIELDS
+            for field_name in (field_names or ())
+        ):
+            return True
+        if fields_spec and _HANDOVER_ONCHANGE_SPEC_FIELDS & set(fields_spec):
+            return True
+        return False
+
+    @api.model
     def _handover_onchange_fields_spec(self, fields_spec):
         """Preserve trusted employee reads in nested onchange serialization."""
         result = {name: dict(spec) for name, spec in fields_spec.items()}
-        employee_fields = {
-            "handover_employee_ids",
-            "unavailable_handover_employee_ids",
-            "handover_refused_recipient_ids",
-            "handover_replaceable_recipient_ids",
-        }
-        for field_name in employee_fields & result.keys():
+        for field_name in _HANDOVER_ONCHANGE_SPEC_FIELDS & result.keys():
             field_spec = result[field_name]
             field_spec["context"] = {
                 **field_spec.get("context", {}),
@@ -109,9 +145,11 @@ class HrLeaveHandover(models.Model):
         return result
 
     def onchange(self, values, field_names, fields_spec):
-        is_handover = self._is_handover_onchange(field_names)
-        target = self._with_handover_employee_read_context() if is_handover else self
-        if is_handover:
+        needs_handover = self._needs_handover_read_context(field_names, fields_spec)
+        target = (
+            self._with_handover_employee_read_context() if needs_handover else self
+        )
+        if needs_handover and fields_spec:
             fields_spec = self._handover_onchange_fields_spec(fields_spec)
         return super(HrLeaveHandover, target).onchange(
             values, field_names, fields_spec
@@ -772,13 +810,13 @@ class HrLeaveHandover(models.Model):
                 leave.handover_waiting_label = _("Tất cả người nhận bàn giao đã chấp nhận")
 
     @api.depends(
-        "state",
-        "handover_acceptance_ids.state",
-        "handover_acceptance_ids.employee_id",
-        "handover_acceptance_ids.employee_id.name",
+        "request_date_from",
+        "request_date_to",
+        "date_from",
+        "date_to",
     )
     def _compute_unavailable_handover_employee_ids(self):
-        Employee = self.env["hr.employee"]
+        Employee = self._with_handover_employee_read_context().env["hr.employee"]
         for leave in self:
             start_dt, end_dt = leave._get_requested_interval()
             if not start_dt or not end_dt:
@@ -792,7 +830,10 @@ class HrLeaveHandover(models.Model):
                     ("date_to", ">", start_dt),
                 ]
             )
-            leave.unavailable_handover_employee_ids = overlapping.mapped("employee_id")
+            unavailable_ids = overlapping.mapped("employee_id").ids
+            leave.unavailable_handover_employee_ids = leave._handover_employee_browse(
+                unavailable_ids
+            )
 
     def _current_user_escalation_assigned_handover_recipient_line(self):
         """Acceptance row for current user if they were designated by handover_escalation_user_id (e.g. trưởng BP)."""
@@ -992,7 +1033,7 @@ class HrLeaveHandover(models.Model):
                 ("date_to", ">", start_dt),
             ]
         )
-        return overlapping.mapped("employee_id")
+        return self._handover_employee_browse(overlapping.mapped("employee_id").ids)
 
     @api.depends(
         "request_date_from",
@@ -1503,8 +1544,8 @@ class HrLeaveHandover(models.Model):
         for leave in self:
             for idx, line in enumerate(leave.handover_acceptance_ids, start=1):
                 line.sequence = idx
-            employees = leave.handover_acceptance_ids.mapped("employee_id")
-            leave.handover_employee_ids = [Command.set(employees.ids)]
+            employee_ids = leave.handover_acceptance_ids.sudo().mapped("employee_id").ids
+            leave.handover_employee_ids = [Command.set(employee_ids)]
 
     @api.onchange(
         "handover_employee_ids",
