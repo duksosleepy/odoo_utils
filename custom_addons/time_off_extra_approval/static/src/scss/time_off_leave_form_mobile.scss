@@ -1,0 +1,152 @@
+// Mobile / PWA layout for "New Leave Request" dialog (Đơn nghỉ phép mới).
+// Date block (red mockup):
+//   Ngày
+//   11/06/2026 -> 12/06/2026
+//   2 ngày
+@media (max-width: 767.98px) {
+    .modal .o_hr_leave_form {
+        .o_inner_group:has(#full_date) {
+            .o_wrap_label:has(label[for="request_date_from"].d-none) {
+                display: none !important;
+            }
+
+            // Row 1: "Ngày" — full width, centered.
+            .o_wrap_label:has(label[for="request_date_from"]:not(.d-none)) {
+                grid-column: 1 / -1;
+                justify-self: center;
+                text-align: center;
+                width: 100%;
+                margin-bottom: 0.15rem;
+
+                .o_form_label {
+                    width: 100%;
+                    text-align: center;
+                }
+            }
+
+            // Row 2–3: date range + duration — stacked, centered, nearly full screen width.
+            .o_cell_custom:has(#full_date) {
+                grid-column: 1 / -1;
+                width: 100%;
+            }
+
+            #full_date {
+                display: flex !important;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: calc(100vw - 2 * 0.1rem) !important;
+                max-width: calc(100vw - 2 * 0.1rem);
+                margin-left: auto !important;
+                margin-right: auto !important;
+                text-align: center;
+
+                > .o_field_widget:first-child {
+                    order: 1;
+                    flex: 0 0 auto !important;
+                    width: 100% !important;
+
+                    .d-flex.gap-2 {
+                        justify-content: center;
+                        flex-wrap: wrap;
+                    }
+                }
+
+                > div:last-child {
+                    order: 2;
+                    flex: 0 0 auto !important;
+                    width: auto !important;
+                    margin-top: 0.35rem;
+                    font-size: 0.875rem;
+                    line-height: 1.2;
+                    color: $o-gray-600;
+                }
+            }
+        }
+    }
+
+    // Calendar picker: nearly full screen width (0.1rem edge gutter).
+    $o-hr-leave-picker-edge: 0.1rem;
+    $o-hr-leave-picker-width: calc(100vw - 2 * #{$o-hr-leave-picker-edge});
+    $o-hr-leave-picker-cell: calc(#{$o-hr-leave-picker-width} / 7);
+
+    .modal .o_hr_leave_form .o_datetime_picker,
+    body.modal-open:has(.modal .o_hr_leave_form) .o_popover.popover:has(.o_datetime_picker) .o_datetime_picker {
+        --DateTimePicker__Day-template-rows: 6;
+        --DateTimePicker__Day-template-columns: 7;
+        width: $o-hr-leave-picker-width !important;
+        max-width: $o-hr-leave-picker-width;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0.65rem 0.35rem !important;
+        gap: 0.5rem !important;
+
+        .o_datetime_picker_header {
+            min-height: 2.75rem;
+            align-items: center;
+            margin-bottom: 0.15rem;
+
+            .btn {
+                min-width: 2.75rem;
+                min-height: 2.75rem;
+                padding: 0.5rem;
+                font-size: 1.1rem;
+            }
+
+            .o_zoom_out {
+                font-size: 1.05rem;
+            }
+        }
+
+        .o_date_picker {
+            width: 100%;
+            gap: 0.15rem;
+        }
+
+        .o_day_of_week_cell {
+            min-height: 2rem;
+            font-size: 0.85rem;
+        }
+
+        .o_date_item_cell {
+            aspect-ratio: 1;
+            min-width: $o-hr-leave-picker-cell;
+            min-height: $o-hr-leave-picker-cell;
+            font-size: 1.05rem;
+            font-weight: 500;
+
+            > div {
+                font-size: 1.05rem;
+                line-height: 1;
+            }
+
+            &.o_today > div {
+                width: 85% !important;
+                min-height: 85%;
+                font-size: 1.1rem;
+            }
+        }
+    }
+
+    body.modal-open:has(.modal .o_hr_leave_form) {
+        .o_popover.popover:has(.o_datetime_picker) {
+            position: fixed !important;
+            left: $o-hr-leave-picker-edge !important;
+            right: $o-hr-leave-picker-edge !important;
+            transform: none !important;
+            width: $o-hr-leave-picker-width !important;
+            max-width: $o-hr-leave-picker-width !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+
+            > .popover-arrow {
+                display: none;
+            }
+
+            .o_datetime_picker {
+                width: 100% !important;
+                max-width: 100%;
+            }
+        }
+    }
+}

@@ -1,6 +1,6 @@
 {
     'name': 'HR Employee HRM Detail',
-    'version': '19.0.1.1.56',
+    'version': '19.0.1.1.59',
     'category': 'Human Resources/Employees',
     'summary': 'Add HRM detail fields to employee Personal tab',
     'description': """
@@ -14,7 +14,7 @@
         - Position details (Mã chức vụ, Cấp tại)
         - Personal information (Trình độ, Tôn giáo, Dân tộc, Nguyên quán)
         - Social insurance (Số sổ BHXH, Ngày tham gia BHXH)
-        - Employment dates (Ngày vào làm, Ngày nghỉ việc, Ngày chính thức)
+        - Employment dates (Ngày vào làm, Ngày bổ nhiệm, Ngày nghỉ việc, Ngày chính thức)
         - Additional info (Nguồn tuyển dụng, Ghi chú, Nhân viên cũ)
     """,
     'depends': ['hr', 'hr_store', 'hr_holidays', 'hr_employee_self_only', 'mail'],

@@ -16,6 +16,7 @@
         "security/hr_leave_type_write_access.xml",
         "security/ir.model.access.csv",
         "views/hr_leave_type_views.xml",
+        "views/hr_leave_form_mobile_date_views.xml",
         "views/hr_leave_odoobot_notify_config_views.xml",
     ],
     "assets": {
@@ -32,6 +33,7 @@
             "time_off_extra_approval/static/src/xml/time_off_dashboard_hrm_patch.xml",
             "time_off_extra_approval/static/src/js/time_off_dashboard_hrm_patch.js",
             "time_off_extra_approval/static/src/scss/time_off_dashboard_mobile.scss",
+            "time_off_extra_approval/static/src/scss/time_off_leave_form_mobile.scss",
         ],
     },
     "installable": True,

@@ -273,6 +273,7 @@ class HrEmployee(models.Model):
 
     # Employment Dates
     ngay_vao_lam = fields.Date(string='Ngày vào làm', groups='hr.group_hr_user')
+    ngay_bo_nhiem = fields.Date(string='Ngày bổ nhiệm', groups='hr.group_hr_user')
     ngay_nghi_viec = fields.Date(string='Ngày nghỉ việc', groups='hr.group_hr_user')
     ngay_chinh_thuc = fields.Date(string='Ngày chính thức', groups='hr.group_hr_user')
 

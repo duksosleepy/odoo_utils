@@ -267,6 +267,30 @@ class HrEmployeeTimeoff(models.Model):
             == (bonus_date.year, bonus_date.month)
         )
 
+    def _blocks_monthly_leave_bonus(self, bonus_date):
+        """Return True when a +1 monthly bonus must be skipped for ``bonus_date``."""
+        self.ensure_one()
+        return self._blocks_departure_monthly_leave_bonus(bonus_date)
+
+    def _monthly_leave_bonus_eligible(self, bonus_date=None):
+        """Whether this employee may receive a +1 monthly leave accrual."""
+        self.ensure_one()
+        bonus_date = bonus_date or self._monthly_leave_bonus_date()
+        return not self._blocks_monthly_leave_bonus(bonus_date)
+
+    def _apply_monthly_leave_bonus(self, bonus_date=None):
+        """Add one paid-leave day to ``tong_so_phep`` when eligible."""
+        bonus_date = bonus_date or self._monthly_leave_bonus_date()
+        ctx = {
+            _MONTHLY_LEAVE_BONUS_DATE_CTX: bonus_date,
+            _SKIP_DEPARTURE_MONTHLY_LEAVE_CUTOFF_CTX: True,
+        }
+        for employee in self:
+            if not employee._monthly_leave_bonus_eligible(bonus_date):
+                continue
+            new_total = (employee.tong_so_phep or 0.0) + 1.0
+            employee.with_context(**ctx).write({"tong_so_phep": new_total})
+
     def _is_single_day_monthly_leave_bonus(self, new_total):
         self.ensure_one()
         return isinstance(new_total, (int, float)) and abs(
@@ -283,7 +307,10 @@ class HrEmployeeTimeoff(models.Model):
                 lambda employee: employee._is_single_day_monthly_leave_bonus(
                     vals["tong_so_phep"]
                 )
-                and employee._blocks_departure_monthly_leave_bonus(bonus_date)
+                and (
+                    employee._blocks_monthly_leave_bonus(bonus_date)
+                    or not employee._monthly_leave_bonus_eligible(bonus_date)
+                )
             ).ids
             if blocked_ids:
                 blocked = self.browse(blocked_ids)
@@ -303,10 +330,8 @@ class HrEmployeeTimeoff(models.Model):
                         and result
                     )
                 _logger.info(
-                    "Skipped monthly leave bonus for employees %s: departure "
-                    "before day %s in %s-%02d",
+                    "Skipped monthly leave bonus for employees %s on %s-%02d",
                     blocked.ids,
-                    _DEPARTURE_MONTHLY_LEAVE_CUTOFF_DAY,
                     bonus_date.year,
                     bonus_date.month,
                 )

@@ -1257,14 +1257,24 @@ class HrLeaveHandover(models.Model):
             partner_ids=[dept_head_user.partner_id.id],
         )
         requester_name = self.employee_id.name or self.employee_id.display_name or self.display_name
+        pending_recipients = self.handover_acceptance_ids.filtered(
+            lambda l: l.employee_id in self.handover_employee_ids and l.state == "pending"
+        ).mapped("employee_id")
+        if pending_recipients:
+            recipient_names = ", ".join(pending_recipients.mapped("name"))
+        else:
+            blocking = self._get_handover_blocking_employees()
+            recipient_names = ", ".join(blocking.mapped("name")) if blocking else _("người được chỉ định")
+        date_text = self._get_handover_bot_period_text()
         button_html = self._notify_handover_bot_leave_form_open_button_markup()
         bot_body = (
             Markup(
                 _(
-                    "Sau {hours} giờ, do không có ai nhận bàn giao đơn cho <b>{requester}</b>, "
-                    "vui lòng vào mục Time Off để quyết định.<br/><br/>"
+                    "Nhân viên <b>{recipient}</b> chưa xác nhận nhận bàn giao công việc cho đơn nghỉ phép ngày "
+                    "<b>{date}</b> của nhân viên <b>{requester}</b>. Trưởng bộ phận vào ngày nghỉ "
+                    "xem xét và quyết định duyệt hoặc từ chối ngày nghỉ phép.<br/><br/>"
                 )
-            ).format(hours=hours, requester=requester_name)
+            ).format(recipient=recipient_names, date=date_text, requester=requester_name)
             + button_html
         )
         try:
