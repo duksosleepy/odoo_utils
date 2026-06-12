@@ -71,30 +71,30 @@ class TestMonthlyLeaveDeparture(TransactionCase):
 
         self.assertEqual(self.employee.tong_so_phep, 7)
 
-    def test_departure_before_day_20_reverses_granted_monthly_bonus(self):
-        self._record_monthly_bonus(date(2026, 10, 1))
-        self.assertEqual(self.employee.tong_so_phep, 6)
+    def test_current_month_departure_before_day_20_deducts_one_day(self):
+        self.employee.with_context(
+            skip_departure_monthly_leave_cutoff=True,
+        ).write({"tong_so_phep": 8})
 
         self.employee.with_context(
-            monthly_leave_bonus_date=date(2026, 10, 1)
-        ).write({"ngay_nghi_viec": date(2026, 10, 15)})
+            monthly_leave_bonus_date=date(2026, 6, 12)
+        ).write({"ngay_nghi_viec": date(2026, 6, 18)})
 
-        self.assertEqual(self.employee.tong_so_phep, 5)
+        self.assertEqual(self.employee.tong_so_phep, 7)
         self.assertEqual(
             self.employee.departure_monthly_leave_reversal_date,
-            date(2026, 10, 1),
+            date(2026, 6, 1),
         )
 
     def test_departure_reversal_is_only_applied_once(self):
         employee = self.employee.with_context(
             monthly_leave_bonus_date=date(2026, 10, 1)
         )
-        self._record_monthly_bonus(date(2026, 10, 1))
         employee.write({"ngay_nghi_viec": date(2026, 10, 15)})
 
         employee.write({"ngay_nghi_viec": date(2026, 10, 16)})
 
-        self.assertEqual(self.employee.tong_so_phep, 5)
+        self.assertEqual(self.employee.tong_so_phep, 4)
 
     def test_future_departure_does_not_remove_current_month_bonus(self):
         self._record_monthly_bonus(date(2026, 10, 1))

@@ -295,11 +295,6 @@ class HrEmployeeTimeoff(models.Model):
         bonus_date = bonus_date or self._monthly_leave_bonus_date()
         return not self._blocks_monthly_leave_bonus(bonus_date)
 
-    def _legacy_monthly_leave_bonus_was_granted(self, bonus_date):
-        """Whether an untracked pre-upgrade monthly credit can be inferred."""
-        self.ensure_one()
-        return False
-
     def _apply_monthly_leave_bonus(self, bonus_date=None):
         """Add one paid-leave day to ``tong_so_phep`` when eligible."""
         bonus_date = bonus_date or self._monthly_leave_bonus_date()
@@ -331,14 +326,6 @@ class HrEmployeeTimeoff(models.Model):
                 or departure_date.replace(day=1) != bonus_month
                 or employee.departure_monthly_leave_reversal_date == bonus_month
             ):
-                continue
-
-            tracked_bonus = employee.last_monthly_leave_bonus_date == bonus_month
-            legacy_bonus = (
-                not employee.last_monthly_leave_bonus_date
-                and employee._legacy_monthly_leave_bonus_was_granted(bonus_date)
-            )
-            if not tracked_bonus and not legacy_bonus:
                 continue
 
             employee.with_context(
