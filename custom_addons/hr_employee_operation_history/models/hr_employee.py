@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from odoo import api, fields, models
+from odoo.fields import Command
 from odoo.tools.misc import format_datetime
 from odoo.tools.translate import _
 
@@ -69,6 +70,50 @@ class HrEmployee(models.Model):
         field = self._fields.get(field_name)
         return field.string if field else field_name
 
+    def _operation_log_flatten_ids(self, ids):
+        flat = []
+        for item in ids:
+            if isinstance(item, int):
+                flat.append(item)
+            elif isinstance(item, (list, tuple)):
+                flat.extend(self._operation_log_flatten_ids(item))
+        return flat
+
+    def _operation_log_resolve_x2many_ids(self, field_name, value):
+        """Turn a raw x2many write/create value into a list of record ids."""
+        if value in (False, None, ''):
+            return []
+        if not isinstance(value, list) or not value:
+            return []
+
+        # Plain id list, e.g. [1, 2, 3]
+        if all(isinstance(item, int) for item in value):
+            return value
+
+        # Single flat Odoo command, e.g. [6, 0, [1, 2, 3]]
+        if len(value) >= 2 and isinstance(value[0], int) and int(value[0]) in range(7):
+            value = [value]
+
+        if not isinstance(value[0], (list, tuple)):
+            return []
+
+        ids = list(self[field_name].ids)
+        for command in value:
+            if not command:
+                continue
+            op = int(command[0])
+            if op == Command.SET:
+                ids = list(command[2] or [])
+            elif op == Command.LINK:
+                if command[1] not in ids:
+                    ids.append(command[1])
+            elif op in (Command.UNLINK, Command.DELETE):
+                if command[1] in ids:
+                    ids.remove(command[1])
+            elif op == Command.CLEAR:
+                ids = []
+        return self._operation_log_flatten_ids(ids)
+
     def _operation_log_format_value(self, field_name, value):
         field = self._fields.get(field_name)
         if not field:
@@ -77,10 +122,11 @@ class HrEmployee(models.Model):
             return ''
         if field.type == 'many2one':
             return self.env[field.comodel_name].browse(value).display_name
-        if field.type == 'many2many':
-            return ', '.join(self.env[field.comodel_name].browse(value).mapped('display_name'))
-        if field.type == 'one2many':
-            return ', '.join(self.env[field.comodel_name].browse(value).mapped('display_name'))
+        if field.type in ('many2many', 'one2many'):
+            record_ids = self._operation_log_resolve_x2many_ids(field_name, value)
+            if not record_ids:
+                return ''
+            return ', '.join(self.env[field.comodel_name].browse(record_ids).mapped('display_name'))
         if field.type == 'selection':
             return dict(field.selection).get(value, value)
         if field.type == 'boolean':
