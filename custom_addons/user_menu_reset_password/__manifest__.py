@@ -1,12 +1,14 @@
 {
-    "name": "User Menu Change Password",
-    "version": "19.0.1.1.0",
+    "name": "User Menu Enhancements",
+    "version": "19.0.1.2.0",
     "category": "Administration",
-    "summary": "Add Change Password option to the backend user menu",
+    "summary": "Show user identity and Change Password in the backend user menu",
     "depends": ["web"],
     "assets": {
         "web.assets_backend": [
             "user_menu_reset_password/static/src/js/reset_password_user_menu.js",
+            "user_menu_reset_password/static/src/xml/user_menu.xml",
+            "user_menu_reset_password/static/src/scss/user_menu.scss",
         ],
     },
     "installable": True,
