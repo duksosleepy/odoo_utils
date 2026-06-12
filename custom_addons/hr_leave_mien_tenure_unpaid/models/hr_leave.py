@@ -10,6 +10,11 @@ O_LEAVE_TYPE_CODE = "O"
 class HrLeave(models.Model):
     _inherit = "hr.leave"
 
+    mien_tenure_unpaid_notice = fields.Char(
+        string="Tenure unpaid notice",
+        compute="_compute_mien_tenure_unpaid_notice",
+    )
+
     def _get_tenure_unpaid_o_leave_type(self, selected=None, employee=None):
         if employee is None:
             employee = self.employee_id if self else False
@@ -94,6 +99,25 @@ class HrLeave(models.Model):
     def _compute_mien_allowed_leave_type_ids(self):
         return super()._compute_mien_allowed_leave_type_ids()
 
+    @api.depends(
+        "employee_id",
+        "employee_id.mien",
+        "employee_id.ma_bo_phan_id.mien",
+        "employee_id.ngay_vao_lam",
+        "employee_id.job_id",
+    )
+    def _compute_mien_tenure_unpaid_notice(self):
+        today = fields.Date.today()
+        for leave in self:
+            employee = leave.employee_id
+            if not employee:
+                leave.mien_tenure_unpaid_notice = False
+                continue
+            leave.mien_tenure_unpaid_notice = (
+                employee._mien_tenure_unpaid_notice_message(reference_date=today)
+                or False
+            )
+
     @api.constrains(
         "employee_id",
         "holiday_status_id",
@@ -121,23 +145,6 @@ class HrLeave(models.Model):
                 mien = employee._get_leave_mien_for_rules()
                 start = leave._get_leave_start_date()
                 end = leave._get_leave_end_date() or start
-                if employee._mien_tenure_unpaid_required():
-                    join = employee.ngay_vao_lam
-                    join_label = (
-                        fields.Date.to_string(join) if join else _("chưa khai báo")
-                    )
-                    raise ValidationError(
-                        _(
-                            "Nhân viên miền %(mien)s chưa đủ 4 năm làm việc "
-                            "(ngày vào làm: %(join)s). Chỉ được đăng ký loại "
-                            "«%(required)s»."
-                        )
-                        % {
-                            "mien": mien or "",
-                            "join": join_label,
-                            "required": o_type.display_name,
-                        }
-                    )
                 if employee._mien_public_holiday_unpaid_required(start, end):
                     raise ValidationError(
                         _(

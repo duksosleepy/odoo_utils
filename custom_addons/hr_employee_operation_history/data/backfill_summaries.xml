@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="hr.employee.operation.log" name="_backfill_change_summaries"/>
+</odoo>

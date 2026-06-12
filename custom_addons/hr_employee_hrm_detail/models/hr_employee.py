@@ -171,6 +171,14 @@ class HrEmployee(models.Model):
                         vals['id_hrm'] = False
                         employee.id_hrm = False
                         employee._raise_id_hrm_duplicate_error(id_hrm, duplicate)
+        if not self.env.su:
+            vals = {
+                key: value
+                for key, value in vals.items()
+                if key in self._fields and self._has_field_access(self._fields[key], 'write')
+            }
+        if not vals:
+            return True
         res = super().write(vals)
         if MIEN_ACCESS_FIELDS & set(vals):
             # ir.rule domains are ormcache'd per uid; refresh when Miền scope changes.
@@ -183,15 +191,15 @@ class HrEmployee(models.Model):
         ('Nam', 'Nam'),
         ('ĐTT', 'ĐTT'),
         ('VP', 'VP'),
-    ], string='Miền', groups='hr.group_hr_user')
-    id_hrm = fields.Char(string='ID HRM', groups='hr.group_hr_user')
+    ], string='Miền', groups='hr.group_hr_user', tracking=True)
+    id_hrm = fields.Char(string='ID HRM', groups='hr.group_hr_user', tracking=True)
 
     # Accounting and Attendance Codes
-    ma_nv_ke_toan = fields.Char(string='Mã NV kế toán', groups='hr.group_hr_user')
-    ma_cham_cong = fields.Char(string='Mã chấm công', groups='hr.group_hr_user')
+    ma_nv_ke_toan = fields.Char(string='Mã NV kế toán', groups='hr.group_hr_user', tracking=True)
+    ma_cham_cong = fields.Char(string='Mã chấm công', groups='hr.group_hr_user', tracking=True)
 
     # Name without diacritics
-    ten_khong_dau = fields.Char(string='Tên không dấu', groups='hr.group_hr_user')
+    ten_khong_dau = fields.Char(string='Tên không dấu', groups='hr.group_hr_user', tracking=True)
 
     # Employee Status
     trang_thai_nhan_vien = fields.Selection([
@@ -199,13 +207,14 @@ class HrEmployee(models.Model):
         ('probation', 'Thử việc'),
         ('leave', 'Nghỉ phép'),
         ('terminated', 'Đã nghỉ việc'),
-    ], string='Trạng thái nhân viên', default='active', groups='hr.group_hr_user')
+    ], string='Trạng thái nhân viên', default='active', groups='hr.group_hr_user', tracking=True)
 
     # Department Information
     ma_bo_phan_id = fields.Many2one(
         'hr.store.code',
         string='Mã bộ phận',
         groups='hr.group_hr_user',
+        tracking=True,
     )
     ma_bo_phan = fields.Char(
         string='Mã bộ phận (mã)',
@@ -240,19 +249,19 @@ class HrEmployee(models.Model):
                     % (employee.ma_bo_phan_id.code, employee.mien)
                 )
 
-    ten_bo_phan = fields.Char(string='Tên bộ phận', groups='hr.group_hr_user')
-    bp_ke_toan = fields.Char(string='BP Kế toán', groups='hr.group_hr_user')
+    ten_bo_phan = fields.Char(string='Tên bộ phận', groups='hr.group_hr_user', tracking=True)
+    bp_ke_toan = fields.Char(string='BP Kế toán', groups='hr.group_hr_user', tracking=True)
 
     # Banking Information
-    so_tai_khoan = fields.Char(string='Số tài khoản', groups='hr.group_hr_user')
-    chi_nhanh_ngan_hang = fields.Char(string='Chi nhánh NH', groups='hr.group_hr_user')
+    so_tai_khoan = fields.Char(string='Số tài khoản', groups='hr.group_hr_user', tracking=True)
+    chi_nhanh_ngan_hang = fields.Char(string='Chi nhánh NH', groups='hr.group_hr_user', tracking=True)
 
     # Position Details
-    ma_chuc_vu = fields.Char(string='Mã chức vụ', groups='hr.group_hr_user')
-    cap_tai = fields.Char(string='Cấp tại', groups='hr.group_hr_user')
+    ma_chuc_vu = fields.Char(string='Mã chức vụ', groups='hr.group_hr_user', tracking=True)
+    cap_tai = fields.Char(string='Cấp tại', groups='hr.group_hr_user', tracking=True)
 
     # Additional Address
-    dia_chi_tam_tru = fields.Char(string='Địa chỉ tạm trú', groups='hr.group_hr_user')
+    dia_chi_tam_tru = fields.Char(string='Địa chỉ tạm trú', groups='hr.group_hr_user', tracking=True)
 
     # Personal Background
     trinh_do = fields.Selection([
@@ -263,27 +272,27 @@ class HrEmployee(models.Model):
         ('bachelor', 'Đại học'),
         ('master', 'Thạc sĩ'),
         ('doctorate', 'Tiến sĩ'),
-    ], string='Trình độ', groups='hr.group_hr_user')
-    ton_giao = fields.Char(string='Tôn giáo', groups='hr.group_hr_user')
-    dan_toc = fields.Char(string='Dân tộc', groups='hr.group_hr_user')
-    nguyen_quan = fields.Char(string='Nguyên quán', groups='hr.group_hr_user')
+    ], string='Trình độ', groups='hr.group_hr_user', tracking=True)
+    ton_giao = fields.Char(string='Tôn giáo', groups='hr.group_hr_user', tracking=True)
+    dan_toc = fields.Char(string='Dân tộc', groups='hr.group_hr_user', tracking=True)
+    nguyen_quan = fields.Char(string='Nguyên quán', groups='hr.group_hr_user', tracking=True)
 
     # Social Insurance
-    so_so_bhxh = fields.Char(string='Số sổ BHXH', groups='hr.group_hr_user')
-    ngay_tham_gia_bhxh = fields.Date(string='Ngày tham gia BHXH', groups='hr.group_hr_user')
+    so_so_bhxh = fields.Char(string='Số sổ BHXH', groups='hr.group_hr_user', tracking=True)
+    ngay_tham_gia_bhxh = fields.Date(string='Ngày tham gia BHXH', groups='hr.group_hr_user', tracking=True)
 
     # Tax Information
-    ma_so_thue = fields.Char(string='Mã số thuế', groups='hr.group_hr_user')
+    ma_so_thue = fields.Char(string='Mã số thuế', groups='hr.group_hr_user', tracking=True)
 
     # Employment Dates
-    ngay_vao_lam = fields.Date(string='Ngày vào làm', groups='hr.group_hr_user')
-    ngay_bo_nhiem = fields.Date(string='Ngày bổ nhiệm', groups='hr.group_hr_user')
-    ngay_nghi_viec = fields.Date(string='Ngày nghỉ việc', groups='hr.group_hr_user')
-    ngay_chinh_thuc = fields.Date(string='Ngày chính thức', groups='hr.group_hr_user')
+    ngay_vao_lam = fields.Date(string='Ngày vào làm', groups='hr.group_hr_user', tracking=True)
+    ngay_bo_nhiem = fields.Date(string='Ngày bổ nhiệm', groups='hr.group_hr_user', tracking=True)
+    ngay_nghi_viec = fields.Date(string='Ngày nghỉ việc', groups='hr.group_hr_user', tracking=True)
+    ngay_chinh_thuc = fields.Date(string='Ngày chính thức', groups='hr.group_hr_user', tracking=True)
 
     # Recruitment and Notes
-    nguon_tuyen_dung = fields.Char(string='Nguồn tuyển dụng', groups='hr.group_hr_user')
-    ghi_chu = fields.Text(string='Ghi chú', groups='hr.group_hr_user')
+    nguon_tuyen_dung = fields.Char(string='Nguồn tuyển dụng', groups='hr.group_hr_user', tracking=True)
+    ghi_chu = fields.Text(string='Ghi chú', groups='hr.group_hr_user', tracking=True)
 
     # Former Employee Flag
-    nhan_vien_cu = fields.Boolean(string='Nhân viên cũ', default=False, groups='hr.group_hr_user')
+    nhan_vien_cu = fields.Boolean(string='Nhân viên cũ', default=False, groups='hr.group_hr_user', tracking=True)

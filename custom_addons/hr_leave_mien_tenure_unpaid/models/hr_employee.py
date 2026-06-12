@@ -5,6 +5,8 @@ from datetime import datetime, time, timedelta
 from dateutil.relativedelta import relativedelta
 
 from odoo import fields, models
+from odoo.tools import format_date
+from odoo.tools.translate import _
 
 # Miền áp dụng quy tắc (trùng Bắc / Nam / ĐTT trong hr_employee_hrm_detail).
 MIEN_TENURE_UNPAID_CODES = frozenset({"Bắc", "Nam", "ĐTT"})
@@ -63,6 +65,40 @@ class HrEmployee(models.Model):
         if not self._mien_tenure_unpaid_applies():
             return False
         return not self._mien_tenure_has_four_years(reference_date=reference_date)
+
+    def _mien_tenure_work_duration_label(self, reference_date=None):
+        """Thâm niên làm việc từ Ngày vào làm (HRM) tới ngày tham chiếu."""
+        self.ensure_one()
+        join_date = self.ngay_vao_lam
+        ref = reference_date or fields.Date.today()
+        if not join_date:
+            return _("chưa khai báo")
+        if ref < join_date:
+            return _("0 ngày")
+        delta = relativedelta(ref, join_date)
+        parts = []
+        if delta.years:
+            parts.append(_("%(years)s năm") % {"years": delta.years})
+        if delta.months:
+            parts.append(_("%(months)s tháng") % {"months": delta.months})
+        if delta.days:
+            parts.append(_("%(days)s ngày") % {"days": delta.days})
+        return ", ".join(parts) if parts else _("0 ngày")
+
+    def _mien_tenure_unpaid_notice_message(self, reference_date=None):
+        self.ensure_one()
+        if not self._mien_tenure_unpaid_required(reference_date=reference_date):
+            return False
+        join_date = self.ngay_vao_lam
+        join_label = (
+            format_date(self.env, join_date) if join_date else _("chưa khai báo")
+        )
+        duration = self._mien_tenure_work_duration_label(reference_date=reference_date)
+        return _(
+            "Đối với chức danh 'Nhóm trưởng', nếu thâm niên làm việc dưới 4 năm "
+            "thì chỉ được tạo đơn nghỉ phép không lương (ngày vào làm của bạn là "
+            "%(join)s, tổng thời gian bạn đã làm là %(duration)s)"
+        ) % {"join": join_label, "duration": duration}
 
     @staticmethod
     def _coerce_leave_date(value):

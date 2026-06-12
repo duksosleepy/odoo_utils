@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Views removed: locking uses holiday_status_id_month_leave_type_locked from hr_leave_type_mien -->
-    <delete model="ir.ui.view" id="hr_leave_view_form_tenure_unpaid"/>
+    <record id="hr_leave_view_form_mien_tenure_notice" model="ir.ui.view">
+        <field name="name">hr.leave.view.form.mien.tenure.notice</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_form"/>
+        <field name="arch" type="xml">
+            <field name="dashboard_warning_message" position="after">
+                <field
+                    name="mien_tenure_unpaid_notice"
+                    class="alert alert-warning d-flex mt-2"
+                    role="alert"
+                    style="white-space: pre-wrap;"
+                    invisible="not mien_tenure_unpaid_notice"
+                    nolabel="1"
+                    colspan="2"
+                    readonly="1"
+                />
+            </field>
+        </field>
+    </record>
 </odoo>

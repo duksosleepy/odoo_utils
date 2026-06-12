@@ -75,12 +75,18 @@ class HrLeaveFileExportConfig(models.Model):
 
     @api.model
     def get_export_file_types_for_employee(self, employee):
+        """Return (has_config_row, allowed_export_types).
+
+        When has_config_row is True, permissions come only from the checkboxes
+        in Trích xuất file (even if all are unchecked).
+        When False, callers may fall back to the employee miền (VP/CH).
+        """
         if not employee:
-            return set()
+            return False, set()
         line = self.sudo().search([("employee_id", "=", employee.id)], limit=1)
         if not line:
-            return set()
-        return {
+            return False, set()
+        return True, {
             export_type
             for export_type, field_name in EXPORT_FILE_TYPE_FIELDS.items()
             if line[field_name]

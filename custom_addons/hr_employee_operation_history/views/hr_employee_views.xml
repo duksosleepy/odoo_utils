@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+
+    <record id="hr_employee_view_form_operation_history" model="ir.ui.view">
+
+        <field name="name">hr.employee.form.operation.history</field>
+
+        <field name="model">hr.employee</field>
+
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+
+        <field name="arch" type="xml">
+
+            <xpath expr="//div[@name='button_box']" position="inside">
+
+                <button name="action_view_operation_history"
+
+                        type="object"
+
+                        class="oe_stat_button"
+
+                        icon="fa-history"
+
+                        groups="hr.group_hr_user">
+
+                    <field name="operation_log_count" widget="statinfo" string="Operation History"/>
+
+                </button>
+
+            </xpath>
+
+            <xpath expr="//page[@name='work_information']" position="after">
+
+                <page string="Operation History" name="operation_history" groups="hr.group_hr_user">
+
+                    <widget name="hr_employee_operation_history_panel"/>
+
+                </page>
+
+            </xpath>
+
+        </field>
+
+    </record>
+
+</odoo>
+
+

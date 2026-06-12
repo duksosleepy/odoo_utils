@@ -211,8 +211,8 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         """Menu kết xuất theo cấu hình trích xuất file hoặc miền user (cần quyền export)."""
         if not self.env.user.has_group("base.group_allow_export"):
             return {"show_vp": False, "show_ch": False, "show_import_capnhatcong_vp": False}
-        configured_types = self._get_current_user_export_file_types()
-        if configured_types:
+        has_config, configured_types = self._get_current_user_export_file_types()
+        if has_config:
             return {
                 "show_vp": "leave_vp" in configured_types,
                 "show_ch": "leave_ch" in configured_types
@@ -230,8 +230,8 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
     def _check_matrix_export_file_type(self, export_file_type):
         if not self.env.user.has_group("base.group_allow_export"):
             raise UserError(_("You need export permissions to download this file."))
-        configured_types = self._get_current_user_export_file_types()
-        if configured_types:
+        has_config, configured_types = self._get_current_user_export_file_types()
+        if has_config:
             allowed = set(configured_types)
             if export_file_type == "import_capnhatcong_vp" and "leave_vp" in allowed:
                 allowed.add("import_capnhatcong_vp")

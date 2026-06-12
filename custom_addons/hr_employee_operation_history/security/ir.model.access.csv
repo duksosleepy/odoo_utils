@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_employee_operation_log_user,hr.employee.operation.log.user,model_hr_employee_operation_log,hr.group_hr_user,1,0,0,0
+access_hr_employee_operation_log_manager,hr.employee.operation.log.manager,model_hr_employee_operation_log,hr.group_hr_manager,1,0,0,1
+access_hr_employee_operation_log_line_user,hr.employee.operation.log.line.user,model_hr_employee_operation_log_line,hr.group_hr_user,1,0,0,0
+access_hr_employee_operation_log_line_manager,hr.employee.operation.log.line.manager,model_hr_employee_operation_log_line,hr.group_hr_manager,1,0,0,1

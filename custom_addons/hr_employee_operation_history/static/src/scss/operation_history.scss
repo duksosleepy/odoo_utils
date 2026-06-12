@@ -1,0 +1,74 @@
+.o_hr_employee_operation_history_panel {
+    .o_hr_employee_operation_history_table {
+        table-layout: fixed;
+        width: 100%;
+
+        th,
+        td {
+            vertical-align: top;
+        }
+
+        .o_col_operation_date {
+            width: 145px;
+            white-space: nowrap;
+        }
+
+        .o_col_operation {
+            width: 95px;
+        }
+
+        .o_col_user {
+            width: 155px;
+            word-break: break-word;
+        }
+
+        .o_col_change_summary {
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.45;
+        }
+
+        .o_operation_history_row {
+            cursor: pointer;
+        }
+    }
+}
+
+.o_hr_employee_operation_history_list {
+    .o_list_table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .o_data_cell[name="change_summary"] {
+        white-space: pre-wrap;
+        word-break: break-word;
+        vertical-align: top;
+        line-height: 1.45;
+    }
+
+    .o_data_cell[name="operation_date"],
+    .o_data_cell[name="operation"],
+    .o_data_cell[name="user_id"] {
+        vertical-align: top;
+    }
+}
+
+.o_hr_employee_operation_history_lines {
+    .o_list_table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .o_data_cell[name="field_label"] {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .o_data_cell[name="old_value"],
+    .o_data_cell[name="new_value"] {
+        white-space: pre-wrap;
+        word-break: break-word;
+        vertical-align: top;
+    }
+}

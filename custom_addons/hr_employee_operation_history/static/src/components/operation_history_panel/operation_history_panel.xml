@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="hr_employee_operation_history.OperationHistoryPanel">
+        <div class="o_hr_employee_operation_history_panel">
+            <div t-if="state.loading" class="text-muted py-3">
+                Loading...
+            </div>
+            <div t-elif="!state.logs.length" class="text-muted py-3">
+                No operation history yet.
+            </div>
+            <div t-else="" class="table-responsive">
+                <table class="table table-sm table-hover o_hr_employee_operation_history_table mb-0">
+                    <thead>
+                        <tr>
+                            <th class="o_col_operation_date">Operation Date</th>
+                            <th class="o_col_operation">Operation</th>
+                            <th class="o_col_user">User</th>
+                            <th class="o_col_change_summary">Change Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="state.logs" t-as="log" t-key="log.id"
+                            class="o_operation_history_row"
+                            t-on-click="() => this.openLog(log.id)">
+                            <td class="o_col_operation_date">
+                                <t t-esc="log.operation_date"/>
+                            </td>
+                            <td class="o_col_operation">
+                                <t t-esc="log.operation"/>
+                            </td>
+                            <td class="o_col_user">
+                                <t t-esc="log.user_name"/>
+                            </td>
+                            <td class="o_col_change_summary">
+                                <t t-if="log.change_summary" t-esc="log.change_summary"/>
+                                <span t-else="" class="text-muted">-</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </t>
+</templates>
