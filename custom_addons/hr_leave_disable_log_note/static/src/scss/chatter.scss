@@ -1,0 +1,9 @@
+.o-mail-Chatter.o_hr_leave_communication_disabled {
+    .o-mail-Chatter-sendMessage,
+    .o-mail-Chatter-logNote,
+    .o-mail-Chatter-topbar button:has(.oi-search),
+    .o-mail-SearchMessageResult,
+    .o-mail-Thread {
+        display: none !important;
+    }
+}

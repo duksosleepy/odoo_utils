@@ -17,6 +17,10 @@ patch(Chatter.prototype, {
             return;
         }
         const hideCommunication = this.props.threadModel === "hr.leave";
+        root.classList.toggle(
+            "o_hr_leave_communication_disabled",
+            hideCommunication
+        );
         const selectors = [
             ".o-mail-Chatter-sendMessage",
             ".o-mail-Chatter-logNote",
