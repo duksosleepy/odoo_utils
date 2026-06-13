@@ -1,1 +1,1 @@
-# This module only extends a backend QWeb template.
+# This module only extends backend web assets.
