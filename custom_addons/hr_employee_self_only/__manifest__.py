@@ -1,6 +1,6 @@
 {
     "name": "HR Employee Self Only Access",
-    "version": "19.0.1.2.6",
+    "version": "19.0.1.2.7",
     "category": "Human Resources",
     "summary": "Employee privacy helpers for time off and managed departments",
     "depends": ["bus", "hr", "hr_holidays", "hr_employee_managed_departments"],
