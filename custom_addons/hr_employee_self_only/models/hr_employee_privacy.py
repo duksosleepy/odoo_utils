@@ -91,3 +91,11 @@ def _privacy_raise_if_employee_create_forbidden(env):
     if not _privacy_is_employee_edit_forbidden(env):
         return
     raise AccessError(_("Bạn không có quyền tạo nhân viên."))
+
+
+def _privacy_raise_if_department_create_forbidden(env):
+    if env.su:
+        return
+    if not _privacy_is_employee_edit_forbidden(env):
+        return
+    raise AccessError(_("Bạn không có quyền tạo phòng ban."))

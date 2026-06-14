@@ -118,6 +118,13 @@ msgid "Bạn không có quyền tạo nhân viên."
 msgstr "Bạn không có quyền tạo nhân viên."
 
 #. module: hr_employee_self_only
+#. odoo-python
+#: code:addons/hr_employee_self_only/models/hr_employee_privacy.py:0
+#: code:addons/hr_employee_self_only/models/hr_department.py:0
+msgid "Bạn không có quyền tạo phòng ban."
+msgstr "Bạn không có quyền tạo phòng ban."
+
+#. module: hr_employee_self_only
 #: model:ir.model.fields,help:hr_employee_self_only.field_hr_employee__employee_form_force_readonly_ui
 msgid ""
 "When true, employee form opens in readonly mode (Edit Employee Profile: No)."

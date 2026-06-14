@@ -1,6 +1,9 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import api, fields, models
+from functools import partial
+
+from odoo import _, api, fields, models
+from odoo.exceptions import AccessError
 
 from .hr_employee_privacy import (
     _privacy_is_employee_edit_forbidden,
@@ -12,6 +15,16 @@ from .hr_employee_privacy import (
 
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
+
+    def _check_access(self, operation):
+        if (
+            operation == "create"
+            and not self.env.su
+            and _privacy_is_employee_edit_forbidden(self.env)
+        ):
+            message = _("Bạn không có quyền tạo nhân viên.")
+            return self, partial(AccessError, message)
+        return super()._check_access(operation)
 
     def _check_employees_no_readonly(self):
         _privacy_raise_if_employee_no_write(self.env, self)
