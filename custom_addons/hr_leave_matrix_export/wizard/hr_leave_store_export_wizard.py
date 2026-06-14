@@ -713,7 +713,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         date_cell = xlwt_module.easyxf(borders, num_format_str="M/D/YY")
         return header, cell, red, red_int, date_cell
 
-    def _build_import_capnhatcong_xls(self, payloads, sheet_name="import_capnhatcong CUA HANG"):
+    def _build_import_capnhatcong_xls(self, payloads, sheet_name="Sheet1"):
         try:
             import xlwt  # noqa: PLC0415
         except ImportError as err:
