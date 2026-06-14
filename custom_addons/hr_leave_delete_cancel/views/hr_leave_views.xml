@@ -8,13 +8,12 @@
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
                 <field name="can_cancel" invisible="1"/>
-                <field name="can_back_to_approve" invisible="1"/>
             </xpath>
             <xpath expr="//header/button[@name='action_cancel']" position="attributes">
                 <attribute name="invisible">not can_cancel or not id</attribute>
             </xpath>
             <xpath expr="//header/button[@name='action_back_to_approval']" position="attributes">
-                <attribute name="invisible">not can_back_to_approve or not id</attribute>
+                <attribute name="invisible">1</attribute>
             </xpath>
         </field>
     </record>
@@ -26,13 +25,12 @@
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
                 <field name="can_cancel" invisible="1"/>
-                <field name="can_back_to_approve" invisible="1"/>
             </xpath>
             <xpath expr="//header/button[@name='action_cancel']" position="attributes">
                 <attribute name="invisible">not can_cancel or not id</attribute>
             </xpath>
             <xpath expr="//header/button[@name='action_back_to_approval']" position="attributes">
-                <attribute name="invisible">not can_back_to_approve or not id</attribute>
+                <attribute name="invisible">1</attribute>
             </xpath>
         </field>
     </record>

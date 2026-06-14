@@ -86,45 +86,19 @@ class HrLeave(models.Model):
         for holiday in self:
             holiday.can_cancel = self._can_cancel_own_leave_strict(holiday)
 
-    @api.depends_context("uid")
-    @api.depends("state", "employee_id", "handover_acceptance_ids.state")
-    def _compute_can_back_to_approve(self):
-        if self.env.user._is_superuser() or self._has_leave_cancel_permission():
-            return super()._compute_can_back_to_approve()
-        for holiday in self:
-            holiday.can_back_to_approve = False
-
     @api.model
     def _check_approval_update(self, state, raise_if_not_possible=True):
         result = super()._check_approval_update(
             state, raise_if_not_possible=raise_if_not_possible
         )
-        if not result or self.env.is_superuser():
+        if not result or state != "cancel" or self.env.is_superuser():
             return result
-        if state == "cancel":
-            for holiday in self:
-                if not self._user_can_cancel_leave_record(holiday):
-                    if raise_if_not_possible:
-                        self._raise_leave_cancel_permission_error(holiday)
-                    return False
-        elif state == "confirm":
-            for holiday in self:
-                if (
-                    holiday.state == "validate"
-                    and not self._user_can_cancel_leave_record(holiday)
-                ):
-                    if raise_if_not_possible:
-                        raise UserError(
-                            _(
-                                "You are not allowed to reset time off requests of employees to approval."
-                            )
-                        )
-                    return False
+        for holiday in self:
+            if not self._user_can_cancel_leave_record(holiday):
+                if raise_if_not_possible:
+                    self._raise_leave_cancel_permission_error(holiday)
+                return False
         return result
-
-    def action_back_to_approval(self):
-        self._check_leave_cancel_permission()
-        return super().action_back_to_approval()
 
     def _action_user_cancel(self, reason=None):
         self._check_leave_cancel_permission()
