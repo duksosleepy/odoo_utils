@@ -4,7 +4,7 @@
         <field name="name">Delete Time Off</field>
         <field name="sequence">12</field>
         <field name="category_id" ref="base.module_category_human_resources"/>
-        <field name="description">Allows deleting time off requests of employees.</field>
+        <field name="description">Allows deleting time off requests. Without this permission, users cannot delete any time off requests, including their own.</field>
         <field name="placeholder">Không</field>
     </record>
 
@@ -12,7 +12,7 @@
         <field name="name">Allowed</field>
         <field name="sequence">10</field>
         <field name="privilege_id" ref="res_groups_privilege_leave_delete"/>
-        <field name="comment">The user can delete time off requests of employees.</field>
+        <field name="comment">The user can delete time off requests.</field>
         <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
     </record>
 

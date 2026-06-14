@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from functools import partial
+
 from odoo import api, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 GROUP_LEAVE_DELETE = "hr_leave_delete_cancel.group_hr_holidays_leave_delete"
 GROUP_LEAVE_CANCEL = "hr_leave_delete_cancel.group_hr_holidays_leave_cancel"
@@ -59,24 +61,34 @@ class HrLeave(models.Model):
             )
         raise UserError(_("You are not allowed to cancel time off requests of employees."))
 
+    def _raise_leave_delete_permission_error(self):
+        raise UserError(_("You are not allowed to delete time off requests."))
+
     def _check_leave_delete_permission(self):
-        """Block deleting other employees' time off without explicit permission."""
         if self._has_leave_delete_permission():
             return
-        user_employees = self.env.user.employee_ids
-        if any(not leave.employee_id or leave.employee_id not in user_employees for leave in self):
-            raise UserError(
-                _("You are not allowed to delete time off requests of employees.")
-            )
+        self._raise_leave_delete_permission_error()
 
     def _check_leave_cancel_permission(self):
         for leave in self:
             if not self._user_can_cancel_leave_record(leave):
                 self._raise_leave_cancel_permission_error(leave)
 
+    def _check_access(self, operation):
+        if operation == "unlink" and not self.env.su and not self._has_leave_delete_permission():
+            message = _("You are not allowed to delete time off requests.")
+            return self, partial(AccessError, message)
+        return super()._check_access(operation)
+
     @api.ondelete(at_uninstall=False)
     def _unlink_if_leave_delete_permission(self):
         self._check_leave_delete_permission()
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_if_correct_states(self):
+        if self._has_leave_delete_permission():
+            return
+        return super()._unlink_if_correct_states()
 
     @api.depends_context("uid")
     @api.depends("state", "employee_id", "handover_acceptance_ids.state")
@@ -103,6 +115,10 @@ class HrLeave(models.Model):
     def _action_user_cancel(self, reason=None):
         self._check_leave_cancel_permission()
         return super()._action_user_cancel(reason=reason)
+
+    def unlink(self):
+        self._check_leave_delete_permission()
+        return super().unlink()
 
     def _get_next_states_by_state(self):
         self.ensure_one()

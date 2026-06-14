@@ -32,13 +32,18 @@ msgstr "Cho phép"
 
 #. module: hr_leave_delete_cancel
 #: model:res.groups.privilege,description:hr_leave_delete_cancel.res_groups_privilege_leave_delete
-msgid "Allows deleting time off requests of employees."
-msgstr "Cho phép xoá đơn nghỉ phép của nhân viên."
+msgid "Allows deleting time off requests. Without this permission, users cannot delete any time off requests, including their own."
+msgstr "Cho phép xoá đơn nghỉ phép. Nếu không có quyền này, người dùng không thể xoá bất kỳ đơn nghỉ phép nào, kể cả của chính mình."
 
 #. module: hr_leave_delete_cancel
 #: model:res.groups,comment:hr_leave_delete_cancel.group_hr_holidays_leave_delete
-msgid "The user can delete time off requests of employees."
-msgstr "Người dùng có thể xoá đơn nghỉ phép của nhân viên."
+msgid "The user can delete time off requests."
+msgstr "Người dùng có thể xoá đơn nghỉ phép."
+
+#. module: hr_leave_delete_cancel
+#: code:addons/hr_leave_delete_cancel/models/hr_leave.py:0
+msgid "You are not allowed to delete time off requests."
+msgstr "Bạn không có quyền xoá đơn nghỉ phép."
 
 #. module: hr_leave_delete_cancel
 #: code:addons/hr_leave_delete_cancel/models/hr_leave.py:0

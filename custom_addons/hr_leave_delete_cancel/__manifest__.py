@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Time Off Delete / Cancel Permission",
-    "version": "19.0.1.0.6",
+    "version": "19.0.1.0.8",
     "category": "Human Resources",
     "summary": "Restrict deleting and cancelling employee time off to explicitly allowed users",
     "depends": [
