@@ -14,6 +14,7 @@ _logger = logging.getLogger(__name__)
 _LEAVES_BUDGET_STATES = ("confirm", "validate1", "validate")
 _TIMEOFF_SELF_SERVICE_CTX = "hr_employee_timeoff_self_service"
 _MONTHLY_LEAVE_BONUS_DATE_CTX = "monthly_leave_bonus_date"
+_SKIP_PREVIOUS_YEAR_BALANCE_SYNC_CTX = "skip_previous_year_balance_sync"
 _SKIP_DEPARTURE_MONTHLY_LEAVE_CUTOFF_CTX = (
     "skip_departure_monthly_leave_cutoff"
 )
@@ -566,6 +567,22 @@ class HrEmployeeTimeoff(models.Model):
                 ),
                 "nam_chot_con_lai": prev_year,
             })
+        tracked_leaves = self.env["hr.leave"].sudo().search(
+            [
+                "|",
+                ("previous_year_balance_deduction", ">", 0),
+                ("previous_year_balance_synced", "=", True),
+            ]
+        )
+        if tracked_leaves:
+            tracked_leaves.with_context(
+                **{_SKIP_PREVIOUS_YEAR_BALANCE_SYNC_CTX: True}
+            ).write(
+                {
+                    "previous_year_balance_deduction": 0.0,
+                    "previous_year_balance_synced": False,
+                }
+            )
         _logger.info(
             "hr_employee_hrm_detail: snapshotted con_lai for %d employees (year=%d)",
             len(employees),
@@ -575,6 +592,24 @@ class HrEmployeeTimeoff(models.Model):
 
 class HrLeaveTimeOffSummary(models.Model):
     _inherit = "hr.leave"
+
+    previous_year_balance_deduction = fields.Float(
+        string="Khấu trừ phép năm trước",
+        readonly=True,
+        copy=False,
+        help=(
+            "Số ngày đơn này đã khấu trừ khỏi Số phép còn lại năm trước. "
+            "Trường kỹ thuật được hệ thống tự động cập nhật."
+        ),
+    )
+    previous_year_balance_synced = fields.Boolean(
+        string="Đã đồng bộ phép năm trước",
+        readonly=True,
+        copy=False,
+        help=(
+            "Đánh dấu kỹ thuật cho đơn phát sinh sau khi đã chốt phép năm trước."
+        ),
+    )
 
     @api.model
     def _con_lai_zero_no_confirmation(self):
@@ -597,6 +632,111 @@ class HrLeaveTimeOffSummary(models.Model):
             employees.with_context(
                 **employees._timeoff_summary_privacy_context()
             )._compute_time_off_summary()
+
+    @api.model
+    def _previous_year_balance_today(self):
+        return fields.Date.context_today(self)
+
+    def _is_previous_year_balance_leave(self):
+        self.ensure_one()
+        today = self._previous_year_balance_today()
+        request_date = self.request_date_from
+        employee = self.employee_id
+        paid_type_ids = employee._summary_paid_leave_type_ids() if employee else []
+        if paid_type_ids:
+            is_paid_type = self.holiday_status_id.id in paid_type_ids
+        else:
+            unpaid_type_ids = (
+                employee._summary_unpaid_leave_type_ids() if employee else []
+            )
+            is_paid_type = self.holiday_status_id.id not in unpaid_type_ids
+        return bool(
+            employee
+            and request_date
+            and request_date.year == today.year - 1
+            and employee.nam_chot_con_lai == request_date.year
+            and self.state in _LEAVES_BUDGET_STATES
+            and is_paid_type
+        )
+
+    def _lock_previous_year_balance_employees(self):
+        employee_ids = sorted(self.mapped("employee_id").ids)
+        if employee_ids:
+            self.env.cr.execute(
+                "SELECT id FROM hr_employee WHERE id IN %s ORDER BY id FOR UPDATE",
+                [tuple(employee_ids)],
+            )
+            self.env["hr.employee"].browse(employee_ids).invalidate_recordset(
+                ["con_lai_nam_truoc"]
+            )
+
+    def _restore_previous_year_balance_deduction(self):
+        leaves = self.sudo().filtered("previous_year_balance_deduction")
+        if not leaves:
+            return
+        leaves._lock_previous_year_balance_employees()
+        for leave in leaves.sorted("id"):
+            deduction = max(0.0, leave.previous_year_balance_deduction)
+            if deduction and leave.employee_id:
+                employee = leave.employee_id
+                employee.write(
+                    {
+                        "con_lai_nam_truoc": (
+                            employee.con_lai_nam_truoc or 0.0
+                        )
+                        + deduction
+                    }
+                )
+            leave.with_context(
+                **{_SKIP_PREVIOUS_YEAR_BALANCE_SYNC_CTX: True}
+            ).write({"previous_year_balance_deduction": 0.0})
+
+    def _apply_previous_year_balance_deduction(self):
+        leaves = self.sudo().filtered(
+            lambda leave: leave._is_previous_year_balance_leave()
+            and not leave.previous_year_balance_deduction
+        )
+        if not leaves:
+            return
+        leaves._lock_previous_year_balance_employees()
+        for leave in leaves.sorted("id"):
+            employee = leave.employee_id
+            available = max(0.0, employee.con_lai_nam_truoc or 0.0)
+            deduction = min(max(0.0, leave.number_of_days or 0.0), available)
+            if not deduction:
+                continue
+            employee.write(
+                {"con_lai_nam_truoc": available - deduction}
+            )
+            leave.with_context(
+                **{_SKIP_PREVIOUS_YEAR_BALANCE_SYNC_CTX: True}
+            ).write({"previous_year_balance_deduction": deduction})
+
+    def _register_previous_year_balance_leaves(self):
+        leaves = self.sudo().filtered(
+            lambda leave: not leave.previous_year_balance_synced
+            and leave._is_previous_year_balance_leave()
+        )
+        if leaves:
+            leaves.with_context(
+                **{_SKIP_PREVIOUS_YEAR_BALANCE_SYNC_CTX: True}
+            ).write({"previous_year_balance_synced": True})
+        return leaves
+
+    @api.model
+    def _rebalance_previous_year_balance(self, employee_ids):
+        employee_ids = list(set(employee_ids))
+        if not employee_ids:
+            return
+        tracked_leaves = self.sudo().search(
+            [
+                ("employee_id", "in", employee_ids),
+                ("previous_year_balance_synced", "=", True),
+            ],
+            order="id",
+        )
+        tracked_leaves._restore_previous_year_balance_deduction()
+        tracked_leaves._apply_previous_year_balance_deduction()
 
     @api.model
     def _con_lai_committed_days(
@@ -630,11 +770,32 @@ class HrLeaveTimeOffSummary(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
+        registered = records._register_previous_year_balance_leaves()
+        self._rebalance_previous_year_balance(registered.mapped("employee_id").ids)
         if not self.env.context.get("leave_fast_create"):
             records._recompute_employee_time_off_summary()
         return records
 
     def write(self, vals):
+        previous_year_fields_changed = bool(
+            {
+                "employee_id",
+                "holiday_status_id",
+                "number_of_days",
+                "request_date_from",
+                "request_date_to",
+                "date_from",
+                "date_to",
+                "state",
+            }.intersection(vals)
+        )
+        sync_previous_year_balance = (
+            previous_year_fields_changed
+            and not self.env.context.get(_SKIP_PREVIOUS_YEAR_BALANCE_SYNC_CTX)
+        )
+        previous_year_employee_ids = self.mapped("employee_id").ids
+        if sync_previous_year_balance:
+            self._restore_previous_year_balance_deduction()
         res = super().write(vals)
         summary_fields_changed = bool({
             "employee_id",
@@ -649,7 +810,24 @@ class HrLeaveTimeOffSummary(models.Model):
             terminal_state_change or not self.env.context.get("leave_fast_create")
         ):
             self._recompute_employee_time_off_summary()
+        if sync_previous_year_balance:
+            self._register_previous_year_balance_leaves()
+            self._rebalance_previous_year_balance(
+                previous_year_employee_ids + self.mapped("employee_id").ids
+            )
         return res
+
+    def unlink(self):
+        sync_previous_year_balance = not self.env.context.get(
+            _SKIP_PREVIOUS_YEAR_BALANCE_SYNC_CTX
+        )
+        employee_ids = self.mapped("employee_id").ids
+        if sync_previous_year_balance:
+            self._restore_previous_year_balance_deduction()
+        result = super().unlink()
+        if sync_previous_year_balance:
+            self._rebalance_previous_year_balance(employee_ids)
+        return result
 
     def action_confirm(self):
         res = super().action_confirm()

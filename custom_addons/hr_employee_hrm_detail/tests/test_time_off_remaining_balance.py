@@ -102,3 +102,108 @@ class TestTimeOffRemainingBalance(TransactionCase):
             ("holiday_status_id", "in", [11, 12]),
             read_group.call_args.kwargs["domain"],
         )
+
+    def test_retroactive_previous_year_leave_deducts_and_restores_snapshot(self):
+        leave_type = self.env["hr.leave.type"].create(
+            {
+                "name": "P1 previous-year balance test",
+                "requires_allocation": False,
+                "company_id": self.env.company.id,
+            }
+        )
+        self.employee.write(
+            {
+                "con_lai_nam_truoc": 5,
+                "nam_chot_con_lai": 2025,
+            }
+        )
+        Leave = self.env["hr.leave"]
+
+        with (
+            patch.object(
+                type(Leave),
+                "_previous_year_balance_today",
+                autospec=True,
+                return_value=date(2026, 1, 2),
+            ),
+            patch.object(
+                type(self.employee),
+                "_summary_paid_leave_type_ids",
+                autospec=True,
+                return_value=[leave_type.id],
+            ),
+        ):
+            leave = Leave.create(
+                {
+                    "name": "Retroactive leave",
+                    "employee_id": self.employee.id,
+                    "holiday_status_id": leave_type.id,
+                    "request_date_from": date(2025, 12, 29),
+                    "request_date_to": date(2025, 12, 29),
+                    "state": "confirm",
+                }
+            )
+            self.assertEqual(leave.previous_year_balance_deduction, 1)
+            self.assertEqual(self.employee.con_lai_nam_truoc, 4)
+
+            leave.write({"state": "refuse"})
+            self.assertEqual(leave.previous_year_balance_deduction, 0)
+            self.assertEqual(self.employee.con_lai_nam_truoc, 5)
+
+    def test_previous_year_balance_rebalances_waiting_retroactive_leaves(self):
+        leave_type = self.env["hr.leave.type"].create(
+            {
+                "name": "P1 previous-year rebalance test",
+                "requires_allocation": False,
+                "company_id": self.env.company.id,
+            }
+        )
+        self.employee.write(
+            {
+                "con_lai_nam_truoc": 1,
+                "nam_chot_con_lai": 2025,
+            }
+        )
+        Leave = self.env["hr.leave"]
+
+        with (
+            patch.object(
+                type(Leave),
+                "_previous_year_balance_today",
+                autospec=True,
+                return_value=date(2026, 1, 2),
+            ),
+            patch.object(
+                type(self.employee),
+                "_summary_paid_leave_type_ids",
+                autospec=True,
+                return_value=[leave_type.id],
+            ),
+        ):
+            first, second = Leave.create(
+                [
+                    {
+                        "name": "First retroactive leave",
+                        "employee_id": self.employee.id,
+                        "holiday_status_id": leave_type.id,
+                        "request_date_from": date(2025, 12, 29),
+                        "request_date_to": date(2025, 12, 29),
+                        "state": "confirm",
+                    },
+                    {
+                        "name": "Second retroactive leave",
+                        "employee_id": self.employee.id,
+                        "holiday_status_id": leave_type.id,
+                        "request_date_from": date(2025, 12, 30),
+                        "request_date_to": date(2025, 12, 30),
+                        "state": "confirm",
+                    },
+                ]
+            )
+            self.assertEqual(first.previous_year_balance_deduction, 1)
+            self.assertTrue(second.previous_year_balance_synced)
+            self.assertEqual(second.previous_year_balance_deduction, 0)
+
+            first.write({"state": "refuse"})
+            self.assertEqual(second.previous_year_balance_deduction, 1)
+            self.assertEqual(self.employee.con_lai_nam_truoc, 0)
