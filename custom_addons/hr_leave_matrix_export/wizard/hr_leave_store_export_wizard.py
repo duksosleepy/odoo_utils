@@ -623,16 +623,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         )
         return leaves.filtered(lambda leave: self._leave_in_mien(leave, self.MIEN_CH_CODES))
 
-    def action_export_store_excel(self):
-        self.ensure_one()
-        self._check_matrix_export_file_type("leave_ch")
-
-        year, month = int(self.year), int(self.month)
-        last_day = calendar.monthrange(year, month)[1]
-        month_start = date(year, month, 1)
-        month_end = date(year, month, last_day)
-        leaves = self._search_store_leaves(year, month, self._parse_domain())
-
+    def _build_store_export_excel(self, leaves, period_start, period_end, filename):
         buffer = BytesIO()
         workbook = xlsxwriter.Workbook(buffer, {"in_memory": True})
         sheet = workbook.add_worksheet("Nghỉ phép CH")
@@ -658,7 +649,9 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
 
         row = 2
         for leave in self._iter_export_root_leaves(leaves):
-            for segment in self._iter_leave_export_segments_merged(leave, month_start, month_end):
+            for segment in self._iter_leave_export_segments_merged(
+                leave, period_start, period_end
+            ):
                 values = self._row_for_leave_segment(segment)
                 for col, value in enumerate(values):
                     sheet.write(row, col, value, cell_fmt)
@@ -682,7 +675,6 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
 
         workbook.close()
         buffer.seek(0)
-        filename = "form_ket_xuat_nghi_phep_ch_%s-%02d.xlsx" % (year, month)
 
         attachment = self.env["ir.attachment"].create(
             {
@@ -698,6 +690,77 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             "url": "/web/content/%s?download=true" % attachment.id,
             "target": "self",
         }
+
+    def action_export_store_excel(self):
+        self.ensure_one()
+        self._check_matrix_export_file_type("leave_ch")
+
+        year, month = int(self.year), int(self.month)
+        last_day = calendar.monthrange(year, month)[1]
+        month_start = date(year, month, 1)
+        month_end = date(year, month, last_day)
+        leaves = self._search_store_leaves(year, month, self._parse_domain())
+        filename = "form_ket_xuat_nghi_phep_ch_%s-%02d.xlsx" % (year, month)
+        return self._build_store_export_excel(
+            leaves, month_start, month_end, filename
+        )
+
+    def _regional_store_leave_domain(self):
+        self.ensure_one()
+        date_from = self.regional_date_from
+        date_to = self.regional_date_to
+        overlap = [
+            ("request_date_from", "<=", date_to),
+            ("request_date_to", ">=", date_from),
+        ]
+        domain = self._parse_domain()
+        domain = domain + overlap if domain else overlap
+        employee_hrm_id = (self.regional_employee_hrm_id or "").strip()
+        attendance_code = (self.regional_attendance_code or "").strip()
+        if employee_hrm_id:
+            domain.append(("employee_id.id_hrm", "=ilike", employee_hrm_id))
+        if attendance_code:
+            domain.append(
+                ("employee_id.ma_cham_cong", "=ilike", attendance_code)
+            )
+        return domain
+
+    def _search_regional_store_leaves(self):
+        self.ensure_one()
+        leaves = self.env["hr.leave"].search(
+            self._regional_store_leave_domain(),
+            order="employee_id, request_date_from, id",
+        )
+        return leaves.filtered(
+            lambda leave: self._leave_in_mien(leave, {self.regional_mien})
+        )
+
+    def action_export_store_by_region_excel(self):
+        self.ensure_one()
+        self._check_matrix_export_file_type("leave_ch")
+        if self.regional_mien not in self.MIEN_CH_CODES:
+            raise UserError(_("Vui lòng chọn Miền cửa hàng cần kết xuất."))
+        if not self.regional_date_from or not self.regional_date_to:
+            raise UserError(_("Vui lòng nhập đầy đủ Từ ngày và Đến ngày."))
+        leaves = self._search_regional_store_leaves()
+        date_from = self.regional_date_from
+        date_to = self.regional_date_to
+        region_code = {
+            "Bắc": "bac",
+            "Nam": "nam",
+            "ĐTT": "dtt",
+        }[self.regional_mien]
+        filename = (
+            "form_ket_xuat_nghi_phep_ch_%s_%s_%s.xlsx"
+            % (
+                region_code,
+                date_from.strftime("%Y%m%d"),
+                date_to.strftime("%Y%m%d"),
+            )
+        )
+        return self._build_store_export_excel(
+            leaves, date_from, date_to, filename
+        )
 
     @staticmethod
     def _import_capnhatcong_xlwt_styles(xlwt_module):

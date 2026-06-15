@@ -1,0 +1,145 @@
+from datetime import date
+
+from odoo.exceptions import AccessError
+from odoo.tests import TransactionCase, new_test_user, tagged
+
+
+@tagged("post_install", "-at_install")
+class TestHrLeaveVisibility(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.approver = new_test_user(
+            cls.env,
+            login="time-off-limited-approver",
+            groups="hr_holidays.group_hr_holidays_user",
+        )
+        cls.owner = new_test_user(
+            cls.env,
+            login="time-off-owner",
+            groups="base.group_user",
+        )
+        cls.other_owner = new_test_user(
+            cls.env,
+            login="time-off-other-owner",
+            groups="base.group_user",
+        )
+        cls.approver_employee = cls.env["hr.employee"].create(
+            {
+                "name": "Limited Approver",
+                "user_id": cls.approver.id,
+                "company_id": cls.env.company.id,
+            }
+        )
+        cls.owner_employee = cls.env["hr.employee"].create(
+            {
+                "name": "Ticket Owner",
+                "user_id": cls.owner.id,
+                "company_id": cls.env.company.id,
+            }
+        )
+        cls.other_employee = cls.env["hr.employee"].create(
+            {
+                "name": "Unrelated Ticket Owner",
+                "user_id": cls.other_owner.id,
+                "company_id": cls.env.company.id,
+            }
+        )
+        cls.leave_type = cls.env["hr.leave.type"].create(
+            {
+                "name": "Visibility security test",
+                "requires_allocation": False,
+                "company_id": cls.env.company.id,
+            }
+        )
+        cls.own_leave = cls._create_leave(cls.approver_employee, date(2026, 7, 6))
+        cls.waiting_leave = cls._create_leave(cls.owner_employee, date(2026, 7, 7))
+        cls.unrelated_leave = cls._create_leave(cls.other_employee, date(2026, 7, 8))
+        leave_ids = (
+            cls.own_leave | cls.waiting_leave | cls.unrelated_leave
+        ).ids
+        cls.env.cr.execute(
+            """
+            DELETE FROM hr_leave_approval_actionable_user_rel
+            WHERE leave_id IN %s
+            """,
+            [tuple(leave_ids)],
+        )
+        cls.env.cr.execute(
+            """
+            INSERT INTO hr_leave_approval_actionable_user_rel (leave_id, user_id)
+            VALUES (%s, %s)
+            """,
+            [cls.waiting_leave.id, cls.approver.id],
+        )
+        (cls.own_leave | cls.waiting_leave | cls.unrelated_leave).invalidate_recordset(
+            ["approval_actionable_user_ids"]
+        )
+
+    @classmethod
+    def _create_leave(cls, employee, request_date):
+        return (
+            cls.env["hr.leave"]
+            .sudo()
+            .with_context(leave_fast_create=True)
+            .create(
+                {
+                    "name": "Visibility test",
+                    "employee_id": employee.id,
+                    "holiday_status_id": cls.leave_type.id,
+                    "request_date_from": request_date,
+                    "request_date_to": request_date,
+                }
+            )
+        )
+
+    def test_officer_sees_only_owned_and_actionable_requests(self):
+        visible = self.env["hr.leave"].with_user(self.approver).search(
+            [
+                (
+                    "id",
+                    "in",
+                    [
+                        self.own_leave.id,
+                        self.waiting_leave.id,
+                        self.unrelated_leave.id,
+                    ],
+                )
+            ]
+        )
+
+        self.assertEqual(
+            set(visible.ids),
+            {self.own_leave.id, self.waiting_leave.id},
+        )
+
+    def test_officer_cannot_write_unrelated_request(self):
+        with self.assertRaises(AccessError):
+            self.unrelated_leave.with_user(self.approver).write(
+                {"name": "Unauthorized update"}
+            )
+
+    def test_time_off_administrator_keeps_full_visibility(self):
+        administrator = new_test_user(
+            self.env,
+            login="time-off-visibility-administrator",
+            groups="hr_holidays.group_hr_holidays_manager",
+        )
+        visible = self.env["hr.leave"].with_user(administrator).search(
+            [
+                (
+                    "id",
+                    "in",
+                    [
+                        self.own_leave.id,
+                        self.waiting_leave.id,
+                        self.unrelated_leave.id,
+                    ],
+                )
+            ]
+        )
+
+        self.assertEqual(
+            set(visible.ids),
+            {self.own_leave.id, self.waiting_leave.id, self.unrelated_leave.id},
+        )

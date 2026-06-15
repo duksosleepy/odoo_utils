@@ -29,6 +29,12 @@ patch(ExportAll, {
             <i class="fa fa-fw fa-file-excel-o me-1"/>Kết xuất nghỉ phép CH
         </DropdownItem>
         <DropdownItem
+            t-if="showHrLeaveMatrixExport and matrixExportAccess.show_ch"
+            class="'o_hr_leave_store_region_export_menu'"
+            onSelected.bind="onStoreRegionExport">
+            <i class="fa fa-fw fa-map-marker me-1"/>Kết xuất nghỉ phép CH theo miền
+        </DropdownItem>
+        <DropdownItem
             t-if="showHrLeaveMatrixExport and (matrixExportAccess.show_vp || matrixExportAccess.show_import_capnhatcong_vp)"
             class="'o_hr_leave_import_capnhatcong_vp_menu'"
             onSelected.bind="onImportCapnhatcongVpExport">
@@ -71,6 +77,16 @@ patch(ExportAll.prototype, {
         await this._openLeaveExportWizard("hr.leave.matrix.export.wizard", _t("Kết xuất nghỉ phép CH"), {
             form_view_ref: "hr_leave_matrix_export.view_hr_leave_store_export_wizard_form",
         });
+    },
+
+    async onStoreRegionExport() {
+        await this._openLeaveExportWizard(
+            "hr.leave.matrix.export.wizard",
+            _t("Kết xuất nghỉ phép CH theo miền"),
+            {
+                form_view_ref: "hr_leave_matrix_export.view_hr_leave_store_region_export_wizard_form",
+            }
+        );
     },
 
     async onImportCapnhatcongExport() {

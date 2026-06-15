@@ -2,17 +2,47 @@
 <odoo>
     <!-- extra_approver_user_ids on hr.leave is defined here, so the ir.rule lives here too -->
     <data>
+        <!--
+            Odoo grants Time Off Officers read/write access to every request and
+            Time Off Responsibles read/write access to every subordinate request.
+            Approval access in this module is intentionally narrower: users may
+            access their own requests through Odoo's base employee rules, or a
+            request on which they can currently perform an approval action.
+            Explicit handover-recipient and read-only-notifier rules remain
+            separate, narrowly scoped workflow grants.
+
+            Time Off Administrators keep unrestricted access through
+            hr_holidays.hr_leave_rule_manager.
+        -->
+        <record id="hr_holidays.hr_leave_rule_responsible_read" model="ir.rule">
+            <field name="domain_force">
+                [('approval_actionable_user_ids', 'in', [user.id])]
+            </field>
+        </record>
+
+        <record id="hr_holidays.hr_leave_rule_responsible_update" model="ir.rule">
+            <field name="domain_force">
+                [('approval_actionable_user_ids', 'in', [user.id])]
+            </field>
+        </record>
+
+        <record id="hr_holidays.hr_leave_rule_user_read" model="ir.rule">
+            <field name="domain_force">
+                [('approval_actionable_user_ids', 'in', [user.id])]
+            </field>
+        </record>
+
+        <record id="hr_holidays.hr_leave_rule_officer_update" model="ir.rule">
+            <field name="domain_force">
+                [('approval_actionable_user_ids', 'in', [user.id])]
+            </field>
+        </record>
+
         <record id="hr_leave_rule_extra_approver" model="ir.rule">
             <field name="name">Time Off: Extra Approvers access</field>
             <field name="model_id" ref="hr_holidays.model_hr_leave"/>
             <field name="domain_force">
                 [
-                    '|',
-                    ('responsible_approval_line_ids.user_id', '=', user.id),
-                    '&amp;',
-                    ('employee_id', '!=', False),
-                    '|',
-                    ('extra_approver_user_ids', 'in', [user.id]),
                     ('approval_actionable_user_ids', 'in', [user.id]),
                 ]
             </field>

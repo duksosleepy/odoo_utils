@@ -1,7 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     "name": "Time Off Matrix Excel Export",
-    "version": "19.0.1.8.10",
+    "version": "19.0.1.8.11",
     "external_dependencies": {
         "python": ["xlwt"],
     },
@@ -21,6 +21,7 @@
         "views/hr_leave_file_export_config_views.xml",
         "wizard/hr_leave_matrix_export_wizard_views.xml",
         "wizard/hr_leave_store_export_wizard_views.xml",
+        "wizard/hr_leave_store_region_export_wizard_views.xml",
         "wizard/hr_leave_import_capnhatcong_wizard_views.xml",
     ],
     "assets": {

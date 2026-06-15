@@ -1,5 +1,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from datetime import date
 import json
 from io import BytesIO
 
@@ -35,6 +36,37 @@ class HrLeaveMatrixExportWizard(models.TransientModel):
         default=lambda self: fields.Date.context_today(self).month,
         help="Calendar month for leave requests in the export.",
     )
+    regional_date_filter = fields.Selection(
+        selection=[
+            ("all_year", "0 - Cả năm"),
+            ("custom", "1 - Khoảng ngày"),
+        ],
+        string="Chọn ngày",
+        default="all_year",
+    )
+    regional_date_from = fields.Date(
+        string="Từ ngày",
+        default=lambda self: date(fields.Date.context_today(self).year, 1, 1),
+    )
+    regional_date_to = fields.Date(
+        string="Đến ngày",
+        default=lambda self: date(fields.Date.context_today(self).year, 12, 31),
+    )
+    regional_mien = fields.Selection(
+        selection=[
+            ("Bắc", "Bắc"),
+            ("Nam", "Nam"),
+            ("ĐTT", "ĐTT"),
+        ],
+        string="Miền",
+        default=lambda self: (
+            self._get_current_user_leave_mien()
+            if self._get_current_user_leave_mien() in self.MIEN_CH_CODES
+            else False
+        ),
+    )
+    regional_employee_hrm_id = fields.Char(string="ID HRM")
+    regional_attendance_code = fields.Char(string="Mã máy chấm công")
     domain_json = fields.Text(
         string="Search domain (JSON)",
         help="Technical: current list filters from the Time Off list view.",
@@ -65,6 +97,23 @@ class HrLeaveMatrixExportWizard(models.TransientModel):
         for wiz in self:
             if wiz.month < 1 or wiz.month > 12:
                 raise UserError(_("Month must be between 1 and 12."))
+
+    @api.onchange("year", "regional_date_filter")
+    def _onchange_regional_date_filter(self):
+        for wizard in self:
+            if wizard.regional_date_filter == "all_year" and wizard.year:
+                wizard.regional_date_from = date(wizard.year, 1, 1)
+                wizard.regional_date_to = date(wizard.year, 12, 31)
+
+    @api.constrains("regional_date_from", "regional_date_to")
+    def _check_regional_date_range(self):
+        for wizard in self:
+            if (
+                wizard.regional_date_from
+                and wizard.regional_date_to
+                and wizard.regional_date_from > wizard.regional_date_to
+            ):
+                raise UserError(_("Từ ngày phải nhỏ hơn hoặc bằng Đến ngày."))
 
     def _parse_domain(self):
         self.ensure_one()
