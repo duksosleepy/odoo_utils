@@ -113,6 +113,16 @@ class TestHrLeaveVisibility(TransactionCase):
             {self.own_leave.id, self.waiting_leave.id},
         )
 
+    def test_standard_noupdate_rules_are_restricted(self):
+        expected = "[('approval_actionable_user_ids', 'in', [user.id])]"
+        for xmlid in (
+            "hr_holidays.hr_leave_rule_responsible_read",
+            "hr_holidays.hr_leave_rule_responsible_update",
+            "hr_holidays.hr_leave_rule_user_read",
+            "hr_holidays.hr_leave_rule_officer_update",
+        ):
+            self.assertEqual(self.env.ref(xmlid).domain_force, expected)
+
     def test_officer_cannot_write_unrelated_request(self):
         with self.assertRaises(AccessError):
             self.unrelated_leave.with_user(self.approver).write(
