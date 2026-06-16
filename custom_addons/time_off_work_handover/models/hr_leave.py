@@ -30,6 +30,7 @@ _DEPARTMENT_HEAD_JOB_TITLE_KEY = handover_constants.DEPARTMENT_HEAD_JOB_TITLE_KE
 _DEPARTMENT_MANAGER_JOB_TITLE_KEY = handover_constants.DEPARTMENT_MANAGER_JOB_TITLE_KEY
 _SKIP_SUBMIT_BOT_NOTIFY_CTX = handover_constants.SKIP_SUBMIT_BOT_NOTIFY_CTX
 _SKIP_OUTCOME_BOT_NOTIFY_CTX = handover_constants.SKIP_OUTCOME_BOT_NOTIFY_CTX
+_HANDOVER_EXEMPT_JOB_TITLE_KEYS = {"asm", "rsm"}
 
 
 def _normalize_job_title_key(title):
@@ -434,13 +435,45 @@ class HrLeaveHandover(models.Model):
         """Create handover acknowledgement rows and schedule activities (clock menu) for recipients."""
         if self.env.context.get("leave_fast_create") or self.env.context.get("mail_activity_automation_skip"):
             return self
-        leaves = self.filtered(lambda l: l.state == "confirm" and l.handover_employee_ids)
+        leaves = self.filtered(
+            lambda l: l.state == "confirm"
+            and not l._should_skip_work_handover()
+            and l.handover_employee_ids
+        )
         leaves._sync_handover_acceptance_lines()
         leaves._schedule_work_handover_activities()
         return self
 
     def _can_skip_work_handover_by_job_title(self, employee):
-        return self._can_skip_workover_rank_for_employee(employee)
+        return self._is_work_handover_exempt_job_title(
+            employee
+        ) or self._can_skip_workover_rank_for_employee(employee)
+
+    def _is_work_handover_exempt_job_title(self, employee):
+        """True for job titles that never require work handover on leave requests."""
+        self.ensure_one()
+        raw = self._read_job_title_safely(employee)
+        return _normalize_job_title_key(raw) in _HANDOVER_EXEMPT_JOB_TITLE_KEYS
+
+    def _should_skip_work_handover(self):
+        self.ensure_one()
+        return bool(
+            self.skip_work_handover
+            or self._is_work_handover_exempt_job_title(
+                self._get_effective_employee_for_skip_handover()
+            )
+        )
+
+    def _apply_job_title_work_handover_exemption(self):
+        exempt_leaves = self.filtered(
+            lambda leave: not leave.skip_work_handover
+            and leave._is_work_handover_exempt_job_title(
+                leave._get_effective_employee_for_skip_handover()
+            )
+        )
+        if exempt_leaves:
+            exempt_leaves.write({"skip_work_handover": True})
+        return self
 
     def _can_skip_workover_rank_for_employee(self, employee):
         """True when employee job title is at least `trưởng bộ phận` on the company selection scale."""
@@ -463,7 +496,7 @@ class HrLeaveHandover(models.Model):
         for leave in self:
             if leave.state not in ("confirm", "validate1", "validate"):
                 continue
-            if leave.skip_work_handover:
+            if leave._should_skip_work_handover():
                 continue
             missing_content = leave.handover_acceptance_ids.filtered(
                 lambda line: line.employee_id and not (line.handover_work_content or "").strip()
@@ -514,7 +547,7 @@ class HrLeaveHandover(models.Model):
         for leave in self:
             if (
                 leave.state in ("confirm", "validate1", "validate")
-                and not leave.skip_work_handover
+                and not leave._should_skip_work_handover()
                 and not leave._handover_recipient_employees()
             ):
                 raise ValidationError(
@@ -528,11 +561,11 @@ class HrLeaveHandover(models.Model):
     def _check_skip_work_handover_permission(self):
         for leave in self.filtered("skip_work_handover"):
             target_employee = leave._get_effective_employee_for_skip_handover()
-            if not leave._can_skip_workover_rank_for_employee(target_employee):
+            if not leave._can_skip_work_handover_by_job_title(target_employee):
                 title_raw = leave._read_job_title_safely(target_employee)
                 raise ValidationError(
                     _(
-                        "Chỉ nhân viên có chức danh từ Trưởng bộ phận trở lên mới được phép bỏ qua bàn giao công việc. "
+                        "Chỉ nhân viên có chức danh ASM, RSM, hoặc từ Trưởng bộ phận trở lên mới được phép bỏ qua bàn giao công việc. "
                         "Nhân viên hiện tại: %(employee)s, chức danh: %(title)s."
                     )
                     % {
@@ -579,6 +612,8 @@ class HrLeaveHandover(models.Model):
 
     @api.depends(
         "state",
+        "employee_id",
+        "employee_id.job_title",
         "handover_employee_ids",
         "handover_employee_ids.name",
         "handover_acceptance_ids.state",
@@ -590,6 +625,17 @@ class HrLeaveHandover(models.Model):
             leave.can_skip_work_handover = leave._can_skip_work_handover_by_job_title(
                 leave._get_effective_employee_for_skip_handover()
             )
+
+    @api.onchange("employee_id")
+    def _onchange_employee_id_apply_handover_exemption(self):
+        for leave in self:
+            target_employee = leave._get_effective_employee_for_skip_handover()
+            if leave._is_work_handover_exempt_job_title(target_employee):
+                leave.skip_work_handover = True
+            elif leave.skip_work_handover and not leave._can_skip_work_handover_by_job_title(
+                target_employee
+            ):
+                leave.skip_work_handover = False
 
     def _compute_handover_assigned_recipient_banner(self):
         """Handover colleague (not the applicant): who picked them + applicant name."""
@@ -925,7 +971,7 @@ class HrLeaveHandover(models.Model):
         """
         self.ensure_one()
         leave_su = self.sudo()
-        if leave_su.state not in ("confirm", "validate1"):
+        if leave_su.state not in ("confirm", "validate1") or leave_su._should_skip_work_handover():
             return self.env["hr.employee"]
         active_recipients = leave_su.handover_employee_ids
         if not active_recipients:
@@ -1180,7 +1226,11 @@ class HrLeaveHandover(models.Model):
     def _handover_past_due_without_any_acceptance(self):
         """Same time/no-acceptance test as handover escalation cron (UI can show before cron sets handover_escalated)."""
         self.ensure_one()
-        if self.state not in ("confirm", "validate1") or not self.handover_employee_ids:
+        if (
+            self.state not in ("confirm", "validate1")
+            or self._should_skip_work_handover()
+            or not self.handover_employee_ids
+        ):
             return False
         active_lines = self.handover_acceptance_ids.filtered(
             lambda l: l.employee_id in self.handover_employee_ids
@@ -1241,6 +1291,7 @@ class HrLeaveHandover(models.Model):
         now = fields.Datetime.now()
         target = self.filtered(
             lambda l: l.state in ("confirm", "validate1")
+            and not l._should_skip_work_handover()
             and l.handover_employee_ids
             and not l.handover_requested_at
         )
@@ -1632,7 +1683,9 @@ class HrLeaveHandover(models.Model):
     def _schedule_work_handover_activities(self):
         today = fields.Date.today()
         for leave in self.filtered(
-            lambda l: l.state in _HANDOVER_ACTIVE_STATES and l.handover_employee_ids
+            lambda l: l.state in _HANDOVER_ACTIVE_STATES
+            and not l._should_skip_work_handover()
+            and l.handover_employee_ids
         ):
             for line in leave.handover_acceptance_ids.sudo().filtered(lambda l: l.state == "pending"):
                 user = line.employee_id.user_id
@@ -1966,10 +2019,11 @@ class HrLeaveHandover(models.Model):
         leaves = self.sudo().search(
             [
                 ("state", "in", ("confirm", "validate1")),
+                ("skip_work_handover", "=", False),
                 ("handover_employee_ids", "!=", False),
             ]
         )
-        for leave in leaves:
+        for leave in leaves.filtered(lambda l: not l._should_skip_work_handover()):
             if not leave.handover_escalated:
                 leave._apply_handover_timeout_escalation()
             else:
@@ -2151,9 +2205,13 @@ class HrLeaveHandover(models.Model):
             if vals.get("state") in ("validate", "refuse", "cancel"):
                 self._feedback_all_work_handover_activities()
             elif "handover_employee_ids" in vals:
-                self.filtered(lambda l: l.state in _HANDOVER_ACTIVE_STATES)._sync_handover_acceptance_lines()
-                self.filtered(lambda l: l.state in _HANDOVER_ACTIVE_STATES)._mark_pending_handover_lines_as_escalation_assigned()
-                self.filtered(lambda l: l.state in _HANDOVER_ACTIVE_STATES)._schedule_work_handover_activities()
+                active_handover = self.filtered(
+                    lambda l: l.state in _HANDOVER_ACTIVE_STATES
+                    and not l._should_skip_work_handover()
+                )
+                active_handover._sync_handover_acceptance_lines()
+                active_handover._mark_pending_handover_lines_as_escalation_assigned()
+                active_handover._schedule_work_handover_activities()
 
     def write(self, vals):
         handover_lines_changed = bool(
@@ -2167,6 +2225,7 @@ class HrLeaveHandover(models.Model):
         ):
             submit_notify_target = self.filtered(
                 lambda l: l.state != "confirm"
+                and not l._should_skip_work_handover()
                 and l.handover_employee_ids
                 and not l.split_group_id
             )
@@ -2186,7 +2245,9 @@ class HrLeaveHandover(models.Model):
             candidates = self.env["hr.leave"].browse(self.ids)
         primaries = self.env["hr.leave"]
         seen = set()
-        for leave in candidates.filtered(lambda l: l.state == "confirm"):
+        for leave in candidates.filtered(
+            lambda l: l.state == "confirm" and not l._should_skip_work_handover()
+        ):
             if not leave.handover_employee_ids or leave._handover_ready_for_approval():
                 continue
             if leave.split_group_id:
@@ -2222,8 +2283,10 @@ class HrLeaveHandover(models.Model):
             primary._notify_handover_recipients_submit_via_bot()
 
     def action_confirm(self):
+        self.sudo()._apply_job_title_work_handover_exemption()
         missing_handover = self.filtered(
-            lambda leave: not leave.skip_work_handover and not leave._handover_recipient_employees()
+            lambda leave: not leave._should_skip_work_handover()
+            and not leave._handover_recipient_employees()
         )
         if missing_handover:
             raise UserError(
@@ -2253,6 +2316,7 @@ class HrLeaveHandover(models.Model):
             )
             raise
         workflow_records = records.sudo()
+        workflow_records._apply_job_title_work_handover_exemption()
         workflow_records.filtered(
             lambda l: l.handover_acceptance_ids and not l.handover_employee_ids
         )._sync_handover_employees_from_acceptance()

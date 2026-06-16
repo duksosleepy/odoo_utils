@@ -185,3 +185,58 @@ class TestHandoverEmployeeRead(TransactionCase):
                 unavailable.mapped("name"),
                 [self.recipient.name],
             )
+
+    def test_asm_rsm_leave_auto_skips_work_handover(self):
+        leave_day = date(2026, 7, 6)
+        start_dt = datetime.combine(leave_day, time(7, 0))
+        end_dt = datetime.combine(leave_day, time(19, 0))
+        for job_title in ("asm", "rsm"):
+            employee = self.env["hr.employee"].create(
+                {
+                    "name": "%s Requester" % job_title.upper(),
+                    "company_id": self.user.company_id.id,
+                    "job_title": job_title,
+                }
+            )
+
+            leave = self.env["hr.leave"].create(
+                {
+                    "name": "%s leave without handover" % job_title.upper(),
+                    "employee_id": employee.id,
+                    "holiday_status_id": self.leave_type.id,
+                    "request_date_from": leave_day,
+                    "request_date_to": leave_day,
+                    "date_from": start_dt,
+                    "date_to": end_dt,
+                }
+            )
+
+            self.assertTrue(leave.skip_work_handover)
+            self.assertTrue(leave._should_skip_work_handover())
+
+    def test_regular_leave_does_not_auto_skip_work_handover(self):
+        leave_day = date(2026, 7, 7)
+        start_dt = datetime.combine(leave_day, time(7, 0))
+        end_dt = datetime.combine(leave_day, time(19, 0))
+        regular_employee = self.env["hr.employee"].create(
+            {
+                "name": "Regular Requester",
+                "company_id": self.user.company_id.id,
+                "job_title": "nhân viên vp",
+            }
+        )
+
+        leave = self.env["hr.leave"].create(
+            {
+                "name": "Regular leave without handover",
+                "employee_id": regular_employee.id,
+                "holiday_status_id": self.leave_type.id,
+                "request_date_from": leave_day,
+                "request_date_to": leave_day,
+                "date_from": start_dt,
+                "date_to": end_dt,
+            }
+        )
+
+        self.assertFalse(leave.skip_work_handover)
+        self.assertFalse(leave._should_skip_work_handover())

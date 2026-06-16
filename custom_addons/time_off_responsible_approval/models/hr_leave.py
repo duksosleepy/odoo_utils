@@ -814,7 +814,7 @@ class HrLeaveResponsibleApproval(models.Model):
                 if missing_since:
                     missing_since.write({"pending_since": fields.Datetime.now()})
                 leave._odoobot_reset_approval_remind_tracking()
-                leave.activity_update()
+                leave.sudo().activity_update()
                 leave._notify_responsible_current_turn()
             elif not leave.responsible_approval_line_ids.filtered(lambda ln: ln.state == "pending"):
                 leave._action_validate(check_state=False)
@@ -1710,7 +1710,7 @@ class HrLeaveResponsibleApproval(models.Model):
         max_seq = max(self.holiday_status_id.multi_approval_step_ids.mapped("sequence") or [1])
         if self.multi_step_current < max_seq:
             self.write({"multi_step_current": self.multi_step_current + 1})
-            self.activity_update()
+            self.sudo().activity_update()
             return True
 
         return self._action_validate(check_state=False)
@@ -1855,7 +1855,7 @@ class HrLeaveResponsibleApproval(models.Model):
         if not pending:
             return self._action_validate(check_state=False)
 
-        self.activity_update()
+        self.sudo().activity_update()
         return True
 
     def action_responsible_refuse(self, reason=False):
