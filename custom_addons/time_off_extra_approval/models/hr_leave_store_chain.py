@@ -6,8 +6,7 @@ notifications, timeout escalation) are shared with employee_hr_responsibles.
 
 Approval flows (Nhóm trưởng / Cửa hàng trưởng):
   The chain follows the org chart (hr.employee.parent_id), one approver per level.
-  ASM is the anchor/first step (preferring the Work Handover ASM); the walk then
-  continues upward from the ASM's reporting line.
+  Work Handover ASM is for job handover only — it does not change the approval order.
   The chain STOPS at the first job title flagged as "Mức duyệt cuối" (is_final_level)
   in the OdooBot Duyệt đơn config (hr.leave.odoobot.notify.rule), matched by the
   requester's Miền. If no final-level title is met, the chain stops at the topmost
@@ -135,11 +134,9 @@ class HrLeaveStoreChain(models.Model):
     def _store_chain_ordered_chain_employees(self):
         """Ordered employees of the approval chain, following the requester's org chart.
 
-        The spine is the requester's reporting line (``employee_id.parent_id`` upward):
-        for a store leader this is ASM → admin → admin tổng. A Work Handover ASM, when
-        present, overrides whoever fills the ASM level (that is the person actually
-        receiving and approving the ticket). Always resolved on a sudo record so the
-        result does not depend on the caller's access rights.
+        The spine is the requester's reporting line (``employee_id.parent_id`` upward),
+        e.g. direct manager → admin miền → admin tổng. Work Handover ASM does not
+        alter this chain (handover is separate from approval order).
         """
         self.ensure_one()
         requester = self.employee_id
@@ -157,27 +154,14 @@ class HrLeaveStoreChain(models.Model):
             ordered_ids.append(cur_id)
             cur_id = self._org_chart_sql_parent_id(cur_id)
 
-        Employee = self.env["hr.employee"].sudo()
-        handover_asm = self._store_chain_handover_asm_employee()
-        if handover_asm and handover_asm.id not in seen:
-            replaced = False
-            for idx, emp_id in enumerate(ordered_ids):
-                if (Employee.browse(emp_id).job_title or "").strip().lower() == "asm":
-                    ordered_ids[idx] = handover_asm.id
-                    replaced = True
-                    break
-            if not replaced:
-                ordered_ids.insert(0, handover_asm.id)
-
-        return Employee.browse(ordered_ids)
+        return self.env["hr.employee"].sudo().browse(ordered_ids)
 
     def _get_store_chain_approver_users(self):
         """Build the ordered approver list for the store chain flow.
 
         Follows the requester's org chart (``employee_id.parent_id`` upward), one
-        approver per level (a Work Handover ASM overrides the ASM level). Stops at the
-        first title flagged as the final level ("Mức duyệt cuối") in the OdooBot Duyệt
-        đơn config for the requester's Miền; otherwise stops at the topmost approver on
+        approver per level. Stops at the first title flagged as the final level
+        ("Mức duyệt cuối") in the OdooBot Duyệt đơn config for the requester's Miền; otherwise stops at the topmost approver on
         the org chart. Returns res.users in sequential approval order (first approves first).
         """
         self.ensure_one()
@@ -241,6 +225,9 @@ class HrLeaveStoreChain(models.Model):
             return
         line_model = self.env["hr.leave.responsible.approval"].sudo()
         existing_by_user = {ln.user_id.id: ln for ln in self.responsible_approval_line_ids}
+        previous_wave_user_ids = self.with_context(
+            skip_responsible_auto_skip_pending=True
+        )._responsible_pending_current_wave_raw().mapped("user_id").ids
         expected_user_ids = set(users.ids)
         for ln in self.responsible_approval_line_ids.filtered(
             lambda line: line.state == "pending" and line.user_id.id not in expected_user_ids
@@ -258,8 +245,14 @@ class HrLeaveStoreChain(models.Model):
         for seq, user in enumerate(users, start=1):
             line = existing_by_user.get(user.id)
             if line:
+                updates = {}
                 if line.sequence != seq:
-                    line.write({"sequence": seq})
+                    updates["sequence"] = seq
+                if line.state == "pending" and not line.pending_since and not has_active_wave:
+                    updates["pending_since"] = now
+                    has_active_wave = True
+                if updates:
+                    line.write(updates)
                 continue
             vals = {
                 "leave_id": self.id,
@@ -276,6 +269,40 @@ class HrLeaveStoreChain(models.Model):
                 user.login,
                 seq,
             )
+        # Keep pending sequence numbers compact (1..n) after skipping removed approvers.
+        pending_lines = self.responsible_approval_line_ids.filtered(
+            lambda line: line.state == "pending"
+        ).sorted(lambda line: (line.sequence, line.id))
+        for seq, line in enumerate(pending_lines, start=1):
+            updates = {}
+            if line.sequence != seq:
+                updates["sequence"] = seq
+            if seq == 1 and not line.pending_since:
+                updates["pending_since"] = now
+            if updates:
+                line.write(updates)
+        self._store_chain_notify_current_turn_after_reconcile(previous_wave_user_ids)
+
+    def _store_chain_notify_current_turn_after_reconcile(self, previous_wave_user_ids=None):
+        """Notify the active approver when the store-chain reconcile changes who is up next."""
+        self.ensure_one()
+        if self.state not in ("confirm", "validate1"):
+            return
+        if not self._handover_ready_for_approval():
+            return
+        wave = self.with_context(
+            skip_responsible_auto_skip_pending=True
+        )._responsible_pending_current_wave_raw()
+        if not wave:
+            return
+        current_user_ids = set(wave.mapped("user_id").ids)
+        previous_wave_user_ids = set(previous_wave_user_ids or [])
+        if current_user_ids == previous_wave_user_ids:
+            return
+        missing_since = wave.filtered(lambda line: not line.pending_since)
+        if missing_since:
+            missing_since.write({"pending_since": fields.Datetime.now()})
+        self._notify_responsible_current_turn()
 
     def _store_chain_ensure_missing_approval_lines(self):
         """Backward-compatible alias for reconcile."""

@@ -621,9 +621,9 @@ class HrLeave(models.Model):
         if "monthly_leave_split_preview" not in fields_list:
             return res
         employee = (
-            self.env["hr.employee"].browse(res["employee_id"])
+            self.env["hr.employee"].browse(res["employee_id"])._sudo_for_timeoff_access()
             if res.get("employee_id")
-            else self.env.user.employee_id
+            else self.env.user.employee_id._sudo_for_timeoff_access()
         )
         leave = self.new(
             {
@@ -646,11 +646,7 @@ class HrLeave(models.Model):
         res = self._default_get_split_preview(res, fields_list)
         if not self.env.context.get("holiday_status_display_name", True) or "holiday_status_id" not in fields_list:
             return res
-        employee = (
-            self.env["hr.employee"].browse(res["employee_id"])
-            if res.get("employee_id")
-            else self.env.user.employee_id
-        )
+        employee = self._safe_timeoff_context_employee()
         start_date = self._coerce_to_date(res.get("request_date_from"))
         if not start_date:
             start_date = self._coerce_to_date(res.get("date_from"))

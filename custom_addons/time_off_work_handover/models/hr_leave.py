@@ -2373,8 +2373,14 @@ class HrLeaveHandover(models.Model):
             raise
 
     def web_read(self, specification):
+        needs_handover = self._needs_handover_read_context((), specification)
+        target = (
+            self._with_handover_employee_read_context() if needs_handover else self
+        )
+        if needs_handover and specification:
+            specification = self._handover_onchange_fields_spec(specification)
         try:
-            return super().web_read(specification)
+            return super(HrLeaveHandover, target).web_read(specification)
         except MissingError:
             _logger.exception(
                 "time_off_work_handover: MissingError during hr.leave web_read "

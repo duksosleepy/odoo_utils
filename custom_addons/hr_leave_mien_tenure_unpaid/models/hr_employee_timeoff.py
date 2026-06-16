@@ -58,7 +58,7 @@ class HrEmployeeTenureMonthlyLeave(models.Model):
         """Add +1 for the bonus month when not already granted this month."""
         bonus_date = bonus_date or self._monthly_leave_bonus_date()
         bonus_month = bonus_date.replace(day=1)
-        to_apply = self.filtered(
+        to_apply = self.sudo().filtered(
             lambda employee: employee.last_monthly_leave_bonus_date != bonus_month
         )
         return super(HrEmployeeTenureMonthlyLeave, to_apply)._apply_monthly_leave_bonus(
@@ -69,7 +69,7 @@ class HrEmployeeTenureMonthlyLeave(models.Model):
         """Remove the current month's auto +1 when qualification no longer matches."""
         bonus_date = bonus_date or self._monthly_leave_bonus_date()
         bonus_month = bonus_date.replace(day=1)
-        for employee in self:
+        for employee in self.sudo():
             if employee.last_monthly_leave_bonus_date != bonus_month:
                 continue
             employee.with_context(
@@ -85,7 +85,7 @@ class HrEmployeeTenureMonthlyLeave(models.Model):
         """Keep current-month auto +1 in sync when qualification fields are corrected."""
         bonus_date = self._monthly_leave_bonus_date()
         bonus_month = bonus_date.replace(day=1)
-        for employee in self:
+        for employee in self.sudo():
             if employee._monthly_leave_bonus_eligible(bonus_date):
                 if employee.last_monthly_leave_bonus_date != bonus_month:
                     employee._apply_monthly_leave_bonus(bonus_date)

@@ -90,10 +90,12 @@ class MailBot(models.AbstractModel):
             return False
         if "hr.leave" not in self.env:
             return _("Bot chưa truy cập được dữ liệu Time Off trên hệ thống hiện tại.")
+        intent = self._classify_intent(body)
+        if intent == "daily_tasks":
+            return self._run_secretary_daily_tasks_skill()
         if skill_key == "main":
             _logger.info("business_discuss_bots: route channel_id=%s skill=main", channel.id)
             return self._run_main_router_skill(body)
-        intent = self._classify_intent(body)
         _logger.info("business_discuss_bots: route channel_id=%s skill=%s intent=%s", channel.id, skill_key, intent)
         if skill_key == "approval":
             if intent not in self._APPROVAL_SUPPORTED_INTENTS:
@@ -183,6 +185,73 @@ class MailBot(models.AbstractModel):
         )
         return Markup(onboarding_note) + Markup(core) + Markup(guidance)
 
+    def _run_secretary_daily_tasks_skill(self):
+        approval_count = self._count_pending_approval_leaves_for_user()
+        handover_count = self._count_pending_handover_leaves_for_user()
+        if not approval_count and not handover_count:
+            return _(
+                "Hôm nay bạn không có việc nào đang chờ xử lý.<br/>"
+                "Chúc bạn một ngày làm việc hiệu quả!"
+            )
+        lines = [_("Hôm nay bạn có những việc sau đây đang chờ. Cụ thể là:")]
+        if approval_count:
+            lines.append(
+                _("_ %(count)s đơn nghỉ phép đang cần bạn duyệt")
+                % {"count": approval_count}
+            )
+        if handover_count:
+            lines.append(
+                _("_ %(count)s đơn bàn giao việc cần bạn xử lý")
+                % {"count": handover_count}
+            )
+        return "<br/>".join(lines)
+
+    def _count_pending_approval_leaves_for_user(self, user=None):
+        user = user or self.env.user
+        Leave = self.env["hr.leave"].sudo()
+        if "approval_actionable_user_ids" not in Leave._fields:
+            return 0
+        return Leave.search_count(
+            [
+                ("state", "in", ("confirm", "validate1")),
+                ("approval_actionable_user_ids", "in", user.id),
+            ]
+        )
+
+    def _count_pending_handover_leaves_for_user(self, user=None):
+        user = user or self.env.user
+        employee = user.sudo().employee_id
+        if not employee:
+            return 0
+        if "hr.leave.handover.acceptance" not in self.env:
+            return 0
+        Acceptance = self.env["hr.leave.handover.acceptance"].sudo()
+        Leave = self.env["hr.leave"]
+        leave_ids = set()
+        pending_lines = Acceptance.search(
+            [
+                ("employee_id", "=", employee.id),
+                ("state", "=", "pending"),
+                ("leave_id.state", "in", ("confirm",)),
+            ]
+        )
+        for line in pending_lines:
+            leave = line.leave_id
+            if employee in leave.handover_employee_ids:
+                leave_ids.add(leave.id)
+        if "handover_escalated" in Leave._fields:
+            escalation_leaves = Leave.with_user(user).search(
+                [
+                    ("state", "in", ("confirm", "validate1")),
+                    ("handover_escalated", "=", True),
+                    ("handover_escalation_user_id", "=", user.id),
+                ]
+            )
+            for leave in escalation_leaves:
+                if leave.handover_escalation_pick_prompt:
+                    leave_ids.add(leave.id)
+        return len(leave_ids)
+
     def _run_main_help_with_leave_summary(self):
         employee = self.env.user.employee_id
         if not employee:
@@ -234,6 +303,21 @@ class MailBot(models.AbstractModel):
         text = self._normalize_text(body)
         if not text:
             return "help"
+        daily_task_tokens = (
+            "hom nay co viec",
+            "co viec gi can lam",
+            "viec gi can lam",
+            "nhung viec can lam",
+            "viec can lam hom nay",
+            "cong viec can lam",
+            "can lam gi hom nay",
+            "what do i need to do",
+            "tasks today",
+            "pending tasks",
+            "to do today",
+        )
+        if any(token in text for token in daily_task_tokens):
+            return "daily_tasks"
         if any(token in text for token in ("menu", "help", "giup", "tro giup", "huong dan")):
             return "help"
         if any(token in text for token in ("gan nhat", "ngay nao", "khi nao")):

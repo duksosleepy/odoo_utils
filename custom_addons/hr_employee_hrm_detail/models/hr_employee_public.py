@@ -23,6 +23,8 @@ class HrEmployeePublic(models.Model):
     con_lai_nam_truoc = fields.Float(readonly=True)
     nam_chot_con_lai = fields.Integer(readonly=True)
     monthly_paid_leave_cap = fields.Integer(readonly=True)
+    last_monthly_leave_bonus_date = fields.Date(readonly=True)
+    departure_monthly_leave_reversal_date = fields.Date(readonly=True)
     can_edit_monthly_paid_leave_cap = fields.Boolean(
         related="employee_id.can_edit_monthly_paid_leave_cap",
         readonly=True,

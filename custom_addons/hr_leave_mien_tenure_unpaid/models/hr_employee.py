@@ -31,9 +31,10 @@ class HrEmployee(models.Model):
     def _employee_job_position_key(self):
         """Normalized job label used for tenure / leave rules."""
         self.ensure_one()
-        if "job_title" in self._fields and self.job_title:
-            return str(self.job_title).strip().casefold()
-        return (self.job_id.name or "").strip().casefold()
+        employee = self.sudo()
+        if "job_title" in employee._fields and employee.job_title:
+            return str(employee.job_title).strip().casefold()
+        return (employee.job_id.name or "").strip().casefold()
 
     def _is_tenure_unpaid_job_position(self):
         """Chức danh «Nhóm trưởng» — chỉ nhóm này mới áp quy tắc thâm niên/ngày lễ."""
@@ -55,7 +56,7 @@ class HrEmployee(models.Model):
     def _mien_tenure_has_four_years(self, reference_date=None):
         """Đủ 4 năm làm việc tính từ Ngày vào làm tới ngày tham chiếu (mặc định: hôm nay)."""
         self.ensure_one()
-        join_date = self.ngay_vao_lam
+        join_date = self.sudo().ngay_vao_lam
         if not join_date:
             return False
         ref = reference_date or fields.Date.today()
@@ -74,7 +75,7 @@ class HrEmployee(models.Model):
     def _mien_tenure_work_duration_label(self, reference_date=None):
         """Thâm niên làm việc từ Ngày vào làm (HRM) tới ngày tham chiếu."""
         self.ensure_one()
-        join_date = self.ngay_vao_lam
+        join_date = self.sudo().ngay_vao_lam
         ref = reference_date or fields.Date.today()
         if not join_date:
             return _("chưa khai báo")
@@ -94,7 +95,7 @@ class HrEmployee(models.Model):
         self.ensure_one()
         if not self._mien_tenure_unpaid_required(reference_date=reference_date):
             return False
-        join_date = self.ngay_vao_lam
+        join_date = self.sudo().ngay_vao_lam
         join_label = (
             format_date(self.env, join_date) if join_date else _("chưa khai báo")
         )

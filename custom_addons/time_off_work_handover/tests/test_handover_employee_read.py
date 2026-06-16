@@ -1,6 +1,7 @@
 from datetime import date, datetime, time
 from unittest.mock import patch
 
+from odoo import Command
 from odoo.addons.hr.models.hr_employee import _ALLOW_READ_HR_EMPLOYEE
 from odoo.fields import Domain
 from odoo.tests import TransactionCase, new_test_user, tagged
@@ -134,6 +135,49 @@ class TestHandoverEmployeeRead(TransactionCase):
         self.assertNotIn(
             "context",
             original["handover_acceptance_ids"]["fields"]["employee_id"],
+        )
+
+    def test_handover_web_read_uses_internal_employee_read_context(self):
+        overlap_day = date(2026, 6, 27)
+        start_dt = datetime.combine(overlap_day, time(7, 0))
+        end_dt = datetime.combine(overlap_day, time(19, 0))
+        leave = self.env["hr.leave"].sudo().create(
+            {
+                "name": "Handover approval read",
+                "employee_id": self.requester_employee.id,
+                "holiday_status_id": self.leave_type.id,
+                "request_date_from": overlap_day,
+                "request_date_to": overlap_day,
+                "date_from": start_dt,
+                "date_to": end_dt,
+                "handover_employee_ids": [Command.set([self.recipient.id])],
+                "state": "confirm",
+            }
+        )
+        Leave = self.env["hr.leave"].with_user(self.user)
+        spec = {
+            "handover_acceptance_ids": {
+                "fields": {
+                    "employee_id": {"fields": {"display_name": {}}},
+                    "handover_work_content": {},
+                }
+            }
+        }
+        access_mixin_type = type(self.env["hr.employee.access.mixin"])
+        with patch.object(
+            access_mixin_type,
+            "_hr_employee_access_extra_domain",
+            autospec=True,
+            return_value=Domain.FALSE,
+        ):
+            Employee = self.env["hr.employee"].with_user(self.user)
+            self.assertFalse(
+                Employee.search([("id", "=", self.recipient.id)])
+            )
+            data = Leave.browse(leave.id).web_read(spec)
+        self.assertEqual(
+            data[0]["handover_acceptance_ids"][0]["employee_id"]["display_name"],
+            self.recipient.display_name,
         )
 
     def test_unavailable_handover_employees_on_overlapping_dates(self):

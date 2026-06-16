@@ -25,7 +25,7 @@ class HrLeave(models.Model):
 
     def _employee_requires_mien_unpaid_o(self):
         self.ensure_one()
-        employee = self.employee_id
+        employee = self.employee_id._sudo_for_timeoff_access() if self.employee_id else False
         if not employee:
             return False
         start = self._get_leave_start_date()
@@ -36,8 +36,6 @@ class HrLeave(models.Model):
         "employee_id",
         "employee_id.mien",
         "employee_id.ma_bo_phan_id.mien",
-        "employee_id.ngay_vao_lam",
-        "employee_id.job_id",
         "request_date_from",
         "request_date_to",
         "date_from",
@@ -54,6 +52,8 @@ class HrLeave(models.Model):
         self, employee, start_date=None, end_date=None, leave=None
     ):
         end_date = end_date or start_date
+        if employee:
+            employee = employee._sudo_for_timeoff_access()
         if employee and employee._mien_unpaid_o_required(
             date_from=start_date, date_to=end_date
         ):
@@ -72,6 +72,8 @@ class HrLeave(models.Model):
     @api.model
     def _monthly_leave_rule_kind(self, employee, start_date, leave=None, end_date=None):
         end_date = end_date or start_date
+        if employee:
+            employee = employee._sudo_for_timeoff_access()
         if employee and employee._mien_unpaid_o_required(
             date_from=start_date, date_to=end_date
         ):
@@ -89,8 +91,6 @@ class HrLeave(models.Model):
         "employee_id",
         "employee_id.mien",
         "employee_id.ma_bo_phan_id.mien",
-        "employee_id.ngay_vao_lam",
-        "employee_id.job_id",
         "request_date_from",
         "request_date_to",
         "date_from",
@@ -103,13 +103,11 @@ class HrLeave(models.Model):
         "employee_id",
         "employee_id.mien",
         "employee_id.ma_bo_phan_id.mien",
-        "employee_id.ngay_vao_lam",
-        "employee_id.job_id",
     )
     def _compute_mien_tenure_unpaid_notice(self):
         today = fields.Date.today()
         for leave in self:
-            employee = leave.employee_id
+            employee = leave.employee_id._sudo_for_timeoff_access() if leave.employee_id else False
             if not employee:
                 leave.mien_tenure_unpaid_notice = False
                 continue
@@ -128,7 +126,7 @@ class HrLeave(models.Model):
     )
     def _check_mien_unpaid_leave_type(self):
         for leave in self:
-            employee = leave.employee_id
+            employee = leave.employee_id._sudo_for_timeoff_access() if leave.employee_id else False
             if not employee or not leave.holiday_status_id:
                 continue
             if not leave._employee_requires_mien_unpaid_o():
