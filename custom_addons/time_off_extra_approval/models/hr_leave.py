@@ -378,16 +378,33 @@ class HolidaysRequest(models.Model):
         )
 
 
-    def _notify_discuss_leave_open_button_markup(self, button_label, *, discuss_link_type):
+    def _notify_discuss_leave_open_button_markup(
+        self,
+        button_label,
+        *,
+        discuss_link_type,
+        readonly_marker=None,
+        split_group_id=None,
+    ):
         """Purple pill for Discuss bots (handover + approval).
 
         Uses ``data-oe-*`` attributes (survive mail HTML sanitization; ``class`` does not).
         """
         self.ensure_one()
         path_esc = escape(self._leave_discuss_open_spa_path())
+        extra_attrs = ""
+        if readonly_marker:
+            extra_attrs += ' data-oe-readonly-timeoff="{}"'.format(
+                escape(readonly_marker)
+            )
+        if split_group_id:
+            extra_attrs += ' data-oe-split-group="{}"'.format(
+                escape(split_group_id)
+            )
         return Markup(
             '<a class="o_timeoff_leave_pill" href="{href}" target="_self" '
-            'data-oe-model="hr.leave" data-oe-id="{res_id}" data-oe-type="{link_type}" '
+            'data-oe-model="hr.leave" data-oe-id="{res_id}" data-oe-type="{link_type}"'
+            '{extra_attrs} '
             'style="display:inline-block;padding:8px 18px;background-color:#714B67;cursor:pointer;'
             'touch-action:manipulation;-webkit-tap-highlight-color:rgba(255,255,255,0.2);'
             'color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;'
@@ -396,6 +413,7 @@ class HolidaysRequest(models.Model):
             href=path_esc,
             res_id=self.id,
             link_type=escape(discuss_link_type),
+            extra_attrs=Markup(extra_attrs),
             label=escape(button_label),
         )
 

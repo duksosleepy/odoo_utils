@@ -1224,9 +1224,10 @@ class HrLeaveResponsibleApproval(models.Model):
         )
         if not employees:
             return self.env["res.users"]
-        return employees.mapped("user_id").filtered(
+        users = employees.mapped("user_id").filtered(
             lambda user: user and user.active and not user.share and user.partner_id
         )
+        return self.env["res.users"].browse(list(dict.fromkeys(users.ids)))
 
     def _is_multi_director_special_employee(self):
         """Legacy special flow, retained until explicit approvers are configured."""
@@ -1391,9 +1392,6 @@ class HrLeaveResponsibleApproval(models.Model):
         segments_html = Markup("<br/>").join(
             Markup(escape(line)) for line in segment_lines if line
         )
-        marker = Markup(
-            '<span data-oe-readonly-timeoff="{key}" style="display:none"></span>'
-        ).format(key=escape(marker_key))
         intro = Markup(
             _(
                 "<b>ĐƠN XIN NGHỈ PHÉP</b><br/>"
@@ -1417,6 +1415,7 @@ class HrLeaveResponsibleApproval(models.Model):
         detail_link = primary._notify_discuss_leave_open_button_markup(
             _("Xem thông tin chi tiết ngày nghỉ phép"),
             discuss_link_type="approval",
+            readonly_marker=marker_key,
         )
         try:
             bot_user = self.env.ref(
@@ -1439,7 +1438,7 @@ class HrLeaveResponsibleApproval(models.Model):
             ):
                 return
             chat.with_user(bot_user).sudo().message_post(
-                body=marker + intro + detail_link,
+                body=intro + detail_link,
                 message_type="comment",
                 subtype_xmlid="mail.mt_comment",
             )

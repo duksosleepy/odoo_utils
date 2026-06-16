@@ -345,14 +345,9 @@ class HrLeaveMonthlySplit(models.Model):
         button_html = primary._notify_discuss_leave_open_button_markup(
             _("Xem thông tin chi tiết ngày nghỉ phép"),
             discuss_link_type="approval",
+            split_group_id=primary.split_group_id or None,
         )
-        if primary.split_group_id:
-            marker = Markup(
-                '<span data-oe-split-group="%s" style="display:none"></span>'
-            ) % escape(primary.split_group_id or "")
-        else:
-            marker = Markup("")
-        body = marker + intro + button_html
+        body = intro + button_html
         try:
             bot_user = self.env.ref(
                 "business_discuss_bots.user_bot_approval", raise_if_not_found=False
