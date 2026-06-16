@@ -15,7 +15,7 @@ MIEN_SELECTION = [
     ("VP", "VP"),
 ]
 
-_JOB_TITLE_MIN_KEY = "trưởng nhóm"
+_JOB_TITLE_MIN_KEY = "giám sát"
 NOTIFY_JOB_TITLE_SELECTION = []
 _include = False
 for _key, _label in JOB_TITLE_SELECTION:

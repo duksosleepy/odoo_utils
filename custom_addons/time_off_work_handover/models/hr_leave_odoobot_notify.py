@@ -2,7 +2,7 @@
 
 import logging
 
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 from odoo import _, fields, models
 from odoo.addons.time_off_work_handover import constants as handover_constants
@@ -48,16 +48,32 @@ class HrLeaveHandoverOdoobotNotify(models.Model):
         return False
 
     def _notify_handover_scheduled_remind_via_bot(self, employees):
-        """Scheduled alarm: short reminder + button to open handover acceptance."""
+        """Scheduled alarm: reminder + button to open handover acceptance."""
         self.ensure_one()
         if not employees:
             return
         notify_leave = self._get_handover_bot_notify_leave()
+        requester_name = (
+            notify_leave.employee_id.name
+            or notify_leave.employee_id.display_name
+            or notify_leave.display_name
+        )
+        group = (
+            notify_leave._get_split_group_leaves_all()
+            if notify_leave.split_group_id
+            else notify_leave
+        )
+        date_from, date_to = notify_leave._get_handover_bot_period_from_to(group)
         intro = Markup(
             _(
-                "Bạn có 1 đơn cần chấp nhận bàn giao việc, vui lòng bấm vào nút bên dưới "
-                "để chấp nhận hoặc từ chối.<br/><br/>"
+                "Bạn có đơn xin nghỉ cần bàn giao việc của <b>{requester}</b> "
+                "vào ngày <b>{date_from}</b> đến ngày <b>{date_to}</b> "
+                "chưa giải quyết được, hãy cố gắng giải quyết nhé.<br/><br/>"
             )
+        ).format(
+            requester=escape(requester_name),
+            date_from=date_from,
+            date_to=date_to,
         )
         button_html = notify_leave._notify_discuss_leave_open_button_markup(
             _("Bàn giao việc"),
@@ -92,10 +108,9 @@ class HrLeaveHandoverOdoobotNotify(models.Model):
                     )
                     if not slot_key:
                         continue
-                    leave._notify_handover_timeout_escalation(
-                        user,
-                        hours=rule.skip_level_hours if rule and not rule.is_final_level else None,
-                    )
+                    esc_employee = leave._handover_employee_for_assigner_user(user)
+                    if esc_employee:
+                        leave._notify_handover_scheduled_remind_via_bot(esc_employee)
                     leave._odoobot_mark_scheduled_remind_sent("handover", slot_key)
                     continue
                 pending_employees = leave.handover_acceptance_ids.filtered(

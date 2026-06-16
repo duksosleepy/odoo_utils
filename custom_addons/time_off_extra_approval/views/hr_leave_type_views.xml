@@ -69,7 +69,7 @@
                 <group string="Work handover escalation"
                        colspan="2"
                        class="o_inner_group">
-                    <field name="handover_escalation_after_hours"/>
+                    <field name="handover_escalation_after_hours" widget="float_time"/>
                     <field name="handover_escalation_max_job_title"/>
                     <field name="handover_escalation_to_manager_hours"
                            invisible="handover_escalation_max_job_title != 'trưởng phòng'"/>

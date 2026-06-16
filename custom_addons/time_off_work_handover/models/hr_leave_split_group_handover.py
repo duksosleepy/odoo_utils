@@ -69,8 +69,8 @@ class HrLeaveSplitGroupHandover(models.Model):
             value = value.date()
         return value.strftime("%d/%m/%Y")
 
-    def _get_handover_bot_period_text(self, group_leaves=None):
-        """Ngày nghỉ trên bot: từ … đến … trên cả nhóm tách (hoặc một đơn nhiều ngày)."""
+    def _collect_handover_bot_period_bounds(self, group_leaves=None):
+        """Return (date_from, date_to) date objects for handover bot messages."""
         self.ensure_one()
         if self.split_group_id:
             group_leaves = self._get_split_group_leaves_all()
@@ -92,18 +92,31 @@ class HrLeaveSplitGroupHandover(models.Model):
                 dates_to.append(date_to)
 
         if dates_from and dates_to:
-            d_min = min(dates_from)
-            d_max = max(dates_to)
-            if d_max != d_min:
-                return _("%(from)s đến ngày %(to)s") % {
-                    "from": self._format_handover_bot_date(d_min),
-                    "to": self._format_handover_bot_date(d_max),
-                }
-            return self._format_handover_bot_date(d_min)
+            return min(dates_from), max(dates_to)
 
         date_from = self.request_date_from or (self.date_from and self.date_from.date())
         date_to = self.request_date_to or (self.date_to and self.date_to.date())
-        if date_to and date_from and date_to != date_from:
+        return date_from, date_to or date_from
+
+    def _get_handover_bot_period_from_to(self, group_leaves=None):
+        """Return (start_str, end_str) for handover bot reminders."""
+        date_from, date_to = self._collect_handover_bot_period_bounds(group_leaves)
+        if not date_from:
+            return "", ""
+        date_to = date_to or date_from
+        return (
+            self._format_handover_bot_date(date_from),
+            self._format_handover_bot_date(date_to),
+        )
+
+    def _get_handover_bot_period_text(self, group_leaves=None):
+        """Ngày nghỉ trên bot: từ … đến … trên cả nhóm tách (hoặc một đơn nhiều ngày)."""
+        self.ensure_one()
+        date_from, date_to = self._collect_handover_bot_period_bounds(group_leaves)
+        if not date_from:
+            return ""
+        date_to = date_to or date_from
+        if date_to != date_from:
             return _("%(from)s đến ngày %(to)s") % {
                 "from": self._format_handover_bot_date(date_from),
                 "to": self._format_handover_bot_date(date_to),

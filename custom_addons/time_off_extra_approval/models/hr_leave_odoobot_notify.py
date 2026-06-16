@@ -147,18 +147,23 @@ class HrLeaveOdoobotNotifyMixin(models.Model):
         bot_user = self.env.ref(bot_user_xmlid, raise_if_not_found=False)
         if not bot_user:
             bot_user = self.env.ref("base.user_root")
+        bot_partner_id = bot_user.partner_id.id if bot_user and bot_user.partner_id else False
+        if not bot_partner_id:
+            return False
         try:
             chat = (
                 self.env["discuss.channel"]
-                .with_user(bot_user)
                 .sudo()
-                ._get_or_create_chat([recipient_user.partner_id.id], pin=True)
+                .with_user(recipient_user)
+                ._get_or_create_chat([bot_partner_id], pin=True)
             )
-            chat.with_user(bot_user).sudo().message_post(
-                body=body,
-                message_type="comment",
-                subtype_xmlid="mail.mt_comment",
-            )
+            post_vals = {
+                "body": body,
+                "message_type": "comment",
+                "subtype_xmlid": "mail.mt_comment",
+                "author_id": bot_partner_id,
+            }
+            chat.with_user(bot_user).sudo().message_post(**post_vals)
             return True
         except Exception:
             _logger.exception(
