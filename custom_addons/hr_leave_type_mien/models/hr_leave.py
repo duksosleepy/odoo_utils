@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.tools.misc import format_date, format_datetime
 from odoo.tools.translate import _
 
 from .hr_leave_mien_config import (
@@ -38,10 +39,60 @@ class HrLeave(models.Model):
         string="Khóa loại phép P1/P2/O theo tháng",
         compute="_compute_holiday_status_id_month_leave_type_locked",
     )
+    leave_list_date_from_display = fields.Char(
+        string="Ngày bắt đầu",
+        compute="_compute_leave_list_date_display",
+    )
+    leave_list_date_to_display = fields.Char(
+        string="Ngày kết thúc",
+        compute="_compute_leave_list_date_display",
+    )
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _leave_type_is_p1_p2_o(self, leave_type=None):
+        """True khi loại phép là P1, P2 hoặc O (theo mã trong ngoặc tên loại)."""
+        leave_type = leave_type or self.holiday_status_id
+        if not leave_type:
+            return False
+        code = (
+            self.env["hr.leave.type"].code_from_name(leave_type.name) or ""
+        ).upper()
+        return code in (
+            P1_LEAVE_TYPE_CODE.upper(),
+            P2_LEAVE_TYPE_CODE.upper(),
+            O_LEAVE_TYPE_CODE.upper(),
+        )
+
+    @api.depends(
+        "holiday_status_id",
+        "date_from",
+        "date_to",
+        "request_date_from",
+        "request_date_to",
+    )
+    def _compute_leave_list_date_display(self):
+        for leave in self:
+            if leave._leave_type_is_p1_p2_o():
+                date_from = leave.request_date_from or leave._get_leave_start_date()
+                date_to = leave.request_date_to or leave._get_leave_end_date()
+                leave.leave_list_date_from_display = (
+                    format_date(leave.env, date_from) if date_from else ""
+                )
+                leave.leave_list_date_to_display = (
+                    format_date(leave.env, date_to) if date_to else ""
+                )
+            else:
+                leave.leave_list_date_from_display = (
+                    format_datetime(leave.env, leave.date_from)
+                    if leave.date_from
+                    else ""
+                )
+                leave.leave_list_date_to_display = (
+                    format_datetime(leave.env, leave.date_to) if leave.date_to else ""
+                )
 
     @api.model
     def _mien_config_leave_type_ids(self, employee):

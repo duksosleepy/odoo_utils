@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- P1/P2/O: list view chỉ hiển thị ngày, không hiển thị giờ -->
+    <record id="hr_leave_view_tree_p1_p2_o_date_display" model="ir.ui.view">
+        <field name="name">hr.leave.list.p1.p2.o.date.display</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='date_from']" position="replace">
+                <field name="date_from" column_invisible="1"/>
+                <field name="leave_list_date_from_display"/>
+            </xpath>
+            <xpath expr="//field[@name='date_to']" position="replace">
+                <field name="date_to" column_invisible="1"/>
+                <field name="leave_list_date_to_display"/>
+            </xpath>
+        </field>
+    </record>
+
     <record id="hr_leave_view_form_mien_filter" model="ir.ui.view">
         <field name="name">hr.leave.form.mien.filter</field>
         <field name="model">hr.leave</field>
