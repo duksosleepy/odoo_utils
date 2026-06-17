@@ -30,6 +30,10 @@ _DEPARTMENT_HEAD_JOB_TITLE_KEY = handover_constants.DEPARTMENT_HEAD_JOB_TITLE_KE
 _DEPARTMENT_MANAGER_JOB_TITLE_KEY = handover_constants.DEPARTMENT_MANAGER_JOB_TITLE_KEY
 _SKIP_SUBMIT_BOT_NOTIFY_CTX = handover_constants.SKIP_SUBMIT_BOT_NOTIFY_CTX
 _SKIP_OUTCOME_BOT_NOTIFY_CTX = handover_constants.SKIP_OUTCOME_BOT_NOTIFY_CTX
+_STORE_REGION_HANDOVER_MIEN_CODES = handover_constants.STORE_REGION_HANDOVER_MIEN_CODES
+_STORE_LEADER_HANDOVER_REQUIRED_JOB_TITLE_KEYS = (
+    handover_constants.STORE_LEADER_HANDOVER_REQUIRED_JOB_TITLE_KEYS
+)
 _HANDOVER_EXEMPT_JOB_TITLE_KEYS = {"asm", "rsm"}
 
 
@@ -444,7 +448,27 @@ class HrLeaveHandover(models.Model):
         leaves._schedule_work_handover_activities()
         return self
 
+    def _get_employee_leave_mien(self, employee):
+        if not employee:
+            return False
+        if hasattr(employee, "_get_leave_mien"):
+            return employee._get_leave_mien()
+        return employee.mien or False
+
+    def _uses_store_region_handover_rules(self, employee):
+        return self._get_employee_leave_mien(employee) in _STORE_REGION_HANDOVER_MIEN_CODES
+
+    def _is_store_leader_handover_required_title(self, employee):
+        """True when NT/CHT in Bắc/Nam/ĐTT must assign a handover recipient."""
+        self.ensure_one()
+        raw = self._read_job_title_safely(employee)
+        return (
+            _normalize_job_title_key(raw) in _STORE_LEADER_HANDOVER_REQUIRED_JOB_TITLE_KEYS
+        )
+
     def _can_skip_work_handover_by_job_title(self, employee):
+        if self._uses_store_region_handover_rules(employee):
+            return not self._is_store_leader_handover_required_title(employee)
         return self._is_work_handover_exempt_job_title(
             employee
         ) or self._can_skip_workover_rank_for_employee(employee)
@@ -452,16 +476,17 @@ class HrLeaveHandover(models.Model):
     def _is_work_handover_exempt_job_title(self, employee):
         """True for job titles that never require work handover on leave requests."""
         self.ensure_one()
+        if self._uses_store_region_handover_rules(employee):
+            return not self._is_store_leader_handover_required_title(employee)
         raw = self._read_job_title_safely(employee)
         return _normalize_job_title_key(raw) in _HANDOVER_EXEMPT_JOB_TITLE_KEYS
 
     def _should_skip_work_handover(self):
         self.ensure_one()
+        employee = self._get_effective_employee_for_skip_handover()
         return bool(
             self.skip_work_handover
-            or self._is_work_handover_exempt_job_title(
-                self._get_effective_employee_for_skip_handover()
-            )
+            or self._is_work_handover_exempt_job_title(employee)
         )
 
     def _apply_job_title_work_handover_exemption(self):
@@ -563,16 +588,28 @@ class HrLeaveHandover(models.Model):
             target_employee = leave._get_effective_employee_for_skip_handover()
             if not leave._can_skip_work_handover_by_job_title(target_employee):
                 title_raw = leave._read_job_title_safely(target_employee)
-                raise ValidationError(
-                    _(
-                        "Chỉ nhân viên có chức danh ASM, RSM, hoặc từ Trưởng bộ phận trở lên mới được phép bỏ qua bàn giao công việc. "
+                if leave._uses_store_region_handover_rules(target_employee):
+                    message = _(
+                        "Nhân viên có chức danh Nhóm trưởng hoặc Cửa hàng trưởng ở miền "
+                        "%(mien)s phải bàn giao công việc khi xin nghỉ phép. "
                         "Nhân viên hiện tại: %(employee)s, chức danh: %(title)s."
                     )
-                    % {
+                    params = {
+                        "mien": leave._get_employee_leave_mien(target_employee) or "-",
                         "employee": target_employee.display_name or "-",
                         "title": title_raw or "-",
                     }
-                )
+                else:
+                    message = _(
+                        "Chỉ nhân viên có chức danh ASM, RSM, hoặc từ Trưởng bộ phận trở lên "
+                        "mới được phép bỏ qua bàn giao công việc. "
+                        "Nhân viên hiện tại: %(employee)s, chức danh: %(title)s."
+                    )
+                    params = {
+                        "employee": target_employee.display_name or "-",
+                        "title": title_raw or "-",
+                    }
+                raise ValidationError(message % params)
 
     # --- Advance notice vs job title (emergency leave) -----------------------------------------
 
@@ -614,6 +651,9 @@ class HrLeaveHandover(models.Model):
         "state",
         "employee_id",
         "employee_id.job_title",
+        "employee_id.mien",
+        "employee_id.ma_bo_phan_id",
+        "employee_id.ma_bo_phan_id.mien",
         "handover_employee_ids",
         "handover_employee_ids.name",
         "handover_acceptance_ids.state",

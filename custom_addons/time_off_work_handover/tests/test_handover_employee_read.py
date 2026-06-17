@@ -284,3 +284,65 @@ class TestHandoverEmployeeRead(TransactionCase):
 
         self.assertFalse(leave.skip_work_handover)
         self.assertFalse(leave._should_skip_work_handover())
+
+    def test_store_region_non_leader_auto_skips_work_handover(self):
+        leave_day = date(2026, 7, 8)
+        start_dt = datetime.combine(leave_day, time(7, 0))
+        end_dt = datetime.combine(leave_day, time(19, 0))
+        for mien, job_title in (
+            ("Bắc", "nhân viên ch"),
+            ("Nam", "giám sát"),
+            ("ĐTT", "asm"),
+        ):
+            employee = self.env["hr.employee"].create(
+                {
+                    "name": "%s %s" % (mien, job_title),
+                    "company_id": self.user.company_id.id,
+                    "mien": mien,
+                    "job_title": job_title,
+                }
+            )
+            leave = self.env["hr.leave"].create(
+                {
+                    "name": "%s leave without handover" % mien,
+                    "employee_id": employee.id,
+                    "holiday_status_id": self.leave_type.id,
+                    "request_date_from": leave_day,
+                    "request_date_to": leave_day,
+                    "date_from": start_dt,
+                    "date_to": end_dt,
+                }
+            )
+            self.assertTrue(
+                leave.skip_work_handover,
+                "%s / %s should auto-skip handover" % (mien, job_title),
+            )
+            self.assertTrue(leave._should_skip_work_handover())
+
+    def test_store_region_leader_requires_work_handover(self):
+        leave_day = date(2026, 7, 9)
+        start_dt = datetime.combine(leave_day, time(7, 0))
+        end_dt = datetime.combine(leave_day, time(19, 0))
+        for job_title in ("nhóm trưởng", "cửa hàng trưởng"):
+            employee = self.env["hr.employee"].create(
+                {
+                    "name": "%s Leader" % job_title,
+                    "company_id": self.user.company_id.id,
+                    "mien": "Bắc",
+                    "job_title": job_title,
+                }
+            )
+            leave = self.env["hr.leave"].create(
+                {
+                    "name": "%s leave requires handover" % job_title,
+                    "employee_id": employee.id,
+                    "holiday_status_id": self.leave_type.id,
+                    "request_date_from": leave_day,
+                    "request_date_to": leave_day,
+                    "date_from": start_dt,
+                    "date_to": end_dt,
+                }
+            )
+            self.assertFalse(leave.skip_work_handover)
+            self.assertFalse(leave._should_skip_work_handover())
+            self.assertFalse(leave.can_skip_work_handover)

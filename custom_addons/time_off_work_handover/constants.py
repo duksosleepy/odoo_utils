@@ -10,3 +10,9 @@ HANDOVER_ESCALATION_MINUTES = 5
 HANDOVER_ESCALATION_TO_MANAGER_HOURS = 2
 DEPARTMENT_HEAD_JOB_TITLE_KEY = "trưởng bộ phận"
 DEPARTMENT_MANAGER_JOB_TITLE_KEY = "trưởng phòng"
+
+# Miền Bắc / Nam / ĐTT: chỉ Nhóm trưởng và Cửa hàng trưởng bắt buộc bàn giao công việc.
+STORE_REGION_HANDOVER_MIEN_CODES = frozenset({"Bắc", "Nam", "ĐTT"})
+STORE_LEADER_HANDOVER_REQUIRED_JOB_TITLE_KEYS = frozenset(
+    {"nhom truong", "cua hang truong"}
+)

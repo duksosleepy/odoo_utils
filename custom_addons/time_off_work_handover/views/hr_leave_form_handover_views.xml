@@ -69,6 +69,7 @@
                 <field
                     name="skip_work_handover"
                     string="No work handover required"
+                    invisible="not can_skip_work_handover"
                     readonly="state not in ('draft', 'confirm')"
                 />
                 <field name="unavailable_handover_employee_ids" invisible="1"/>
