@@ -91,8 +91,16 @@ class TestHrLeaveVisibility(TransactionCase):
             """,
             [cls.waiting_leave.id, cls.limited_approver.id],
         )
+        cls.env["hr.leave.responsible.approval"].sudo().create(
+            {
+                "leave_id": cls.unrelated_leave.id,
+                "user_id": cls.limited_approver.id,
+                "sequence": 1,
+                "state": "approved",
+            }
+        )
         (cls.own_leave | cls.waiting_leave | cls.unrelated_leave).invalidate_recordset(
-            ["approval_actionable_user_ids"]
+            ["approval_actionable_user_ids", "responsible_approval_line_ids"]
         )
 
     @classmethod
@@ -132,7 +140,7 @@ class TestHrLeaveVisibility(TransactionCase):
             {self.own_leave.id, self.waiting_leave.id, self.unrelated_leave.id},
         )
 
-    def test_non_officer_approver_sees_only_owned_and_actionable_requests(self):
+    def test_non_officer_approver_sees_actionable_and_participated_requests(self):
         visible = self.env["hr.leave"].with_user(self.limited_approver).search(
             [
                 (
@@ -149,7 +157,7 @@ class TestHrLeaveVisibility(TransactionCase):
 
         self.assertEqual(
             set(visible.ids),
-            {self.waiting_leave.id},
+            {self.waiting_leave.id, self.unrelated_leave.id},
         )
 
     def test_standard_noupdate_rules_preserve_officer_access(self):
