@@ -1918,23 +1918,39 @@ class HrLeaveResponsibleApproval(models.Model):
                     leave.id,
                 )
 
-    def _notify_approval_scheduled_remind_via_bot(self, approver_user):
-        """Scheduled alarm: short reminder + button to open the leave approval form."""
+    @api.model
+    def _search_pending_approval_leaves_for_user(self, user):
+        """Leaves the user can approve/refuse right now (matches approval list filters)."""
+        if not user:
+            return self.browse()
+        return self.sudo().search(
+            [
+                ("state", "in", ("confirm", "validate1")),
+                ("approval_actionable_user_ids", "in", user.id),
+            ],
+            order="request_date_from asc, create_date asc, id asc",
+        )
+
+    @api.model
+    def _count_pending_approval_leaves_for_user(self, user):
+        return len(self._search_pending_approval_leaves_for_user(user))
+
+    def _notify_approval_scheduled_remind_summary_via_bot(self, approver_user, pending_count):
+        """Scheduled alarm: one consolidated reminder + button to open the approval list."""
         self.ensure_one()
         if not approver_user or approver_user.share or not approver_user.partner_id:
             return
-        primary = self
-        if hasattr(self, "_get_split_group_primary_leave"):
-            primary = self._get_split_group_primary_leave() or self
+        if pending_count <= 0:
+            return
         intro = Markup(
             _(
-                "Bạn có 1 đơn cần duyệt, vui lòng bấm vào nút bên dưới "
+                "Bạn có %(count)s đơn cần duyệt, vui lòng bấm vào nút bên dưới "
                 "để duyệt hoặc từ chối.<br/><br/>"
             )
+            % {"count": pending_count}
         )
-        button_html = primary._notify_discuss_leave_open_button_markup(
+        button_html = self._notify_discuss_approval_pending_list_button_markup(
             _("Duyệt đơn"),
-            discuss_link_type="approval",
         )
         body = intro + button_html
         self._post_odoobot_bot_discuss_message(
@@ -1952,6 +1968,7 @@ class HrLeaveResponsibleApproval(models.Model):
             ]
         )
         leaves._ensure_responsible_approval_lines()
+        reminders_by_approver = {}
         for leave in leaves:
             try:
                 if leave._responsible_approval_mode() != "sequential":
@@ -1968,12 +1985,30 @@ class HrLeaveResponsibleApproval(models.Model):
                 )
                 if not slot_key:
                     continue
-                leave._notify_approval_scheduled_remind_via_bot(approver)
-                leave._odoobot_mark_scheduled_remind_sent("approval", slot_key)
+                reminders_by_approver.setdefault(approver.id, {"approver": approver, "items": []})
+                reminders_by_approver[approver.id]["items"].append((leave, slot_key))
             except Exception:
                 _logger.exception(
                     "time_off_responsible_approval: OdooBot remind failed for leave id=%s",
                     leave.id,
+                )
+        for data in reminders_by_approver.values():
+            approver = data["approver"]
+            items = data["items"]
+            try:
+                pending_count = self._count_pending_approval_leaves_for_user(approver)
+                if pending_count <= 0:
+                    pending_count = len(items)
+                anchor = items[0][0]
+                anchor._notify_approval_scheduled_remind_summary_via_bot(
+                    approver, pending_count
+                )
+                for leave, slot_key in items:
+                    leave._odoobot_mark_scheduled_remind_sent("approval", slot_key)
+            except Exception:
+                _logger.exception(
+                    "time_off_responsible_approval: OdooBot consolidated remind failed approver_id=%s",
+                    approver.id,
                 )
 
     @api.model

@@ -405,6 +405,23 @@ class HolidaysRequest(models.Model):
             discuss_link_type="approval",
         )
 
+    @api.model
+    def _approval_pending_list_discuss_spa_path(self):
+        """SPA path for the Time Off approval dashboard (list of pending requests)."""
+        return "/odoo/time-off-approval"
+
+    @api.model
+    def _notify_discuss_approval_pending_list_button_markup(self, button_label):
+        """Purple pill that opens the pending-approval list view (not a single leave form)."""
+        path_esc = escape(self._approval_pending_list_discuss_spa_path())
+        return Markup(
+            '<a class="o_timeoff_leave_pill" href="{href}" target="_self" '
+            'data-oe-model="hr.leave" data-oe-type="approval_list" '
+            'style="display:inline-block;padding:8px 18px;background-color:#714B67;cursor:pointer;'
+            'touch-action:manipulation;-webkit-tap-highlight-color:rgba(255,255,255,0.2);'
+            'color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;'
+            'font-size:14px;line-height:1.2;">{label}</a>'
+        ).format(href=path_esc, label=escape(button_label))
 
     def _notify_discuss_leave_open_button_markup(
         self,

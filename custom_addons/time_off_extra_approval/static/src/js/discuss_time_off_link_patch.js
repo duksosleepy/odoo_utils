@@ -19,11 +19,20 @@ const LEAVE_LINK_SELECTOR = [
 const APPROVAL_GROUP_SELECTOR =
     'a[data-oe-type="approval_group"][data-oe-action][data-oe-id]';
 
+const APPROVAL_LIST_SELECTOR = 'a[data-oe-type="approval_list"]';
+
 function findTimeOffLeaveLink(target) {
     if (target?.closest?.(APPROVAL_GROUP_SELECTOR)) {
         return null;
     }
+    if (target?.closest?.(APPROVAL_LIST_SELECTOR)) {
+        return null;
+    }
     return target?.closest?.(LEAVE_LINK_SELECTOR) ?? null;
+}
+
+function findApprovalListLink(target) {
+    return target?.closest?.(APPROVAL_LIST_SELECTOR) ?? null;
 }
 
 function findApprovalGroupLink(target) {
@@ -72,6 +81,22 @@ function openLeaveForm(env, resId) {
         views: [[false, "form"]],
         target: "current",
     });
+}
+
+function openApprovalPendingList(env) {
+    return env.services.action.doAction("hr_holidays.hr_leave_action_action_approve_department");
+}
+
+function handleApprovalListLink(ev, store, thread) {
+    const link = findApprovalListLink(ev.target);
+    if (!link) {
+        return false;
+    }
+    ev.preventDefault();
+    ev.stopPropagation();
+    foldMobileChatWindow(store, ev, thread, link);
+    openApprovalPendingList(store.env);
+    return true;
 }
 
 async function handleApprovalGroupAction(ev, store) {
@@ -148,6 +173,9 @@ function handleTimeOffLeaveLink(ev, store, thread) {
 }
 
 async function handleTimeOffDiscussClick(ev, store, thread) {
+    if (handleApprovalListLink(ev, store, thread)) {
+        return true;
+    }
     if (await handleApprovalGroupAction(ev, store)) {
         return true;
     }
@@ -156,6 +184,9 @@ async function handleTimeOffDiscussClick(ev, store, thread) {
 
 patch(Store.prototype, {
     handleClickOnLink(ev, thread) {
+        if (handleApprovalListLink(ev, this, thread)) {
+            return true;
+        }
         if (findApprovalGroupLink(ev.target)) {
             void handleApprovalGroupAction(ev, this);
             return true;

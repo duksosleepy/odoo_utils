@@ -9,10 +9,12 @@
 .o-discuss-text-body:has(a[data-oe-model="hr.leave"]),
 .o-discuss-text-body:has(a[data-oe-type="handover"]),
 .o-discuss-text-body:has(a[data-oe-type="approval"]),
+.o-discuss-text-body:has(a[data-oe-type="approval_list"]),
 .o-discuss-text-body:has(a[href*="/hr.leave/"]),
 .o-mail-Message-richBody:has(a[data-oe-model="hr.leave"]),
 .o-mail-Message-richBody:has(a[data-oe-type="handover"]),
 .o-mail-Message-richBody:has(a[data-oe-type="approval"]),
+.o-mail-Message-richBody:has(a[data-oe-type="approval_list"]),
 .o-mail-Message-richBody:has(a[href*="/hr.leave/"]) {
     overflow-x: visible !important;
     touch-action: pan-y;
@@ -32,6 +34,7 @@
 a[data-oe-model="hr.leave"][data-oe-id],
 a[data-oe-type="handover"][data-oe-id],
 a[data-oe-type="approval"][data-oe-id],
+a[data-oe-type="approval_list"],
 a[href*="/hr.leave/"] {
     position: relative;
     z-index: 3;
