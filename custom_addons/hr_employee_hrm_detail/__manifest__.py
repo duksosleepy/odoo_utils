@@ -1,6 +1,6 @@
 {
     'name': 'HR Employee HRM Detail',
-    'version': '19.0.1.1.70',
+    'version': '19.0.1.1.71',
     'category': 'Human Resources/Employees',
     'summary': 'Add HRM detail fields to employee Personal tab',
     'description': """

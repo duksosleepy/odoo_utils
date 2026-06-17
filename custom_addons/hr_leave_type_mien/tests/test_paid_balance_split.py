@@ -61,11 +61,11 @@ class TestPaidBalanceSplit(TransactionCase):
         )
         self.assertEqual(paid_used, 3)
 
-    def test_maternity_license_keeps_monthly_p1p2o_flow(self):
+    def test_unpaid_leave_dates_keep_monthly_p1p2o_flow(self):
         employee = self.env["hr.employee"].create(
             {
-                "name": "Maternity Monthly Flow",
-                "thai_san_ngay_cap_phep": date(2026, 2, 1),
+                "name": "Unpaid Leave Monthly Flow",
+                "unpaid_leave_start_date": date(2026, 2, 1),
                 "mien": "Bắc",
                 "tong_so_phep": 5,
             }

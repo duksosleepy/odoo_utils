@@ -157,37 +157,43 @@ class TestTimeOffRemainingBalance(TransactionCase):
         self.assertIn(paid_p2.id, paid_ids)
         self.assertNotIn(unpaid_o.id, paid_ids)
 
-    def test_unpaid_leave_start_day_one_adds_one_total_day_and_recomputes(self):
+    def test_unpaid_leave_dates_do_not_directly_change_total_days(self):
         with patch.object(
             type(self.employee),
             "_get_leave_days_used_for_summary",
             autospec=True,
             return_value=0,
         ):
-            self.employee.write({"unpaid_leave_start_date": date(2026, 2, 1)})
-            self.assertEqual(self.employee.tong_so_phep, 6)
-            self.assertEqual(self.employee.con_lai, 6)
-
-            self.employee.write({"unpaid_leave_start_date": date(2026, 2, 2)})
+            self.employee.write(
+                {
+                    "unpaid_leave_start_date": date(2026, 2, 1),
+                    "unpaid_leave_return_date": date(2026, 4, 1),
+                }
+            )
             self.assertEqual(self.employee.tong_so_phep, 5)
             self.assertEqual(self.employee.con_lai, 5)
 
-            self.employee.write({"unpaid_leave_start_date": date(2026, 3, 1)})
-            self.assertEqual(self.employee.tong_so_phep, 6)
-            self.assertEqual(self.employee.con_lai, 6)
+            self.employee.write({"unpaid_leave_return_date": date(2026, 4, 2)})
+            self.assertEqual(self.employee.tong_so_phep, 5)
+            self.assertEqual(self.employee.con_lai, 5)
 
-    def test_unpaid_leave_start_total_day_keeps_remaining_derived_from_used_days(self):
+    def test_unpaid_leave_date_change_keeps_remaining_derived_from_used_days(self):
         with patch.object(
             type(self.employee),
             "_get_leave_days_used_for_summary",
             autospec=True,
             return_value=2,
         ):
-            self.employee.write({"unpaid_leave_start_date": date(2026, 2, 1)})
+            self.employee.write(
+                {
+                    "unpaid_leave_start_date": date(2026, 2, 1),
+                    "unpaid_leave_return_date": date(2026, 4, 1),
+                }
+            )
 
-            self.assertEqual(self.employee.tong_so_phep, 6)
+            self.assertEqual(self.employee.tong_so_phep, 5)
             self.assertEqual(self.employee.da_su_dung, 2)
-            self.assertEqual(self.employee.con_lai, 4)
+            self.assertEqual(self.employee.con_lai, 3)
 
     def test_retroactive_previous_year_leave_deducts_and_restores_snapshot(self):
         leave_type = self.env["hr.leave.type"].create(

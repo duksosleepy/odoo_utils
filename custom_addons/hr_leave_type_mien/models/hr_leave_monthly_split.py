@@ -172,10 +172,7 @@ class HrLeaveMonthlySplit(models.Model):
         committed = self._con_lai_committed_days(
             employee, exclude_leave_ids=exclude_leave_ids
         )
-        bonus = 0.0
-        if hasattr(employee, "_maternity_first_day_balance_bonus"):
-            bonus = employee._maternity_first_day_balance_bonus(target_date)
-        budget = (employee.tong_so_phep or 0.0) + bonus - committed
+        budget = (employee.tong_so_phep or 0.0) - committed
         if budget < 0:
             budget = 0
         return int(budget)

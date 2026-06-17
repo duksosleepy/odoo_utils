@@ -27,6 +27,7 @@ _TIMEOFF_SELF_READ_FIELDS = frozenset({"version_id", "mien", "ma_bo_phan_id"})
 # Tên Job Position được phép chỉnh `monthly_paid_leave_cap`.
 _MONTHLY_CAP_EDITOR_JOB_POSITION = "sale admin"
 _UNPAID_LEAVE_START_DATE_FIELD = "unpaid_leave_start_date"
+_UNPAID_LEAVE_RETURN_DATE_FIELD = "unpaid_leave_return_date"
 
 
 class HrEmployeeTimeoff(models.Model):
@@ -286,10 +287,32 @@ class HrEmployeeTimeoff(models.Model):
             == (bonus_date.year, bonus_date.month)
         )
 
+    def _blocks_unpaid_leave_monthly_leave_bonus(self, bonus_date):
+        self.ensure_one()
+        bonus_date = fields.Date.to_date(bonus_date) or self._monthly_leave_bonus_date()
+        bonus_month = bonus_date.replace(day=1)
+        if bonus_month.month == 12:
+            next_month = bonus_month.replace(year=bonus_month.year + 1, month=1)
+        else:
+            next_month = bonus_month.replace(month=bonus_month.month + 1)
+
+        employee = self.sudo()
+        start_date = getattr(employee, _UNPAID_LEAVE_START_DATE_FIELD, False)
+        return_date = getattr(employee, _UNPAID_LEAVE_RETURN_DATE_FIELD, False)
+        start_date = fields.Date.to_date(start_date) if start_date else False
+        return_date = fields.Date.to_date(return_date) if return_date else False
+
+        if not start_date or start_date >= next_month:
+            return False
+        return not return_date or return_date > bonus_month
+
     def _blocks_monthly_leave_bonus(self, bonus_date):
         """Return True when a +1 monthly bonus must be skipped for ``bonus_date``."""
         self.ensure_one()
-        return self._blocks_departure_monthly_leave_bonus(bonus_date)
+        return (
+            self._blocks_departure_monthly_leave_bonus(bonus_date)
+            or self._blocks_unpaid_leave_monthly_leave_bonus(bonus_date)
+        )
 
     def _monthly_leave_bonus_eligible(self, bonus_date=None):
         """Whether this employee may receive a +1 monthly leave accrual."""
@@ -383,47 +406,7 @@ class HrEmployeeTimeoff(models.Model):
             new_total - (self.tong_so_phep or 0.0) - 1.0
         ) < 0.000001
 
-    def _unpaid_leave_start_bonus_units(self):
-        self.ensure_one()
-        license_date = getattr(self.sudo(), _UNPAID_LEAVE_START_DATE_FIELD, False)
-        license_date = fields.Date.to_date(license_date) if license_date else False
-        return 1.0 if license_date and license_date.day == 1 else 0.0
-
-    def _sync_unpaid_leave_start_bonus_to_total(self, old_bonus_by_employee):
-        ctx = {
-            _SKIP_DEPARTURE_MONTHLY_LEAVE_CUTOFF_CTX: True,
-            _SKIP_DEPARTURE_MONTHLY_LEAVE_REVERSAL_CTX: True,
-        }
-        for employee in self.sudo():
-            old_bonus = old_bonus_by_employee.get(employee.id, 0.0)
-            new_bonus = employee._unpaid_leave_start_bonus_units()
-            delta = new_bonus - old_bonus
-            if abs(delta) < 0.000001:
-                continue
-            employee.with_context(**ctx).write(
-                {"tong_so_phep": (employee.tong_so_phep or 0.0) + delta}
-            )
-
-    @api.model_create_multi
-    def create(self, vals_list):
-        records = super().create(vals_list)
-        to_sync = records.filtered(
-            lambda employee: employee._unpaid_leave_start_bonus_units()
-        )
-        if to_sync:
-            to_sync._sync_unpaid_leave_start_bonus_to_total({})
-        return records
-
     def write(self, vals):
-        sync_unpaid_leave_start_bonus = _UNPAID_LEAVE_START_DATE_FIELD in vals
-        old_unpaid_leave_start_bonus = (
-            {
-                employee.id: employee._unpaid_leave_start_bonus_units()
-                for employee in self.sudo()
-            }
-            if sync_unpaid_leave_start_bonus
-            else {}
-        )
         if (
             "tong_so_phep" in vals
             and not self.env.context.get(_SKIP_DEPARTURE_MONTHLY_LEAVE_CUTOFF_CTX)
@@ -472,8 +455,6 @@ class HrEmployeeTimeoff(models.Model):
                     )
                 )
         result = super().write(vals)
-        if sync_unpaid_leave_start_bonus:
-            self._sync_unpaid_leave_start_bonus_to_total(old_unpaid_leave_start_bonus)
         if (
             "ngay_nghi_viec" in vals
             and not self.env.context.get(

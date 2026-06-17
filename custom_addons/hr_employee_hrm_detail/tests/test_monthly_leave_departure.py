@@ -164,3 +164,54 @@ class TestMonthlyLeaveDeparture(TransactionCase):
         ).write({"tong_so_phep": 7})
 
         self.assertEqual(self.employee.tong_so_phep, 6)
+
+    def test_unpaid_leave_period_blocks_monthly_bonus_until_return_month(self):
+        self.employee.write(
+            {
+                "unpaid_leave_start_date": date(2026, 2, 15),
+                "unpaid_leave_return_date": date(2026, 4, 1),
+            }
+        )
+
+        self.employee.with_context(
+            monthly_leave_bonus_date=date(2026, 2, 1)
+        ).write({"tong_so_phep": 6})
+        self.assertEqual(self.employee.tong_so_phep, 5)
+
+        self.employee.with_context(
+            monthly_leave_bonus_date=date(2026, 3, 1)
+        ).write({"tong_so_phep": 6})
+        self.assertEqual(self.employee.tong_so_phep, 5)
+
+        self.employee.with_context(
+            monthly_leave_bonus_date=date(2026, 4, 1)
+        ).write({"tong_so_phep": 6})
+        self.assertEqual(self.employee.tong_so_phep, 6)
+
+    def test_unpaid_leave_return_after_day_one_blocks_return_month_bonus(self):
+        self.employee.write(
+            {
+                "unpaid_leave_start_date": date(2026, 2, 15),
+                "unpaid_leave_return_date": date(2026, 4, 2),
+            }
+        )
+
+        self.employee.with_context(
+            monthly_leave_bonus_date=date(2026, 4, 1)
+        ).write({"tong_so_phep": 6})
+
+        self.assertEqual(self.employee.tong_so_phep, 5)
+
+    def test_open_unpaid_leave_period_blocks_later_monthly_bonus(self):
+        self.employee.write(
+            {
+                "unpaid_leave_start_date": date(2026, 2, 15),
+                "unpaid_leave_return_date": False,
+            }
+        )
+
+        self.employee.with_context(
+            monthly_leave_bonus_date=date(2026, 5, 1)
+        ).write({"tong_so_phep": 6})
+
+        self.assertEqual(self.employee.tong_so_phep, 5)
