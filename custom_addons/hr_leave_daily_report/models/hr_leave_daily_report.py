@@ -90,7 +90,7 @@ class HrLeaveDailyReport(models.Model):
                     ROW_NUMBER() OVER (
                         ORDER BY l.request_date_from DESC NULLS LAST, l.employee_id, l.id
                     ) AS stt,
-                    l.employee_leave_mien AS employee_leave_mien,
+                    COALESCE(l.employee_leave_mien, e.mien) AS employee_leave_mien,
                     COALESCE(NULLIF(TRIM(e.id_hrm), ''), '') AS employee_id_hrm,
                     COALESCE(e.name, '') AS employee_name,
                     UPPER(COALESCE(NULLIF(TRIM(e.ma_bo_phan), ''), '')) AS employee_ma_bo_phan,
