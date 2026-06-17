@@ -10,8 +10,6 @@ _ACTIONABLE_LEAVE_DOMAIN = (
 _STANDARD_LEAVE_RULE_XMLIDS = (
     "hr_holidays.hr_leave_rule_responsible_read",
     "hr_holidays.hr_leave_rule_responsible_update",
-    "hr_holidays.hr_leave_rule_user_read",
-    "hr_holidays.hr_leave_rule_officer_update",
 )
 
 
