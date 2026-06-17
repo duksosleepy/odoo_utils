@@ -25,7 +25,7 @@ class HrLeaveDailyReport(models.Model):
     employee_id_hrm = fields.Char(string="ID", readonly=True)
     employee_name = fields.Char(string="Họ và Tên NV", readonly=True)
     employee_ma_bo_phan = fields.Char(string="Mã bộ phận", readonly=True)
-    job_title = fields.Char(string="Chức danh", readonly=True)
+    job_title = fields.Char(string="Job Title Key", readonly=True)
     job_title_display = fields.Char(
         string="Chức danh",
         compute="_compute_job_title_display",
@@ -94,7 +94,7 @@ class HrLeaveDailyReport(models.Model):
                     COALESCE(NULLIF(TRIM(e.id_hrm), ''), '') AS employee_id_hrm,
                     COALESCE(e.name, '') AS employee_name,
                     UPPER(COALESCE(NULLIF(TRIM(e.ma_bo_phan), ''), '')) AS employee_ma_bo_phan,
-                    COALESCE(e.job_title, '') AS job_title,
+                    COALESCE(v.job_title, '') AS job_title,
                     l.request_date_from AS request_date_from,
                     l.request_date_to AS request_date_to,
                     l.number_of_days AS number_of_days,
@@ -103,6 +103,7 @@ class HrLeaveDailyReport(models.Model):
                     l.employee_company_id AS company_id
                 FROM hr_leave l
                 INNER JOIN hr_employee e ON l.employee_id = e.id
+                LEFT JOIN hr_version v ON v.id = e.current_version_id
                 WHERE e.active IS TRUE
                   AND l.state != 'cancel'
             )
