@@ -184,6 +184,10 @@ class HrLeaveHandover(models.Model):
         string="Handover status",
         compute="_compute_handover_waiting_label",
     )
+    handover_recipient_display = fields.Char(
+        string="Work handover recipients",
+        compute="_compute_handover_recipient_display",
+    )
     handover_refused_label = fields.Char(
         string="Handover refused status",
         compute="_compute_handover_refused_label",
@@ -896,6 +900,12 @@ class HrLeaveHandover(models.Model):
                 leave.handover_waiting_label = _("Đang chờ bàn giao: %s") % ", ".join(waiting.mapped("name"))
             else:
                 leave.handover_waiting_label = _("Tất cả người nhận bàn giao đã chấp nhận")
+
+    @api.depends("handover_employee_ids", "handover_employee_ids.name")
+    def _compute_handover_recipient_display(self):
+        for leave in self:
+            names = leave.handover_employee_ids.mapped("name")
+            leave.handover_recipient_display = ", ".join(name for name in names if name)
 
     @api.depends(
         "request_date_from",
@@ -2117,28 +2127,28 @@ class HrLeaveHandover(models.Model):
             else:
                 leave.emergency_leave_approver_notice = ""
 
+    @api.depends(
+        "state",
+        "validation_type",
+        "handover_employee_ids",
+        "handover_acceptance_ids.state",
+        "responsible_approval_line_ids.state",
+        "multi_step_current",
+    )
     def _compute_status_display_label(self):
         selection = dict(self._fields["state"].selection)
         for leave in self:
             label = selection.get(leave.state)
             if leave.state in ("confirm", "validate1"):
-                in_approval_flow = False
-                if leave.validation_type == "employee_hr_responsibles":
-                    in_approval_flow = bool(
-                        leave.responsible_approval_line_ids.filtered(
-                            lambda line: line.state == "pending"
-                        )[:1]
-                    )
-                elif leave.validation_type == "multi_step_6":
-                    in_approval_flow = bool(leave._get_current_multi_step())
-                else:
-                    in_approval_flow = True
-
-                if in_approval_flow:
-                    label = _("Đang chờ duyệt")
-                elif leave._get_handover_blocking_employees():
+                if leave._get_handover_blocking_employees():
                     label = _("Đang chờ bàn giao công việc")
-                else:
+                elif leave.validation_type == "employee_hr_responsibles" and leave.responsible_approval_line_ids.filtered(
+                    lambda line: line.state == "pending"
+                )[:1]:
+                    label = _("Đang chờ duyệt")
+                elif leave.validation_type == "multi_step_6" and leave._get_current_multi_step():
+                    label = _("Đang chờ duyệt")
+                elif leave.validation_type not in ("employee_hr_responsibles", "multi_step_6"):
                     label = _("Đang chờ duyệt")
             leave.status_display_label = label
 

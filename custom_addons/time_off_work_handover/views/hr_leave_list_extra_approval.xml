@@ -9,6 +9,9 @@
         <field name="model">hr.leave</field>
         <field name="inherit_id" ref="hr_holidays.hr_leave_view_tree"/>
         <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="class">o_hr_leave_handover_list</attribute>
+            </xpath>
             <xpath expr="//field[@name='employee_id']" position="before">
                 <field name="validation_type" column_invisible="1"/>
                 <field name="can_responsible_approve" column_invisible="1"/>
@@ -16,6 +19,11 @@
             </xpath>
             <xpath expr="//field[@name='employee_id']" position="after">
                 <field name="approval_current_step_label" optional="show" string="Awaiting"/>
+                <field
+                    name="handover_recipient_display"
+                    optional="show"
+                    string="Người nhận bàn giao công việc"
+                />
             </xpath>
             <xpath expr="//field[@name='state']" position="replace">
                 <field name="state" column_invisible="1"/>
@@ -29,13 +37,13 @@
                 />
             </xpath>
             <xpath expr="//field[@name='message_needaction']/following-sibling::button[@icon='fa-thumbs-up']" position="replace">
-                <button string="Approve" name="action_responsible_approve" type="object"
+                <button string="Duyệt đơn" name="action_responsible_approve" type="object"
                     icon="fa-thumbs-up"
                     invisible="validation_type != 'employee_hr_responsibles' or not can_responsible_approve"/>
-                <button string="Approve" name="action_multi_step_approve" type="object"
+                <button string="Duyệt đơn" name="action_multi_step_approve" type="object"
                     icon="fa-thumbs-up"
                     invisible="validation_type != 'multi_step_6' or not can_multi_step_approve"/>
-                <button string="Approve" name="action_approve" type="object"
+                <button string="Duyệt đơn" name="action_approve" type="object"
                     icon="fa-thumbs-up"
                     invisible="validation_type in ('employee_hr_responsibles', 'multi_step_6') or not can_approve"/>
             </xpath>
@@ -43,13 +51,13 @@
                 <attribute name="invisible">validation_type in ('employee_hr_responsibles', 'multi_step_6') or not can_validate or can_approve</attribute>
             </xpath>
             <xpath expr="//field[@name='message_needaction']/following-sibling::button[@icon='fa-times']" position="replace">
-                <button string="Refuse" name="action_open_responsible_refuse_wizard" type="object"
+                <button string="Từ Chối" name="action_open_responsible_refuse_wizard" type="object"
                     icon="fa-times"
                     invisible="validation_type != 'employee_hr_responsibles' or not can_responsible_approve"/>
-                <button string="Refuse" name="action_open_multi_step_refuse_wizard" type="object"
+                <button string="Từ Chối" name="action_open_multi_step_refuse_wizard" type="object"
                     icon="fa-times"
                     invisible="validation_type != 'multi_step_6' or not can_multi_step_approve"/>
-                <button string="Refuse" name="action_open_refuse_wizard" type="object"
+                <button string="Từ Chối" name="action_open_refuse_wizard" type="object"
                     icon="fa-times"
                     invisible="validation_type in ('employee_hr_responsibles', 'multi_step_6') or not can_refuse"/>
             </xpath>
