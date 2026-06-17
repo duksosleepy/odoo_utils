@@ -3,13 +3,16 @@
     <!-- extra_approver_user_ids on hr.leave is defined here, so the ir.rule lives here too -->
     <data>
         <!--
-            Odoo grants Time Off Officers read/write access to every request and
-            Time Off Responsibles read/write access to every subordinate request.
-            Approval access in this module is intentionally narrower: users may
-            access their own requests through Odoo's base employee rules, or a
-            request on which they can currently perform an approval action.
-            Explicit handover-recipient and read-only-notifier rules remain
-            separate, narrowly scoped workflow grants.
+            Odoo grants Time Off Officers read/write access to every request.
+            Keep that role behavior intact: approvers explicitly assigned the
+            "Officer: Manage all requests" role must still be able to open the
+            requests they manage from notifications, lists, and direct links.
+
+            Time Off Responsible and extra-approver access stays narrower for
+            users without the officer role: own requests through Odoo's base
+            employee rules, or requests where they can currently perform an
+            approval action. Explicit handover-recipient and read-only-notifier
+            rules remain separate, narrowly scoped workflow grants.
 
             Time Off Administrators keep unrestricted access through
             hr_holidays.hr_leave_rule_manager.
@@ -28,13 +31,21 @@
 
         <record id="hr_holidays.hr_leave_rule_user_read" model="ir.rule">
             <field name="domain_force">
-                [('approval_actionable_user_ids', 'in', [user.id])]
+                [(1, '=', 1)]
             </field>
         </record>
 
         <record id="hr_holidays.hr_leave_rule_officer_update" model="ir.rule">
             <field name="domain_force">
-                [('approval_actionable_user_ids', 'in', [user.id])]
+                [
+                    '|',
+                        '&amp;',
+                            ('employee_id.user_id', '=', user.id),
+                            ('state', '!=', 'validate'),
+                        '|',
+                            ('employee_id.user_id', '!=', user.id),
+                            ('employee_id.user_id', '=', False)
+                ]
             </field>
         </record>
 

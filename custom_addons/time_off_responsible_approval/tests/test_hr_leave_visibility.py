@@ -14,6 +14,11 @@ class TestHrLeaveVisibility(TransactionCase):
             login="time-off-limited-approver",
             groups="hr_holidays.group_hr_holidays_user",
         )
+        cls.limited_approver = new_test_user(
+            cls.env,
+            login="time-off-actionable-approver",
+            groups="base.group_user",
+        )
         cls.owner = new_test_user(
             cls.env,
             login="time-off-owner",
@@ -28,6 +33,13 @@ class TestHrLeaveVisibility(TransactionCase):
             {
                 "name": "Limited Approver",
                 "user_id": cls.approver.id,
+                "company_id": cls.env.company.id,
+            }
+        )
+        cls.limited_approver_employee = cls.env["hr.employee"].create(
+            {
+                "name": "Actionable Approver",
+                "user_id": cls.limited_approver.id,
                 "company_id": cls.env.company.id,
             }
         )
@@ -72,6 +84,13 @@ class TestHrLeaveVisibility(TransactionCase):
             """,
             [cls.waiting_leave.id, cls.approver.id],
         )
+        cls.env.cr.execute(
+            """
+            INSERT INTO hr_leave_approval_actionable_user_rel (leave_id, user_id)
+            VALUES (%s, %s)
+            """,
+            [cls.waiting_leave.id, cls.limited_approver.id],
+        )
         (cls.own_leave | cls.waiting_leave | cls.unrelated_leave).invalidate_recordset(
             ["approval_actionable_user_ids"]
         )
@@ -93,7 +112,7 @@ class TestHrLeaveVisibility(TransactionCase):
             )
         )
 
-    def test_officer_sees_only_owned_and_actionable_requests(self):
+    def test_officer_manage_all_requests_keeps_full_visibility(self):
         visible = self.env["hr.leave"].with_user(self.approver).search(
             [
                 (
@@ -110,22 +129,57 @@ class TestHrLeaveVisibility(TransactionCase):
 
         self.assertEqual(
             set(visible.ids),
-            {self.own_leave.id, self.waiting_leave.id},
+            {self.own_leave.id, self.waiting_leave.id, self.unrelated_leave.id},
         )
 
-    def test_standard_noupdate_rules_are_restricted(self):
-        expected = "[('approval_actionable_user_ids', 'in', [user.id])]"
+    def test_non_officer_approver_sees_only_owned_and_actionable_requests(self):
+        visible = self.env["hr.leave"].with_user(self.limited_approver).search(
+            [
+                (
+                    "id",
+                    "in",
+                    [
+                        self.own_leave.id,
+                        self.waiting_leave.id,
+                        self.unrelated_leave.id,
+                    ],
+                )
+            ]
+        )
+
+        self.assertEqual(
+            set(visible.ids),
+            {self.waiting_leave.id},
+        )
+
+    def test_standard_noupdate_rules_preserve_officer_access(self):
+        def normalized_domain(xmlid):
+            return " ".join(self.env.ref(xmlid).domain_force.split())
+
+        actionable = "[('approval_actionable_user_ids', 'in', [user.id])]"
+        officer_update = (
+            "[ '|', '&', ('employee_id.user_id', '=', user.id), "
+            "('state', '!=', 'validate'), '|', "
+            "('employee_id.user_id', '!=', user.id), "
+            "('employee_id.user_id', '=', False) ]"
+        )
         for xmlid in (
             "hr_holidays.hr_leave_rule_responsible_read",
             "hr_holidays.hr_leave_rule_responsible_update",
-            "hr_holidays.hr_leave_rule_user_read",
-            "hr_holidays.hr_leave_rule_officer_update",
         ):
-            self.assertEqual(self.env.ref(xmlid).domain_force, expected)
+            self.assertEqual(normalized_domain(xmlid), actionable)
+        self.assertEqual(
+            normalized_domain("hr_holidays.hr_leave_rule_user_read"),
+            "[(1, '=', 1)]",
+        )
+        self.assertEqual(
+            normalized_domain("hr_holidays.hr_leave_rule_officer_update"),
+            officer_update,
+        )
 
-    def test_officer_cannot_write_unrelated_request(self):
+    def test_non_officer_approver_cannot_write_unrelated_request(self):
         with self.assertRaises(AccessError):
-            self.unrelated_leave.with_user(self.approver).write(
+            self.unrelated_leave.with_user(self.limited_approver).write(
                 {"name": "Unauthorized update"}
             )
 
