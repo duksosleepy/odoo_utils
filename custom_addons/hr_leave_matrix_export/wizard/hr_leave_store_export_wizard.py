@@ -156,7 +156,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             ma_bp = IMPORT_CAPNHATCONG_DEFAULT_MA_BP
         if ma_khieu is None:
             ma_khieu = self._leave_type_symbol(leave)
-        ghi_chu = (leave.notes or leave.private_name or leave.name or "").strip()
+        ghi_chu = leave._timeoff_internal_reason_text()
         return {
             "ma_bp": ma_bp,
             "ma_khieu": ma_khieu,
@@ -528,7 +528,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         return self._normalize_leave_type_code(name)
 
     def _leave_reason(self, leave):
-        return (leave.notes or leave.private_name or leave.name or "").strip()
+        return leave._timeoff_internal_reason_text()
 
     def _format_ngay_nghi_display(self, leave):
         """Một cột NGÀY NGHỈ: một ngày hoặc khoảng from–to."""

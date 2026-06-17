@@ -869,7 +869,7 @@ class HrLeaveResponsibleApproval(models.Model):
         total_days = (self.duration_display or "").strip()
         if not total_days and self.number_of_days:
             total_days = "%g" % self.number_of_days
-        reason = (self.notes or self.private_name or self.name or "").strip() or "—"
+        reason = self._timeoff_internal_reason_text() or "—"
         return {
             "requester": requester_name,
             "id_hrm": id_hrm,

@@ -284,7 +284,7 @@ class HrLeaveMonthlySplit(models.Model):
         requester_name = employee.name or employee.display_name or self.display_name
         id_hrm = (getattr(employee, "id_hrm", None) or "").strip() or "—"
         department = (employee.department_id.name or "").strip() or "—"
-        reason = (self.notes or self.private_name or self.name or "").strip() or "—"
+        reason = self._timeoff_internal_reason_text() or "—"
         segment_lines = []
         total_days = 0
         for kind, seg_from, seg_to in plan:

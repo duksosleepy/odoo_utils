@@ -76,6 +76,28 @@ class HolidaysRequest(models.Model):
             total_days = (leave.request_date_to - leave.request_date_from).days + 1
             leave.request_calendar_days_display = _("%g %s") % (total_days, _("days"))
 
+    def _timeoff_internal_reason_text(self, vals=None, include_notes=True):
+        """Return request reason for trusted server-side workflows.
+
+        ``private_name`` is intentionally protected by Odoo field groups. Custom
+        notification/export flows can run under an employee who only participates
+        in handover, so direct reads would fail even though the workflow itself
+        is allowed.
+        """
+        self.ensure_one()
+        if vals:
+            reason = (vals.get("name") or vals.get("private_name") or "").strip()
+            if reason:
+                return reason
+        if include_notes:
+            notes = (self.notes or "").strip()
+            if notes:
+                return notes
+        reason = (self.sudo().private_name or "").strip()
+        if reason:
+            return reason
+        return (self.sudo().name or "").strip()
+
     def _action_return_reload_leave_form(self):
         """call_button only forwards dict actions to the web client; booleans are dropped, so the form must reload explicitly."""
         return {

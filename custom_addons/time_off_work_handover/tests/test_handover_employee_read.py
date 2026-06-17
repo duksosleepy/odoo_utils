@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from odoo import Command
 from odoo.addons.hr.models.hr_employee import _ALLOW_READ_HR_EMPLOYEE
+from odoo.exceptions import AccessError
 from odoo.fields import Domain
 from odoo.tests import TransactionCase, new_test_user, tagged
 
@@ -17,10 +18,22 @@ class TestHandoverEmployeeRead(TransactionCase):
             login="handover-employee-read",
             groups="base.group_user",
         )
+        cls.handover_user = new_test_user(
+            cls.env,
+            login="handover-private-reason-read",
+            groups="base.group_user",
+        )
         cls.recipient = cls.env["hr.employee"].create(
             {
                 "name": "Restricted Handover Recipient",
                 "company_id": cls.user.company_id.id,
+            }
+        )
+        cls.handover_employee = cls.env["hr.employee"].create(
+            {
+                "name": "Base Handover Recipient",
+                "user_id": cls.handover_user.id,
+                "company_id": cls.handover_user.company_id.id,
             }
         )
         cls.requester_employee = cls.env["hr.employee"].create(
@@ -179,6 +192,35 @@ class TestHandoverEmployeeRead(TransactionCase):
             data[0]["handover_acceptance_ids"][0]["employee_id"]["display_name"],
             self.recipient.display_name,
         )
+
+    def test_handover_recipient_can_build_approval_notice_without_private_name_group(self):
+        leave_day = date(2026, 6, 28)
+        start_dt = datetime.combine(leave_day, time(7, 0))
+        end_dt = datetime.combine(leave_day, time(19, 0))
+        leave = self.env["hr.leave"].sudo().create(
+            {
+                "private_name": "Sensitive private reason",
+                "employee_id": self.requester_employee.id,
+                "holiday_status_id": self.leave_type.id,
+                "request_date_from": leave_day,
+                "request_date_to": leave_day,
+                "date_from": start_dt,
+                "date_to": end_dt,
+                "handover_employee_ids": [Command.set([self.handover_employee.id])],
+                "state": "confirm",
+            }
+        )
+
+        self.assertFalse(
+            self.handover_user.has_group("hr_holidays.group_hr_holidays_user")
+        )
+        handover_leave = self.env["hr.leave"].with_user(self.handover_user).browse(leave.id)
+        with self.assertRaises(AccessError):
+            handover_leave.private_name
+
+        details = handover_leave._get_approval_bot_leave_notification_details()
+
+        self.assertEqual(details["reason"], "Sensitive private reason")
 
     def test_unavailable_handover_employees_on_overlapping_dates(self):
         overlap_day = date(2026, 6, 26)

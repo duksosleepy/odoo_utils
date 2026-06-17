@@ -161,7 +161,7 @@ class HrLeaveSplitGroup(models.Model):
         requester_name = employee.name or employee.display_name or primary.display_name
         id_hrm = (getattr(employee, "id_hrm", None) or "").strip() or "—"
         department = (employee.department_id.name or "").strip() or "—"
-        reason = (primary.notes or primary.private_name or primary.name or "").strip() or "—"
+        reason = primary._timeoff_internal_reason_text() or "—"
 
         segment_lines = []
         total_days = 0.0
