@@ -6,14 +6,11 @@ import re
 from markupsafe import Markup, escape
 
 from odoo import api, fields, models, _
-from odoo.tools import html_sanitize
 
 _logger = logging.getLogger(__name__)
 
 _STATUS_DIV_RE = re.compile(
-    r'(<div class="o_timeoff_discuss_notify_status"[^>]*data-oe-notify-key="(?P<key>[^"]+)"[^>]*>)'
-    r".*?"
-    r"(</div>)",
+    r'<div class="o_timeoff_discuss_notify_status"[^>]*>.*?</div>',
     re.DOTALL | re.IGNORECASE,
 )
 
@@ -76,19 +73,24 @@ class HrLeaveDiscussNotify(models.Model):
         self.ensure_one()
         message = self.message_id.sudo()
         if not message or not message.body:
+            _logger.warning(
+                "time_off_discuss_notify: skip patch leave_id=%s message_id=%s reason=no_body",
+                self.leave_id.id,
+                message.id if message else None,
+            )
             return
         body = str(message.body)
-        replacement = str(new_status_markup)
-
-        def _replacer(match):
-            if match.group("key") != notify_key:
-                return match.group(0)
-            return replacement
-
-        new_body, count = _STATUS_DIV_RE.subn(_replacer, body, count=1)
+        replacement = str(new_status_markup).rstrip()
+        new_body, count = _STATUS_DIV_RE.subn(replacement, body, count=1)
         if not count:
+            _logger.warning(
+                "time_off_discuss_notify: status div not found leave_id=%s message_id=%s key=%s",
+                self.leave_id.id,
+                message.id,
+                notify_key,
+            )
             return
-        message.write({"body": html_sanitize(new_body, sanitize_tags=False)})
+        message.write({"body": Markup(new_body)})
 
 
 class HrLeaveDiscussNotifyMixin(models.Model):
@@ -107,13 +109,11 @@ class HrLeaveDiscussNotifyMixin(models.Model):
         )
         view_label = _("Chưa xem") if view_status == "unseen" else _("Đã xem")
         return Markup(
-            '<div class="o_timeoff_discuss_notify_status" '
-            'data-oe-notify-key="{key}">'
+            '<div class="o_timeoff_discuss_notify_status">'
             "Trạng thái: <b>{approval}</b><br/>"
             "<b>{view}</b>"
             "</div><br/>"
         ).format(
-            key=escape(notify_key),
             approval=escape(approval_label),
             view=escape(view_label),
         )
@@ -254,4 +254,7 @@ class HrLeaveDiscussNotifyMixin(models.Model):
             split_group_id=gid,
             view_status="seen",
         )
+        trackers = leave._discuss_notify_find_trackers(self.env.user, gid)
+        if trackers:
+            trackers._sync_message_body()
         return True

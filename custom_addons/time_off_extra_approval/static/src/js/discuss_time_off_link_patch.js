@@ -172,7 +172,7 @@ async function handleApprovalGroupAction(ev, store) {
     return true;
 }
 
-function handleTimeOffLeaveLink(ev, store, thread) {
+async function handleTimeOffLeaveLink(ev, store, thread) {
     const link = findTimeOffLeaveLink(ev.target);
     if (!link) {
         return false;
@@ -184,7 +184,7 @@ function handleTimeOffLeaveLink(ev, store, thread) {
     ev.preventDefault();
     ev.stopPropagation();
     foldMobileChatWindow(store, ev, thread, link);
-    void markLeaveNotificationViewed(store.env.services.orm, resId, link);
+    await markLeaveNotificationViewed(store.env.services.orm, resId, link);
     openLeaveForm(store.env, resId);
     return true;
 }
@@ -196,7 +196,7 @@ async function handleTimeOffDiscussClick(ev, store, thread) {
     if (await handleApprovalGroupAction(ev, store)) {
         return true;
     }
-    return handleTimeOffLeaveLink(ev, store, thread);
+    return await handleTimeOffLeaveLink(ev, store, thread);
 }
 
 patch(Store.prototype, {
@@ -208,7 +208,8 @@ patch(Store.prototype, {
             void handleApprovalGroupAction(ev, this);
             return true;
         }
-        if (handleTimeOffLeaveLink(ev, this, thread)) {
+        if (findTimeOffLeaveLink(ev.target)) {
+            void handleTimeOffLeaveLink(ev, this, thread);
             return true;
         }
         return super.handleClickOnLink(...arguments);
