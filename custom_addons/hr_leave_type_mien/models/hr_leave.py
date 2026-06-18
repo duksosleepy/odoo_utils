@@ -65,6 +65,17 @@ class HrLeave(models.Model):
     # Helpers
     # ------------------------------------------------------------------
 
+    @api.model
+    def _leave_mien_scope_restricts_user(self, user=None):
+        """True when the user has an explicit VP / Cửa Hàng leave scope."""
+        user = user or self.env.user
+        if user._is_superuser():
+            return False
+        return (
+            user.has_group("hr_leave_type_mien.group_leave_mien_vp")
+            or user.has_group("hr_leave_type_mien.group_leave_mien_store")
+        )
+
     def _leave_type_is_p1_p2_o(self, leave_type=None):
         """True khi loại phép là P1, P2 hoặc O (theo mã trong ngoặc tên loại)."""
         leave_type = leave_type or self.holiday_status_id

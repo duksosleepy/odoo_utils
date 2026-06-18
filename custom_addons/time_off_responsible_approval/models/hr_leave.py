@@ -1032,11 +1032,35 @@ class HrLeaveResponsibleApproval(models.Model):
         ordered = self._employee_hr_substitute_final_director_with_department_manager(ordered)
         return ordered
 
+    def _get_time_off_officer_users(self):
+        """Internal Time Off officers / administrators (matches multi-step fallback approvers)."""
+        group_user = self.env.ref("hr_holidays.group_hr_holidays_user")
+        group_manager = self.env.ref("hr_holidays.group_hr_holidays_manager")
+        return self.env["res.users"].sudo().search(
+            [
+                ("share", "=", False),
+                "|",
+                ("all_group_ids", "in", [group_user.id]),
+                ("all_group_ids", "in", [group_manager.id]),
+            ]
+        )
+
     def _get_responsible_for_approval(self):
+        self.ensure_one()
         if self.validation_type == "employee_hr_responsibles":
-            return self._get_responsible_approval_users()
+            pending = self.responsible_approval_line_ids.filtered(
+                lambda line: line.state == "pending" and line.user_id and not line.user_id.share
+            )
+            if not pending:
+                return self.env["res.users"]
+            if self._responsible_approval_mode() == "sequential":
+                return self._responsible_pending_current_wave_raw().mapped("user_id")
+            return pending.mapped("user_id")
         if self.validation_type == "multi_step_6":
-            return self._get_multi_step_approvers()
+            approvers = self._get_multi_step_approvers().filtered(lambda user: user and not user.share)
+            if approvers:
+                return approvers
+            return self._get_time_off_officer_users()
 
         res = super()._get_responsible_for_approval()
         # Only HR-step validations use responsible_ids; for manager validations this is handled by employee leave manager.
@@ -1764,6 +1788,12 @@ class HrLeaveResponsibleApproval(models.Model):
         leaves.flush_recordset(["extra_approver_user_ids"])
         leaves._compute_approval_actionable_user_ids()
         leaves.flush_recordset(["approval_actionable_user_ids"])
+        pending = leaves.filtered(
+            lambda leave: leave.state in ("confirm", "validate1")
+            and leave.validation_type in ("employee_hr_responsibles", "multi_step_6")
+        )
+        if pending:
+            pending.activity_update()
         _logger.info(
             "time_off_responsible_approval: refreshed actionable users leaves=%s users=%s",
             leaves.ids,
