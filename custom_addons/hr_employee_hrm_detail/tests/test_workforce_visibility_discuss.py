@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from odoo.addons.mail.tools.discuss import Store
 from odoo.tests import TransactionCase, new_test_user, tagged
 
 
@@ -107,3 +108,15 @@ class TestWorkforceVisibilityDiscuss(TransactionCase):
             ("id", "=", self.vp_user.partner_id.id),
         ]
         self.assertTrue(partner_model.search_count(domain))
+
+    def test_discuss_channel_invite_cross_group(self):
+        """Discuss invite picker must not apply HR employee visibility."""
+        Partner = self.env["res.partner"]
+        vp_invite = Partner.with_user(self.vp_user)._search_for_channel_invite(
+            Store(), self.ch_user.name, limit=30
+        )
+        ch_invite = Partner.with_user(self.ch_user)._search_for_channel_invite(
+            Store(), self.vp_user.name, limit=30
+        )
+        self.assertIn(self.ch_user.partner_id.id, vp_invite["partner_ids"])
+        self.assertIn(self.vp_user.partner_id.id, ch_invite["partner_ids"])
