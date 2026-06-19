@@ -2,18 +2,36 @@
 
 from odoo import api, fields, models
 
-from .hr_employee import (
-    STORE_MIENS,
-    VISIBILITY_OFFICE,
-    VISIBILITY_STORE,
-    WORKFORCE_GROUP_CH,
-    WORKFORCE_GROUP_VP,
-    _workforce_group_from_mien,
-)
+VISIBILITY_POLICIES = [
+    ("self", "Chỉ bản thân"),
+    ("assigned", "Chỉ định mã bộ phận"),
+    ("department", "Cùng phòng ban"),
+    ("region", "Cùng khu vực (Miền)"),
+    ("all", "Toàn bộ"),
+]
 
 
 class ResUsers(models.Model):
     _inherit = "res.users"
+
+    visibility_policy = fields.Selection(
+        selection=VISIBILITY_POLICIES,
+        string="Phạm vi xem nhân viên",
+        default="self",
+        help=(
+            "Quy định user được nhìn thấy hồ sơ nhân viên nào. "
+            "Quản trị viên (HR Administrator) luôn thấy toàn bộ."
+        ),
+    )
+    assigned_ma_bo_phan_ids = fields.Many2many(
+        "hr.store.code",
+        "res_users_assigned_ma_bo_phan_rel",
+        "user_id",
+        "store_code_id",
+        string="Mã bộ phận được xem",
+        help="Chỉ dùng khi Phạm vi xem = 'Chỉ định mã bộ phận'. "
+        "User sẽ thấy mọi nhân viên thuộc các mã bộ phận được chọn.",
+    )
 
     employee_ma_bo_phan_id = fields.Many2one(
         "hr.store.code",
@@ -22,15 +40,18 @@ class ResUsers(models.Model):
         store=True,
         index=True,
     )
-
-    hr_user_workforce_scope = fields.Selection(
-        selection=[
-            ("vp", "Văn phòng"),
-            ("ch", "Cửa hàng"),
-            ("self", "Self only"),
-        ],
-        compute="_compute_hr_user_workforce_scope",
+    employee_department_id = fields.Many2one(
+        "hr.department",
+        string="Phòng ban (nhân viên)",
+        compute="_compute_employee_org",
         store=True,
+        index=True,
+    )
+    employee_mien = fields.Char(
+        string="Miền (nhân viên)",
+        compute="_compute_employee_org",
+        store=True,
+        index=True,
     )
 
     @api.depends("employee_id", "employee_id.ma_bo_phan_id")
@@ -40,37 +61,24 @@ class ResUsers(models.Model):
             user.employee_ma_bo_phan_id = emp.ma_bo_phan_id if emp else False
 
     @api.depends(
-        "employee_id.workforce_group",
+        "employee_id",
+        "employee_id.department_id",
         "employee_id.mien",
         "employee_id.ma_bo_phan_id.mien",
-        "group_ids",
     )
-    def _compute_hr_user_workforce_scope(self):
+    def _compute_employee_org(self):
         for user in self:
-            if user._is_superuser() or user.has_group("hr.group_hr_manager"):
-                user.hr_user_workforce_scope = False
-                continue
-            if user.has_group("hr_employee_hrm_detail.group_hr_employees_supporter"):
-                user.hr_user_workforce_scope = False
-                continue
-            if not user.has_group("hr.group_hr_user"):
-                user.hr_user_workforce_scope = False
-                continue
-            emp = user.employee_id
-            workforce_group = False
+            emp = user.sudo().employee_id
+            user.employee_department_id = emp.department_id if emp else False
             if emp:
-                workforce_group = emp.workforce_group or _workforce_group_from_mien(
-                    emp.mien or (emp.ma_bo_phan_id.mien if emp.ma_bo_phan_id else False)
+                user.employee_mien = emp.mien or (
+                    emp.ma_bo_phan_id.mien if emp.ma_bo_phan_id else False
                 )
-            if workforce_group == WORKFORCE_GROUP_VP:
-                user.hr_user_workforce_scope = "vp"
-            elif workforce_group == WORKFORCE_GROUP_CH:
-                user.hr_user_workforce_scope = "ch"
             else:
-                user.hr_user_workforce_scope = "self"
+                user.employee_mien = False
 
     def write(self, vals):
         res = super().write(vals)
-        if "group_ids" in vals:
+        if {"group_ids", "visibility_policy", "assigned_ma_bo_phan_ids"} & set(vals):
             self.env.registry.clear_cache()
         return res

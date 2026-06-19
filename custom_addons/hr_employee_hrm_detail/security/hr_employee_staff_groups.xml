@@ -1,28 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!--
-    Workforce visibility matrix (HR profiles vs Discuss):
-    - Administrator (hr.group_hr_manager): all employee profiles
-    - Office officer (VP / employee_visibility=office): VP profiles only
-    - Store officer (CH / employee_visibility=store): CH profiles only
-    - Discuss (res.partner): no HR visibility filter — all internal users can chat
-    -->
+    <!-- Legacy staff groups; visibility checkboxes live in hr_employee_visibility_groups.xml -->
     <record id="group_hr_employees_staff" model="res.groups">
         <field name="name">Employee</field>
         <field name="sequence">12</field>
         <field name="privilege_id" ref="hr.res_groups_privilege_employees"/>
         <field name="implied_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
-        <field name="comment">The user can view employees who share the same department code (Mã bộ phận).</field>
+        <field name="comment">Standard employee. Assign EMP_OFFICE or EMP_STORE per user.</field>
     </record>
 
-    <!--
-    Like HR Officer (Chuyên viên) but may view all employees (no Miền / department filter).
-    -->
     <record id="group_hr_employees_supporter" model="res.groups">
         <field name="name">Support Staff</field>
         <field name="sequence">11</field>
         <field name="privilege_id" ref="hr.res_groups_privilege_employees"/>
         <field name="implied_ids" eval="[(4, ref('hr.group_hr_user'))]"/>
-        <field name="comment">HR officer rights; can view the full employee list (all regions).</field>
+        <field name="comment">HR officer (tạo/sửa NV). Phạm vi xem: tick EMP_ALL / EMP_STORE / EMP_OFFICE riêng.</field>
     </record>
 </odoo>
