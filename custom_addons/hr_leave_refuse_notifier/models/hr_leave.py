@@ -17,49 +17,36 @@ class HrLeave(models.Model):
             _logger.exception("hr_leave_refuse_notifier: failed to notify refuse ticket notifier")
         return result
 
-    def _get_refuse_notifier_users(self):
-        self.ensure_one()
-        users = self.env["res.users"]
-        if self.validation_type == "employee_hr_responsibles":
-            users |= self.sudo().responsible_approval_line_ids.mapped("user_id")
-        if self.validation_type == "multi_step_6":
-            step = self.sudo()._get_current_multi_step()
-            if step:
-                users |= step._get_all_approver_users()
-        users |= self.sudo().extra_approver_user_ids
-        users |= self.sudo().holiday_status_id.sudo().responsible_ids
-        if self.employee_id.leave_manager_id:
-            users |= self.employee_id.leave_manager_id
-        users = users.filtered(lambda u: u and not u.share and u.active)
-        return users
-
     def _notify_refuse_ticket_notifier(self):
         refuser = self.env.user.display_name
         odoobot_partner = self.env.ref("base.partner_root", raise_if_not_found=False)
         if not odoobot_partner:
-            _logger.warning("hr_leave_refuse_notifier: base.partner_root not found")
             return
         for leave in self:
-            notifier_users = leave._get_refuse_notifier_users()
-            if not notifier_users:
-                _logger.info(
-                    "hr_leave_refuse_notifier: no approvers to notify for leave_id=%s",
-                    leave.id,
-                )
-                continue
+            user_ids = set()
+            for line in leave.sudo().responsible_approval_line_ids:
+                if line.user_id and not line.user_id.share and line.user_id.active:
+                    user_ids.add(line.user_id.id)
+            if leave.employee_id.leave_manager_id and not leave.employee_id.leave_manager_id.share:
+                user_ids.add(leave.employee_id.leave_manager_id.id)
             _logger.info(
-                "hr_leave_refuse_notifier: leave_id=%s notifying %d approver(s): %s",
+                "hr_leave_refuse_notifier: leave_id=%s notifying %d user(s): %s",
                 leave.id,
-                len(notifier_users),
-                [u.login for u in notifier_users],
+                len(user_ids),
+                list(user_ids),
             )
+            if not user_ids:
+                continue
             body = _(
-                "%(leave_name)s has been refused by %(refuser)s.",
+                "%(leave_name)s đã bị từ chối bởi %(refuser)s.",
                 leave_name=leave.display_name,
                 refuser=refuser,
             )
-            for user in notifier_users:
+            for uid in user_ids:
                 try:
+                    user = self.env["res.users"].sudo().browse(uid)
+                    if not user.exists() or user.share or not user.partner_id:
+                        continue
                     chat = (
                         self.env["discuss.channel"]
                         .sudo()
@@ -74,7 +61,7 @@ class HrLeave(models.Model):
                     )
                 except Exception:
                     _logger.exception(
-                        "hr_leave_refuse_notifier: OdooBot DM failed leave_id=%s user_id=%s",
+                        "hr_leave_refuse_notifier: DM failed leave_id=%s user_id=%s",
                         leave.id,
-                        user.id,
+                        uid,
                     )
