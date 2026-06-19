@@ -37,11 +37,21 @@ class HrLeave(models.Model):
             )
             if not user_ids:
                 continue
-            body = _(
-                "%(leave_name)s đã bị từ chối bởi %(refuser)s.",
-                leave_name=leave.display_name,
-                refuser=refuser,
-            )
+            leave_name = leave.holiday_status_id.display_name or leave.display_name
+            reason = (leave.last_refusal_reason or "").strip()
+            if reason:
+                body = _(
+                    "%(leave_name)s đã bị từ chối bởi %(refuser)s với lý do: <b>%(reason)s</b>",
+                    leave_name=leave_name,
+                    refuser=refuser,
+                    reason=reason,
+                )
+            else:
+                body = _(
+                    "%(leave_name)s đã bị từ chối bởi %(refuser)s.",
+                    leave_name=leave_name,
+                    refuser=refuser,
+                )
             for uid in user_ids:
                 try:
                     user = self.env["res.users"].sudo().browse(uid)
