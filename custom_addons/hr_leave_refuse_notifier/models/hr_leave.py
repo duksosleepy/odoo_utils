@@ -15,12 +15,11 @@ class HrLeave(models.Model):
             employee = leave.holiday_status_id.refuse_notify_employee_id
             if not employee or not employee.user_id:
                 continue
-            leave.message_notify(
+            leave.sudo().message_post(
                 partner_ids=employee.user_id.partner_id.ids,
-                subject=_("Time Off Request Refused"),
                 body=_(
                     "%(leave_name)s has been refused.",
                     leave_name=leave.display_name,
                 ),
-                email_layout_xmlid="mail.mail_notification_layout",
+                subtype_xmlid="mail.mt_comment",
             )
