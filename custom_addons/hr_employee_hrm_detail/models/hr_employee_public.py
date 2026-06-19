@@ -13,6 +13,11 @@ class HrEmployeePublic(models.Model):
         readonly=True,
     )
     mien = fields.Selection(related="employee_id.mien", readonly=True)
+    workforce_group = fields.Selection(related="employee_id.workforce_group", readonly=True)
+    employee_visibility = fields.Selection(
+        related="employee_id.employee_visibility",
+        readonly=True,
+    )
     # Time-off balance fields: exposed on public profile so employees without
     # HR officer rights can read their own leave counters when creating requests.
     phep_chuan = fields.Float(readonly=True)

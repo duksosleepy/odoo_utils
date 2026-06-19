@@ -3,12 +3,19 @@
 from odoo import api, models
 from odoo.fields import Domain
 
-MIEN_BND = ("Bắc", "Nam", "ĐTT")
+from .hr_employee import (
+    VISIBILITY_ALL,
+    VISIBILITY_OFFICE,
+    VISIBILITY_STORE,
+    WORKFORCE_GROUP_CH,
+    WORKFORCE_GROUP_VP,
+    _workforce_group_from_mien,
+)
 
 
 class HrEmployeeAccessMixin(models.AbstractModel):
     _name = "hr.employee.access.mixin"
-    _description = "Miền / Employees privilege access helpers"
+    _description = "Workforce visibility / Employees privilege access helpers"
 
     @api.model
     def _hr_employee_access_self_domain(self, user=None):
@@ -43,26 +50,33 @@ class HrEmployeeAccessMixin(models.AbstractModel):
         return emp.mien or (emp.ma_bo_phan_id.mien if emp.ma_bo_phan_id else False)
 
     @api.model
-    def _hr_employee_allowed_miens(self, user=None):
+    def _hr_employee_user_workforce_group(self, user=None):
         user = user or self.env.user
-        mien = self._hr_employee_user_mien(user)
-        if mien == "VP":
-            return ["VP"]
-        if mien in MIEN_BND:
-            return list(MIEN_BND)
+        emp = user.employee_id
+        if not emp:
+            return False
+        if emp.workforce_group:
+            return emp.workforce_group
+        return _workforce_group_from_mien(self._hr_employee_user_mien(user))
+
+    @api.model
+    def _hr_employee_allowed_visibility(self, user=None):
+        """Employee visibility layer: office/store scopes for HR profile reads."""
+        user = user or self.env.user
+        workforce_group = self._hr_employee_user_workforce_group(user)
+        if workforce_group == WORKFORCE_GROUP_VP:
+            return [VISIBILITY_OFFICE]
+        if workforce_group == WORKFORCE_GROUP_CH:
+            return [VISIBILITY_STORE]
         return []
 
     @api.model
-    def _hr_employee_mien_match_domain(
-        self, mien_field, dept_mien_field, allowed, user=None, model_name=None
+    def _hr_employee_visibility_match_domain(
+        self, visibility_field, allowed_visibility, user=None, model_name=None
     ):
         user = user or self.env.user
         return Domain([
-            "|",
-            (mien_field, "in", allowed),
-            "&",
-            (mien_field, "=", False),
-            (dept_mien_field, "in", allowed),
+            (visibility_field, "in", list(allowed_visibility)),
         ]) | self._hr_employee_access_scope_domain(user, model_name=model_name)
 
     @api.model
@@ -76,8 +90,8 @@ class HrEmployeeAccessMixin(models.AbstractModel):
     @api.model
     def _hr_employee_access_field_names(self, model_name):
         if model_name == "hr.employee.public":
-            return "employee_id.mien", "employee_id.ma_bo_phan_id.mien"
-        return "mien", "ma_bo_phan_id.mien"
+            return "employee_id.employee_visibility", "employee_id.workforce_group"
+        return "employee_visibility", "workforce_group"
 
     @api.model
     def _hr_employee_staff_store_employee_ids(self, user=None):
@@ -116,34 +130,18 @@ class HrEmployeeAccessMixin(models.AbstractModel):
             return self._hr_employee_staff_department_domain(user, model_name=model_name)
         if not user.has_group("hr.group_hr_user"):
             return None
-        allowed = self._hr_employee_allowed_miens(user)
-        if not allowed:
+        allowed_visibility = self._hr_employee_allowed_visibility(user)
+        if not allowed_visibility:
             return self._hr_employee_access_scope_domain(user, model_name=model_name)
-        mien_field, dept_mien_field = self._hr_employee_access_field_names(model_name)
-        return self._hr_employee_mien_match_domain(
-            mien_field, dept_mien_field, allowed, user=user, model_name=model_name
+        visibility_field, _workforce_field = self._hr_employee_access_field_names(model_name)
+        return self._hr_employee_visibility_match_domain(
+            visibility_field,
+            allowed_visibility,
+            user=user,
+            model_name=model_name,
         )
 
     @api.model
     def _hr_employee_discuss_access_applies(self, user=None):
-        """Whether Discuss partner pickers must follow HR employee visibility."""
-        user = user or self.env.user
-        if user._is_superuser() or user.has_group("hr.group_hr_manager"):
-            return False
-        return user.has_group(
-            "hr_employee_hrm_detail.group_hr_employees_staff"
-        ) or user.has_group("hr.group_hr_user")
-
-    @api.model
-    def _hr_employee_discuss_accessible_partner_domain(self, user=None):
-        """res.partner domain for Discuss search/invite; None = no HR filter."""
-        user = user or self.env.user
-        if not self._hr_employee_discuss_access_applies(user):
-            return None
-        employee_domain = self._hr_employee_apply_access_domain(
-            [], model_name="hr.employee.public"
-        )
-        employees = self.env["hr.employee.public"].with_user(user).search(employee_domain)
-        partner_ids = employees.user_id.partner_id.ids
-        partner_ids = list({user.partner_id.id, *partner_ids})
-        return Domain([("id", "in", partner_ids)])
+        """Communication layer: Discuss must not follow HR employee visibility."""
+        return False

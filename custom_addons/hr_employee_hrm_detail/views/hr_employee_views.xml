@@ -10,6 +10,8 @@
                 <group string="HRM" groups="hr.group_hr_user">
                     <group>
                         <field name="mien"/>
+                        <field name="workforce_group"/>
+                        <field name="employee_visibility"/>
                         <field name="id_hrm"/>
                         <field name="ma_nv_ke_toan"/>
                         <field name="ma_cham_cong"/>
@@ -62,6 +64,8 @@
         <field name="arch" type="xml">
             <field name="department_id" position="after">
                 <field name="mien" optional="hide" groups="hr.group_hr_user"/>
+                <field name="workforce_group" optional="hide" groups="hr.group_hr_user"/>
+                <field name="employee_visibility" optional="hide" groups="hr.group_hr_user"/>
                 <field name="ma_bo_phan" optional="hide" groups="hr.group_hr_user"/>
                 <field name="id_hrm" optional="hide" groups="hr.group_hr_user"/>
                 <field name="ngay_vao_lam" optional="hide" groups="hr.group_hr_user"/>
@@ -78,6 +82,8 @@
         <field name="arch" type="xml">
             <xpath expr="//templates" position="before">
                 <field name="mien" groups="hr.group_hr_user"/>
+                <field name="workforce_group" groups="hr.group_hr_user"/>
+                <field name="employee_visibility" groups="hr.group_hr_user"/>
                 <field name="ma_bo_phan" groups="hr.group_hr_user"/>
                 <field name="id_hrm" groups="hr.group_hr_user"/>
                 <field name="ngay_vao_lam" groups="hr.group_hr_user"/>

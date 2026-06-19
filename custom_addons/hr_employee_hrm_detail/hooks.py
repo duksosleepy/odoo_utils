@@ -28,8 +28,8 @@ def _sync_mien_access_rules(env):
 def post_init_hook(env):
     users = env["res.users"].search([])
     env.add_to_compute(env["res.users"]._fields["employee_ma_bo_phan_id"], users)
-    env.add_to_compute(env["res.users"]._fields["hr_officer_mien_scope"], users)
-    env["res.users"].flush_model(["employee_ma_bo_phan_id", "hr_officer_mien_scope"])
+    env.add_to_compute(env["res.users"]._fields["hr_user_workforce_scope"], users)
+    env["res.users"].flush_model(["employee_ma_bo_phan_id", "hr_user_workforce_scope"])
     _sync_mien_access_rules(env)
     env["hr.employee.public"].init()
     env.registry.clear_cache()

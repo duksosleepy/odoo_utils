@@ -6,6 +6,31 @@ from odoo.tools.translate import _
 
 
 MIEN_ACCESS_FIELDS = frozenset({'mien', 'ma_bo_phan_id'})
+WORKFORCE_ACCESS_FIELDS = frozenset({'workforce_group', 'employee_visibility'})
+VISIBILITY_ACCESS_FIELDS = MIEN_ACCESS_FIELDS | WORKFORCE_ACCESS_FIELDS
+
+WORKFORCE_GROUP_VP = 'VP'
+WORKFORCE_GROUP_CH = 'CH'
+VISIBILITY_OFFICE = 'office'
+VISIBILITY_STORE = 'store'
+VISIBILITY_ALL = 'all'
+STORE_MIENS = frozenset({'Bắc', 'Nam', 'ĐTT'})
+WORKFORCE_TO_VISIBILITY = {
+    WORKFORCE_GROUP_VP: VISIBILITY_OFFICE,
+    WORKFORCE_GROUP_CH: VISIBILITY_STORE,
+}
+
+
+def _workforce_group_from_mien(mien):
+    if mien == WORKFORCE_GROUP_VP:
+        return WORKFORCE_GROUP_VP
+    if mien in STORE_MIENS:
+        return WORKFORCE_GROUP_CH
+    return False
+
+
+def _visibility_from_workforce_group(workforce_group):
+    return WORKFORCE_TO_VISIBILITY.get(workforce_group, False)
 
 
 
@@ -144,19 +169,37 @@ class HrEmployee(models.Model):
                 },
             }
 
+    @api.model
+    def _apply_workforce_visibility_defaults(self, vals):
+        workforce_group = vals.get('workforce_group')
+        if not workforce_group:
+            mien = vals.get('mien')
+            if not mien and vals.get('ma_bo_phan_id'):
+                store = self.env['hr.store.code'].browse(vals['ma_bo_phan_id'])
+                mien = store.mien
+            workforce_group = _workforce_group_from_mien(mien)
+            if workforce_group:
+                vals['workforce_group'] = workforce_group
+        if vals.get('employee_visibility') != VISIBILITY_ALL:
+            visibility = _visibility_from_workforce_group(vals.get('workforce_group'))
+            if visibility:
+                vals['employee_visibility'] = visibility
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             id_hrm = (vals.get('id_hrm') or '').strip()
             if not id_hrm:
+                self._apply_workforce_visibility_defaults(vals)
                 continue
             vals['id_hrm'] = id_hrm
             duplicate = self._get_id_hrm_duplicate(id_hrm)
             if duplicate:
                 vals['id_hrm'] = False
                 self._raise_id_hrm_duplicate_error(id_hrm, duplicate)
+            self._apply_workforce_visibility_defaults(vals)
         employees = super().create(vals_list)
-        if any(MIEN_ACCESS_FIELDS & set(vals) for vals in vals_list):
+        if any(VISIBILITY_ACCESS_FIELDS & set(vals) for vals in vals_list):
             self.env.registry.clear_cache()
         if any(
             {"unpaid_leave_start_date", "unpaid_leave_return_date"} & set(vals)
@@ -184,9 +227,14 @@ class HrEmployee(models.Model):
             }
         if not vals:
             return True
+        if {'mien', 'ma_bo_phan_id'} & set(vals) and not {'workforce_group', 'employee_visibility'} & set(vals):
+            sync_vals = {}
+            self._apply_workforce_visibility_defaults(sync_vals)
+            if sync_vals:
+                vals = dict(vals, **sync_vals)
         res = super().write(vals)
-        if MIEN_ACCESS_FIELDS & set(vals):
-            # ir.rule domains are ormcache'd per uid; refresh when Miền scope changes.
+        if VISIBILITY_ACCESS_FIELDS & set(vals):
+            # ir.rule domains are ormcache'd per uid; refresh when visibility scope changes.
             self.env.registry.clear_cache()
         if {"unpaid_leave_start_date", "unpaid_leave_return_date"} & set(vals) and hasattr(
             self, "_compute_time_off_summary"
@@ -201,6 +249,27 @@ class HrEmployee(models.Model):
         ('ĐTT', 'ĐTT'),
         ('VP', 'VP'),
     ], string='Miền', groups='hr.group_hr_user', tracking=True)
+    workforce_group = fields.Selection(
+        [
+            (WORKFORCE_GROUP_VP, 'Văn phòng (VP)'),
+            (WORKFORCE_GROUP_CH, 'Cửa hàng (CH)'),
+        ],
+        string='Nhóm lực lượng',
+        groups='hr.group_hr_user',
+        tracking=True,
+        help='Phân loại nhân viên Văn phòng (VP) hoặc Cửa hàng (CH) cho phân quyền hồ sơ HR.',
+    )
+    employee_visibility = fields.Selection(
+        [
+            (VISIBILITY_OFFICE, 'Văn phòng'),
+            (VISIBILITY_STORE, 'Cửa hàng'),
+            (VISIBILITY_ALL, 'Tất cả'),
+        ],
+        string='Phạm vi hiển thị hồ sơ',
+        groups='hr.group_hr_user',
+        tracking=True,
+        help='Lớp hiển thị hồ sơ HR. Discuss/chat không bị giới hạn bởi trường này.',
+    )
     id_hrm = fields.Char(string='ID HRM', groups='hr.group_hr_user', tracking=True)
 
     # Accounting and Attendance Codes
