@@ -13,11 +13,11 @@ def migrate(cr, version):
     env = api.Environment(cr, SUPERUSER_ID, {})
     from odoo.addons.hr_employee_hrm_detail.hooks import (
         _sync_mien_access_rules,
-        _sync_user_visibility_groups,
+        _sync_user_visibility_policy,
     )
 
     users = env["res.users"].search([("share", "=", False)])
-    _sync_user_visibility_groups(env, users)
+    _sync_user_visibility_policy(env, users)
     _sync_mien_access_rules(env)
     env.registry.clear_cache()
     _logger.info(
