@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from markupsafe import Markup
+
 from odoo import _, models
 
 _logger = logging.getLogger(__name__)
@@ -40,12 +42,9 @@ class HrLeave(models.Model):
             leave_name = leave.holiday_status_id.display_name or leave.display_name
             reason = (leave.last_refusal_reason or "").strip()
             if reason:
-                body = _(
-                    "%(leave_name)s đã bị từ chối bởi %(refuser)s với lý do: <b>%(reason)s</b>",
-                    leave_name=leave_name,
-                    refuser=refuser,
-                    reason=reason,
-                )
+                body = Markup(
+                    "%s đã bị từ chối bởi %s với lý do: <b>%s</b>"
+                ) % (leave_name, refuser, reason)
             else:
                 body = _(
                     "%(leave_name)s đã bị từ chối bởi %(refuser)s.",
