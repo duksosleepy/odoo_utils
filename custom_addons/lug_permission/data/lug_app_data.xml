@@ -95,4 +95,52 @@
         <field name="module_name">point_of_sale</field>
         <field name="menu_xmlid">point_of_sale.menu_point_root</field>
     </record>
+
+    <record id="lug_app_discuss" model="lug.app">
+        <field name="name">Thảo luận</field>
+        <field name="code">discuss</field>
+        <field name="sequence">1</field>
+        <field name="module_name">mail</field>
+        <field name="menu_xmlid">mail.menu_root_discuss</field>
+    </record>
+
+    <record id="lug_app_calendar" model="lug.app">
+        <field name="name">Lịch</field>
+        <field name="code">calendar</field>
+        <field name="sequence">2</field>
+        <field name="module_name">calendar</field>
+        <field name="menu_xmlid">calendar.mail_menu_calendar</field>
+    </record>
+
+    <record id="lug_app_todo" model="lug.app">
+        <field name="name">Việc cần làm</field>
+        <field name="code">todo</field>
+        <field name="sequence">3</field>
+        <field name="module_name">project_todo</field>
+        <field name="menu_xmlid">project_todo.menu_todo_todos</field>
+    </record>
+
+    <record id="lug_app_dashboards" model="lug.app">
+        <field name="name">Báo cáo tổng quan</field>
+        <field name="code">dashboards</field>
+        <field name="sequence">4</field>
+        <field name="module_name">spreadsheet_dashboard</field>
+        <field name="menu_xmlid">spreadsheet_dashboard.spreadsheet_dashboard_menu_root</field>
+    </record>
+
+    <record id="lug_app_project" model="lug.app">
+        <field name="name">Dự án</field>
+        <field name="code">project</field>
+        <field name="sequence">85</field>
+        <field name="module_name">project</field>
+        <field name="menu_xmlid">project.menu_main_pm</field>
+    </record>
+
+    <record id="lug_app_timesheets" model="lug.app">
+        <field name="name">Timesheets</field>
+        <field name="code">timesheets</field>
+        <field name="sequence">86</field>
+        <field name="module_name">hr_timesheet</field>
+        <field name="menu_xmlid">hr_timesheet.timesheet_menu_root</field>
+    </record>
 </odoo>

@@ -72,3 +72,27 @@ class LugGroupPermission(models.Model):
                         app=line.app_id.display_name,
                     )
                 )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        lines.group_id.user_ids._sync_lug_odoo_groups()
+        self.env["res.users"]._lug_clear_menu_cache_global(self.env)
+        return lines
+
+    def write(self, vals):
+        res = super().write(vals)
+        if any(
+            key.startswith("perm_") or key in {"app_id", "group_id"}
+            for key in vals
+        ):
+            self.group_id.user_ids._sync_lug_odoo_groups()
+            self.env["res.users"]._lug_clear_menu_cache_global(self.env)
+        return res
+
+    def unlink(self):
+        users = self.group_id.user_ids
+        res = super().unlink()
+        users._sync_lug_odoo_groups()
+        self.env["res.users"]._lug_clear_menu_cache_global(self.env)
+        return res

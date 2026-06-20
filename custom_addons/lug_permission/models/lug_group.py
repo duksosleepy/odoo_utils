@@ -42,7 +42,10 @@ class LugGroup(models.Model):
             "domain": [("id", "in", self.user_ids.ids)],
         }
 
-    def _permission_codes_for_app(self, app):
-        self.ensure_one()
-        line = self.permission_line_ids.filtered(lambda l: l.app_id == app)[:1]
-        return line._active_permission_codes() if line else set()
+    def write(self, vals):
+        res = super().write(vals)
+        if {"permission_line_ids", "user_ids"} & set(vals):
+            self.mapped("user_ids")._sync_lug_odoo_groups()
+            self.env["res.users"]._lug_clear_menu_cache_global(self.env)
+        return res
+
