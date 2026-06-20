@@ -6,3 +6,4 @@ from . import lug_group_permission
 from . import lug_user_permission
 from . import res_users
 from . import ir_ui_menu
+from . import ir_http

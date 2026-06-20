@@ -6,4 +6,5 @@ def post_init_hook(env):
     )
     if users:
         users._sync_lug_odoo_groups()
+        users._sync_lug_visibility_policy()
         env["res.users"]._lug_clear_menu_cache_global(env)

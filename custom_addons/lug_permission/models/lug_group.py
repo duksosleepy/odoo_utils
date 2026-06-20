@@ -45,7 +45,9 @@ class LugGroup(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if {"permission_line_ids", "user_ids"} & set(vals):
-            self.mapped("user_ids")._sync_lug_odoo_groups()
+            users = self.mapped("user_ids")
+            users._sync_lug_odoo_groups()
+            users._sync_lug_visibility_policy()
             self.env["res.users"]._lug_clear_menu_cache_global(self.env)
         return res
 

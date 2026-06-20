@@ -17,3 +17,22 @@ LUG_DATA_SCOPES = [
     ("region", "REGION - Khu vực (Miền)"),
     ("company", "COMPANY - Toàn công ty"),
 ]
+
+# LUG data scope -> hr_employee_hrm_detail visibility_policy (base mapping).
+LUG_SCOPE_TO_VISIBILITY = {
+    "self": "self",
+    "store": "ma_bo_phan",
+    "region": "region",
+    "company": "all",
+}
+
+# HR submenus hidden when the user only has View on the HR app.
+LUG_HR_VIEW_ONLY_HIDDEN_MENU_XMLIDS = [
+    "hr_skills.hr_skill_learning_menu",
+    "hr.hr_menu_hr_reports",
+    "hr.menu_hr_department_kanban",
+    "hr.menu_human_resources_configuration",
+    "hr.menu_config_employee",
+    "hr.menu_hr_main",
+    "hr.menu_hr_employee",
+]

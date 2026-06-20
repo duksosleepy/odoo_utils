@@ -32,12 +32,35 @@
                         </group>
                         <group string="Phạm vi dữ liệu (Data Scope)">
                             <field name="lug_data_scope" widget="radio"/>
+                            <div class="text-muted" colspan="2">
+                                Tự đồng bộ sang tab <b>Phạm vi xem nhân viên</b>
+                                (visibility_policy). User không dùng LUG vẫn cấu hình
+                                phạm vi ở tab đó như cũ.
+                            </div>
                         </group>
+                    </group>
+                    <group string="Mã bộ phận được xem (STORE)"
+                           invisible="lug_data_scope != 'store'">
+                        <field name="assigned_ma_bo_phan_ids" nolabel="1"
+                               widget="many2many_tags"
+                               options="{'no_create': True, 'no_create_edit': True}"/>
+                        <div class="text-muted" colspan="2">
+                            Chọn nhiều mã bộ phận khi ASM quản nhiều cửa hàng.
+                            Để trống = chỉ xem cùng mã bộ phận với nhân viên của user.
+                        </div>
+                    </group>
+                    <group string="Thông tin tổ chức (chỉ đọc)">
+                        <field name="employee_ma_bo_phan_id" readonly="1"/>
+                        <field name="employee_department_id" readonly="1"/>
+                        <field name="employee_mien" readonly="1"/>
+                        <field name="visibility_policy" readonly="1"
+                               string="Phạm vi xem (đồng bộ)"/>
                     </group>
                     <separator string="Quyền bổ sung riêng"/>
                     <div class="text-muted mb-2">
                         Quyền hiệu lực = Nhóm quyền + Quyền bổ sung riêng.
-                        User chưa được gán nhóm/quyền LUG vẫn dùng quyền Odoo mặc định.
+                        Chỉ xem HR → ẩn menu Học hỏi, Báo cáo, Phòng ban.
+                        Không có quyền Thảo luận → ẩn biểu tượng thông báo trên thanh menu.
                     </div>
                     <field name="lug_user_permission_ids" nolabel="1"/>
                 </page>

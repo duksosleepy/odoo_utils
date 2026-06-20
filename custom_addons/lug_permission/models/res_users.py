@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from odoo import api, fields, models
 
-from .lug_constants import LUG_DATA_SCOPES
+from .lug_constants import LUG_DATA_SCOPES, LUG_HR_VIEW_ONLY_HIDDEN_MENU_XMLIDS, LUG_SCOPE_TO_VISIBILITY
 from .lug_odoo_groups import (
     LUG_ALWAYS_HIDDEN_MENU_XMLIDS,
     LUG_APP_ODOO_GROUPS,
@@ -141,6 +141,54 @@ class ResUsers(models.Model):
         self.ensure_one()
         return self.lug_data_scope or "self"
 
+    def _lug_visibility_policy_from_scope(self):
+        """Map LUG data scope to hr_employee_hrm_detail visibility_policy."""
+        self.ensure_one()
+        user = self._lug_sudo()
+        scope = user.lug_data_scope or "self"
+        if scope == "store":
+            if user.assigned_ma_bo_phan_ids:
+                return "assigned"
+            return "ma_bo_phan"
+        return LUG_SCOPE_TO_VISIBILITY.get(scope, "self")
+
+    def _sync_lug_visibility_policy(self):
+        for user in self:
+            if not user._lug_permission_is_enforced():
+                continue
+            policy = user._lug_visibility_policy_from_scope()
+            if user.visibility_policy != policy:
+                super(
+                    ResUsers,
+                    user.with_context(skip_lug_sync=True, skip_role_apply=True),
+                ).write({"visibility_policy": policy})
+
+    def _lug_ui_systray_flags(self):
+        self.ensure_one()
+        if not self._lug_permission_is_enforced():
+            return {"hide_messaging": False, "hide_activities": False}
+        perm_map = self._lug_effective_permission_map()
+        hide_messaging = "view" not in perm_map.get("discuss", set())
+        return {
+            "hide_messaging": hide_messaging,
+            "hide_activities": hide_messaging,
+        }
+
+    def _lug_hidden_hr_submenu_ids(self):
+        self.ensure_one()
+        perm_map = self._lug_effective_permission_map()
+        hr_perms = perm_map.get("hr", set())
+        if "view" not in hr_perms:
+            return []
+        if hr_perms - {"view"}:
+            return []
+        hidden = []
+        for xmlid in LUG_HR_VIEW_ONLY_HIDDEN_MENU_XMLIDS:
+            menu = self.env.ref(xmlid, raise_if_not_found=False)
+            if menu:
+                hidden.append(menu.id)
+        return hidden
+
     def _lug_granted_root_menu_ids(self):
         self.ensure_one()
         permission_map = self._lug_effective_permission_map()
@@ -168,6 +216,7 @@ class ResUsers(models.Model):
             menu = self.env.ref(xmlid, raise_if_not_found=False)
             if menu and menu.id not in hidden:
                 hidden.append(menu.id)
+        hidden.extend(self._lug_hidden_hr_submenu_ids())
         return hidden
 
     @api.model
@@ -186,6 +235,7 @@ class ResUsers(models.Model):
             "lug_user_permission_ids",
             "lug_data_scope",
             "user_role",
+            "assigned_ma_bo_phan_ids",
         }
         should_sync = bool(lug_fields & set(vals))
         if "group_ids" in vals:
@@ -196,6 +246,7 @@ class ResUsers(models.Model):
             enforced = self.filtered(lambda u: u._lug_permission_is_enforced())
             if enforced:
                 enforced._sync_lug_odoo_groups()
+                enforced._sync_lug_visibility_policy()
             self._lug_clear_menu_cache()
         return res
 
@@ -205,6 +256,7 @@ class ResUsers(models.Model):
         enforced = users.filtered(lambda u: u._lug_permission_is_enforced())
         if enforced:
             enforced._sync_lug_odoo_groups()
+            enforced._sync_lug_visibility_policy()
         if any(
             {"lug_group_ids", "lug_user_permission_ids", "lug_data_scope", "user_role"}
             & set(vals)

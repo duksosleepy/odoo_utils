@@ -54,6 +54,7 @@ class LugUserPermission(models.Model):
     def create(self, vals_list):
         lines = super().create(vals_list)
         lines.user_id._sync_lug_odoo_groups()
+        lines.user_id._sync_lug_visibility_policy()
         self.env["res.users"]._lug_clear_menu_cache_global(self.env)
         return lines
 
@@ -64,6 +65,7 @@ class LugUserPermission(models.Model):
             for key in vals
         ):
             self.user_id._sync_lug_odoo_groups()
+            self.user_id._sync_lug_visibility_policy()
             self.env["res.users"]._lug_clear_menu_cache_global(self.env)
         return res
 
@@ -71,5 +73,6 @@ class LugUserPermission(models.Model):
         users = self.user_id
         res = super().unlink()
         users._sync_lug_odoo_groups()
+        users._sync_lug_visibility_policy()
         self.env["res.users"]._lug_clear_menu_cache_global(self.env)
         return res

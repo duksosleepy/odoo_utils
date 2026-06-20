@@ -77,6 +77,7 @@ class LugGroupPermission(models.Model):
     def create(self, vals_list):
         lines = super().create(vals_list)
         lines.group_id.user_ids._sync_lug_odoo_groups()
+        lines.group_id.user_ids._sync_lug_visibility_policy()
         self.env["res.users"]._lug_clear_menu_cache_global(self.env)
         return lines
 
@@ -87,6 +88,7 @@ class LugGroupPermission(models.Model):
             for key in vals
         ):
             self.group_id.user_ids._sync_lug_odoo_groups()
+            self.group_id.user_ids._sync_lug_visibility_policy()
             self.env["res.users"]._lug_clear_menu_cache_global(self.env)
         return res
 
@@ -94,5 +96,6 @@ class LugGroupPermission(models.Model):
         users = self.group_id.user_ids
         res = super().unlink()
         users._sync_lug_odoo_groups()
+        users._sync_lug_visibility_policy()
         self.env["res.users"]._lug_clear_menu_cache_global(self.env)
         return res
