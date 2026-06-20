@@ -8,7 +8,18 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Phạm vi xem nhân viên" name="employee_visibility">
                     <group>
-                        <group string="Chính sách hiển thị">
+                        <group string="Vai trò (Role)">
+                            <field name="user_role" widget="radio"/>
+                            <div class="text-muted" colspan="2"
+                                 invisible="not user_role">
+                                Chọn vai trò sẽ tự cấp quyền app phù hợp và đặt
+                                phạm vi dữ liệu mặc định. Bạn vẫn có thể tinh
+                                chỉnh phạm vi ở phần "Chính sách hiển thị".
+                            </div>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Chính sách hiển thị (Data Scope)">
                             <field name="visibility_policy" widget="radio"/>
                         </group>
                         <group string="Thông tin tổ chức (chỉ đọc)">
@@ -23,9 +34,109 @@
                                widget="many2many_tags"
                                options="{'no_create': True, 'no_create_edit': True}"/>
                     </group>
-                    <div class="text-muted">
-                        Quản trị viên (HR Administrator) luôn thấy toàn bộ nhân viên,
-                        bất kể chính sách ở đây. Chat/Discuss không bị giới hạn bởi phạm vi này.
+                    <separator string="Ma trận App theo Vai trò (tham khảo)"/>
+                    <div class="o_form_label">
+                        <table class="table table-sm table-bordered o_table">
+                            <thead>
+                                <tr>
+                                    <th>Ứng dụng</th>
+                                    <th>Employee</th>
+                                    <th>ASM</th>
+                                    <th>RM</th>
+                                    <th>HR</th>
+                                    <th>Admin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Hồ sơ nhân viên</td>
+                                    <td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+                                </tr>
+                                <tr>
+                                    <td>Nghỉ phép</td>
+                                    <td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+                                </tr>
+                                <tr>
+                                    <td>Chấm công</td>
+                                    <td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+                                </tr>
+                                <tr>
+                                    <td>Chi phí <span class="text-muted">(khi cài)</span></td>
+                                    <td>✗</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+                                </tr>
+                                <tr>
+                                    <td>CRM <span class="text-muted">(khi cài)</span></td>
+                                    <td>✗</td><td>✗</td><td>✓</td><td>✗</td><td>✓</td>
+                                </tr>
+                                <tr>
+                                    <td>POS <span class="text-muted">(khi cài)</span></td>
+                                    <td>✗</td><td>✗</td><td>✗</td><td>✗</td><td>✓</td>
+                                </tr>
+                                <tr>
+                                    <td>Kế toán <span class="text-muted">(khi cài)</span></td>
+                                    <td>✗</td><td>✗</td><td>✗</td><td>✓</td><td>✓</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <separator string="Giải thích phạm vi (Data Scope)"/>
+                    <div class="o_form_label">
+                        <table class="table table-sm table-bordered o_table">
+                            <thead>
+                                <tr>
+                                    <th>Chính sách</th>
+                                    <th>Scope ERP</th>
+                                    <th>User thấy được</th>
+                                    <th>Dùng cho vai trò</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><b>Chỉ bản thân</b></td>
+                                    <td>SELF</td>
+                                    <td>Chỉ hồ sơ của chính mình</td>
+                                    <td>Nhân viên (Employee)</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Cùng mã bộ phận</b></td>
+                                    <td>STORE</td>
+                                    <td>Nhân viên cùng Mã bộ phận với mình</td>
+                                    <td>Quản lý cửa hàng/bộ phận</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Chỉ định mã bộ phận</b></td>
+                                    <td>STORE (nhiều)</td>
+                                    <td>Nhân viên thuộc các Mã bộ phận được gán bên trên (vd KDV + LDH)</td>
+                                    <td>ASM (quản nhiều cửa hàng)</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Cùng phòng ban</b></td>
+                                    <td>DEPARTMENT</td>
+                                    <td>Nhân viên cùng Phòng ban với mình</td>
+                                    <td>Trưởng/phó phòng</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Cùng khu vực (Miền)</b></td>
+                                    <td>REGION</td>
+                                    <td>Nhân viên cùng Miền (VP/Bắc/Nam/ĐTT)</td>
+                                    <td>RM (quản lý vùng)</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Toàn bộ</b></td>
+                                    <td>COMPANY</td>
+                                    <td>Tất cả nhân viên trong công ty</td>
+                                    <td>HR / Admin</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        <ul class="mb-0">
+                            <li>Dù chọn mức nào, user <b>luôn thấy</b>: hồ sơ của chính mình và những người mà user đó <b>duyệt phép</b> (để không vỡ luồng nghỉ phép).</li>
+                            <li><b>Quản trị viên (HR Administrator)</b> luôn thấy toàn bộ nhân viên, bất kể chính sách ở đây.</li>
+                            <li><b>Chat/Discuss</b> không bị giới hạn bởi phạm vi này — vẫn nhắn tin được với mọi người.</li>
+                            <li>Phạm vi này áp cho <b>Hồ sơ nhân viên</b> và <b>Đơn nghỉ phép</b>. Việc <b>vào app nào</b> (App Access) và <b>thao tác gì</b> (Xem/Tạo/Sửa/Xóa/Duyệt) được quản lý ở tab <b>Quyền truy cập</b>.</li>
+                        </ul>
                     </div>
                 </page>
             </xpath>

@@ -11,9 +11,80 @@ VISIBILITY_POLICIES = [
     ("all", "Toàn bộ"),
 ]
 
+USER_ROLES = [
+    ("employee", "Nhân viên (Employee)"),
+    ("asm", "Quản lý cửa hàng (ASM)"),
+    ("rm", "Quản lý vùng (RM)"),
+    ("hr", "Nhân sự (HR)"),
+    ("admin", "Quản trị (Admin)"),
+]
+
+# Role -> list of group XML ids granted. Groups from apps that are not installed
+# are resolved with raise_if_not_found=False and silently skipped, so the same
+# mapping keeps working when Chi phí/CRM/POS/Kế toán get installed later.
+ROLE_GROUP_XMLIDS = {
+    "employee": [
+        "base.group_user",
+    ],
+    "asm": [
+        "base.group_user",
+        "hr.group_hr_user",
+        "hr_holidays.group_hr_holidays_responsible",
+        "hr_attendance.group_hr_attendance_officer",
+        # Chi phí (khi cài hr_expense)
+        "hr_expense.group_hr_expense_team_approver",
+    ],
+    "rm": [
+        "base.group_user",
+        "hr.group_hr_user",
+        "hr_holidays.group_hr_holidays_responsible",
+        "hr_attendance.group_hr_attendance_officer",
+        "hr_expense.group_hr_expense_team_approver",
+        # CRM (khi cài crm/sale)
+        "sales_team.group_sale_salesman_all_leads",
+    ],
+    "hr": [
+        "base.group_user",
+        "hr.group_hr_user",
+        "hr_holidays.group_hr_holidays_user",
+        "hr_attendance.group_hr_attendance_user",
+        # Kế toán (khi cài account)
+        "account.group_account_user",
+    ],
+    "admin": [
+        "base.group_user",
+        "hr.group_hr_manager",
+        "hr_holidays.group_hr_holidays_manager",
+        "hr_attendance.group_hr_attendance_manager",
+        "hr_expense.group_hr_expense_manager",
+        "sales_team.group_sale_manager",
+        "point_of_sale.group_pos_manager",
+        "account.group_account_manager",
+    ],
+}
+
+# Default Data Scope applied when a role is assigned (admin can still override).
+ROLE_DEFAULT_SCOPE = {
+    "employee": "self",
+    "asm": "assigned",
+    "rm": "region",
+    "hr": "all",
+    "admin": "all",
+}
+
 
 class ResUsers(models.Model):
     _inherit = "res.users"
+
+    user_role = fields.Selection(
+        selection=USER_ROLES,
+        string="Vai trò",
+        help=(
+            "Gán nhanh bộ quyền theo vai trò nghiệp vụ. Khi chọn vai trò, hệ "
+            "thống tự cấp quyền truy cập các app phù hợp và đặt phạm vi dữ liệu "
+            "(Data Scope) mặc định. Có thể tinh chỉnh lại phạm vi bên dưới."
+        ),
+    )
 
     visibility_policy = fields.Selection(
         selection=VISIBILITY_POLICIES,
@@ -78,8 +149,62 @@ class ResUsers(models.Model):
             else:
                 user.employee_mien = False
 
+    @api.model
+    def _role_group(self, xmlid):
+        return self.env.ref(xmlid, raise_if_not_found=False)
+
+    @api.model
+    def _role_managed_group_ids(self):
+        """Every group id that any role may grant (only those that exist)."""
+        ids = set()
+        for xmlids in ROLE_GROUP_XMLIDS.values():
+            for xmlid in xmlids:
+                group = self._role_group(xmlid)
+                if group:
+                    ids.add(group.id)
+        return ids
+
+    def _role_target_group_ids(self, role):
+        """Group ids granted by the given role (existing groups only)."""
+        ids = []
+        for xmlid in ROLE_GROUP_XMLIDS.get(role, []):
+            group = self._role_group(xmlid)
+            if group:
+                ids.append(group.id)
+        return ids
+
+    def _apply_user_role(self, set_scope=True):
+        """Sync group membership (and default scope) from each user's role."""
+        managed = self._role_managed_group_ids()
+        for user in self:
+            role = user.user_role
+            if not role:
+                continue
+            target = set(user._role_target_group_ids(role))
+            commands = [(3, gid) for gid in managed - target]
+            commands += [(4, gid) for gid in target]
+            if commands:
+                super(ResUsers, user).write({"group_ids": commands})
+            if set_scope:
+                scope = ROLE_DEFAULT_SCOPE.get(role)
+                if scope and user.visibility_policy != scope:
+                    super(ResUsers, user).write({"visibility_policy": scope})
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        users = super().create(vals_list)
+        role_users = users.filtered("user_role")
+        if role_users:
+            role_users._apply_user_role()
+            self.env.registry.clear_cache()
+        return users
+
     def write(self, vals):
         res = super().write(vals)
-        if {"group_ids", "visibility_policy", "assigned_ma_bo_phan_ids"} & set(vals):
+        if "user_role" in vals and not self.env.context.get("skip_role_apply"):
+            # Reapply scope only when role itself changed (preserve manual scope
+            # overrides done in the same write).
+            self._apply_user_role(set_scope="visibility_policy" not in vals)
+        if {"group_ids", "visibility_policy", "assigned_ma_bo_phan_ids", "user_role"} & set(vals):
             self.env.registry.clear_cache()
         return res
