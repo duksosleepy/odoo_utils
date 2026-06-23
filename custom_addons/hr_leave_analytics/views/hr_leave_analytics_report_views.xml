@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_leave_analytics_report_view_list" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.list</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <list string="Phân tích nghỉ phép" create="0" edit="0" delete="0" import="0">
+                <field name="employee_name"/>
+                <field name="employee_mien" optional="show"/>
+                <field name="workforce_block" optional="show"/>
+                <field name="department_id" optional="show"/>
+                <field name="store_name" optional="show"/>
+                <field name="leave_type_name"/>
+                <field name="request_date_from"/>
+                <field name="request_date_to"/>
+                <field name="number_of_days" sum="Tổng ngày"/>
+                <field name="state" widget="badge"/>
+                <button
+                    name="action_open_leave"
+                    type="object"
+                    string="Xem đơn"
+                    icon="fa-external-link"
+                    class="btn-link"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_search" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.search</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <search string="Phân tích nghỉ phép">
+                <field name="employee_name"/>
+                <field name="department_id"/>
+                <field name="store_name"/>
+                <field name="leave_type_name"/>
+                <field name="employee_mien"/>
+                <filter string="Đã duyệt" name="validated" domain="[('state', '=', 'validate')]"/>
+                <filter string="Chờ duyệt" name="to_approve" domain="[('state', 'in', ('confirm', 'validate1'))]"/>
+                <separator/>
+                <filter string="Miền Bắc" name="mien_bac" domain="[('employee_mien', '=', 'Bắc')]"/>
+                <filter string="Miền Nam" name="mien_nam" domain="[('employee_mien', '=', 'Nam')]"/>
+                <filter string="Miền ĐTT" name="mien_dtt" domain="[('employee_mien', '=', 'ĐTT')]"/>
+                <filter string="VP" name="mien_vp" domain="[('employee_mien', '=', 'VP')]"/>
+                <separator/>
+                <filter string="Văn phòng" name="block_office" domain="[('workforce_block', '=', 'office')]"/>
+                <filter string="Cửa hàng" name="block_store" domain="[('workforce_block', '=', 'store')]"/>
+                <group>
+                    <filter string="Loại nghỉ" name="group_type" context="{'group_by': 'holiday_status_id'}"/>
+                    <filter string="Phòng ban" name="group_department" context="{'group_by': 'department_id'}"/>
+                    <filter string="Miền" name="group_mien" context="{'group_by': 'employee_mien'}"/>
+                    <filter string="Khối" name="group_workforce" context="{'group_by': 'workforce_block'}"/>
+                    <filter string="Cửa hàng" name="group_store" context="{'group_by': 'store_id'}"/>
+                    <filter string="Tháng" name="group_month" context="{'group_by': 'leave_month'}"/>
+                    <filter string="Thứ" name="group_weekday" context="{'group_by': 'weekday_label'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_graph_type" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.graph.type</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <graph string="Nghỉ phép theo loại" type="pie" sample="1">
+                <field name="holiday_status_id"/>
+                <field name="number_of_days" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_graph_department" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.graph.department</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <graph string="Nghỉ phép theo phòng ban" type="bar" sample="1">
+                <field name="department_id"/>
+                <field name="number_of_days" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_graph_mien" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.graph.mien</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <graph string="Nghỉ phép theo miền" type="bar" sample="1">
+                <field name="employee_mien"/>
+                <field name="number_of_days" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_graph_workforce" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.graph.workforce</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <graph string="Nghỉ phép theo khối" type="pie" sample="1">
+                <field name="workforce_block"/>
+                <field name="number_of_days" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_graph_store" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.graph.store</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <graph string="Top cửa hàng nghỉ nhiều" type="bar" sample="1">
+                <field name="store_id"/>
+                <field name="number_of_days" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_graph_month" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.graph.month</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <graph string="Nghỉ phép theo tháng" type="line" sample="1">
+                <field name="leave_month" interval="month"/>
+                <field name="number_of_days" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_graph_weekday" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.graph.weekday</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <graph string="Nghỉ phép theo thứ" type="bar" sample="1">
+                <field name="weekday_label"/>
+                <field name="number_of_days" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_report_view_pivot" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.report.pivot</field>
+        <field name="model">hr.leave.analytics.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Phân tích nghỉ phép" sample="1">
+                <field name="employee_mien" type="row"/>
+                <field name="department_id" type="row"/>
+                <field name="holiday_status_id" type="col"/>
+                <field name="number_of_days" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_hr_leave_analytics_report" model="ir.actions.act_window">
+        <field name="name">Chi tiết phân tích nghỉ phép</field>
+        <field name="res_model">hr.leave.analytics.report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="search_view_id" ref="hr_leave_analytics_report_view_search"/>
+        <field name="context">{'search_default_validated': 1}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_by_type" model="ir.actions.act_window">
+        <field name="name">Nghỉ phép theo loại</field>
+        <field name="res_model">hr.leave.analytics.report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="hr_leave_analytics_report_view_graph_type"/>
+        <field name="search_view_id" ref="hr_leave_analytics_report_view_search"/>
+        <field name="context">{'search_default_validated': 1, 'search_default_group_type': 1}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_by_department" model="ir.actions.act_window">
+        <field name="name">Nghỉ phép theo phòng ban</field>
+        <field name="res_model">hr.leave.analytics.report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="hr_leave_analytics_report_view_graph_department"/>
+        <field name="search_view_id" ref="hr_leave_analytics_report_view_search"/>
+        <field name="context">{'search_default_validated': 1, 'search_default_group_department': 1}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_by_mien" model="ir.actions.act_window">
+        <field name="name">Nghỉ phép theo miền</field>
+        <field name="res_model">hr.leave.analytics.report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="hr_leave_analytics_report_view_graph_mien"/>
+        <field name="search_view_id" ref="hr_leave_analytics_report_view_search"/>
+        <field name="context">{'search_default_validated': 1, 'search_default_group_mien': 1}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_by_store" model="ir.actions.act_window">
+        <field name="name">Top cửa hàng nghỉ nhiều</field>
+        <field name="res_model">hr.leave.analytics.report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="hr_leave_analytics_report_view_graph_store"/>
+        <field name="search_view_id" ref="hr_leave_analytics_report_view_search"/>
+        <field name="context">{'search_default_validated': 1, 'search_default_group_store': 1, 'search_default_block_store': 1}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_trend" model="ir.actions.act_window">
+        <field name="name">Xu hướng nghỉ phép</field>
+        <field name="res_model">hr.leave.analytics.report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="hr_leave_analytics_report_view_graph_month"/>
+        <field name="search_view_id" ref="hr_leave_analytics_report_view_search"/>
+        <field name="context">{'search_default_validated': 1, 'search_default_group_month': 1}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_dashboard_client" model="ir.actions.client">
+        <field name="name">Báo cáo tổng</field>
+        <field name="tag">hr_leave_analytics_dashboard</field>
+    </record>
+</odoo>

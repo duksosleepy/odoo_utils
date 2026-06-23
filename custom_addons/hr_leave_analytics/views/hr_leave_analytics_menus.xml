@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_hr_leave_analytics_root"
+        name="Báo cáo tổng"
+        parent="hr_holidays.menu_hr_holidays_report"
+        sequence="0"
+        groups="hr_holidays.group_hr_holidays_user"
+    />
+
+    <menuitem
+        id="menu_hr_leave_analytics_dashboard"
+        name="Tổng quan"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_dashboard_client"
+        sequence="1"
+    />
+
+    <menuitem
+        id="menu_hr_leave_analytics_by_type"
+        name="Theo loại nghỉ"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_by_type"
+        sequence="2"
+    />
+
+    <menuitem
+        id="menu_hr_leave_analytics_by_department"
+        name="Theo phòng ban"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_by_department"
+        sequence="3"
+    />
+
+    <menuitem
+        id="menu_hr_leave_analytics_by_mien"
+        name="Theo miền"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_by_mien"
+        sequence="4"
+    />
+
+    <menuitem
+        id="menu_hr_leave_analytics_by_store"
+        name="Theo cửa hàng"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_by_store"
+        sequence="5"
+    />
+
+    <menuitem
+        id="menu_hr_leave_analytics_trend"
+        name="Xu hướng"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_trend"
+        sequence="6"
+    />
+
+    <menuitem
+        id="menu_hr_leave_analytics_detail"
+        name="Chi tiết"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_report"
+        sequence="7"
+    />
+</odoo>
