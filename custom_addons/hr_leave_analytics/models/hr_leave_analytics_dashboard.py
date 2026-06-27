@@ -56,6 +56,36 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
 
         return filters.get("employee_mien") or self.env.context.get("dashboard_mien") or False
 
+    @api.model
+    def _employee_regional_mien(self, employee):
+        """Miền thực tế của nhân viên — ưu tiên mien_zone, sau mien, cuối cùng mã BP."""
+        if not employee:
+            return False
+        employee = employee.sudo()
+        if employee.mien_zone_id and (employee.mien_zone_id.legacy_mien or "").strip():
+            mien = (employee.mien_zone_id.legacy_mien or "").strip()
+            if mien != "Tất cả":
+                return mien
+        mien = (employee.mien or "").strip()
+        if mien and mien != "Tất cả":
+            return mien
+        if employee.ma_bo_phan_id and employee.ma_bo_phan_id.mien:
+            return employee.ma_bo_phan_id.mien
+        return False
+
+    @api.model
+    def _append_leave_mien_domain(self, domain, active_mien):
+        """Lọc sơ bộ đơn nghỉ theo miền nhân viên (khớp chính xác ở post-filter)."""
+        if not active_mien:
+            return domain
+        domain += [
+            "|", "|",
+            ("employee_id.mien_zone_id.legacy_mien", "=", active_mien),
+            ("employee_id.mien", "=", active_mien),
+            ("employee_id.ma_bo_phan_id.mien", "=", active_mien),
+        ]
+        return domain
+
 
 
     @api.model
@@ -225,14 +255,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
 
     @api.model
     def _resolve_leave_mien(self, leave):
-        employee = leave.employee_id
-        if not employee:
-            return False
-        if leave.employee_leave_mien:
-            return leave.employee_leave_mien
-        if hasattr(employee, "_get_leave_mien"):
-            return employee._get_leave_mien()
-        return employee.mien or False
+        return self._employee_regional_mien(leave.employee_id if leave else False)
 
     @api.model
     def _classify_leave_status_bucket(self, leave):
@@ -367,8 +390,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_from", "<=", date_to),
             ("request_date_to", ">=", date_from),
         ]
-        if active_mien:
-            domain.append(("employee_leave_mien", "=", active_mien))
+        domain = self._append_leave_mien_domain(domain, active_mien)
         if filters.get("store_id"):
             domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
         if filters.get("department_id"):
@@ -413,10 +435,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
     def _employee_matches_mien(self, employee, active_mien):
         if not active_mien:
             return True
-        mien = employee.mien or False
-        if not mien and employee.ma_bo_phan_id:
-            mien = employee.ma_bo_phan_id.mien or False
-        return mien == active_mien
+        return self._employee_regional_mien(employee) == active_mien
 
     @api.model
     def _month_validated_leaves(self, filters):
@@ -431,8 +450,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_from", "<=", date_to),
             ("request_date_to", ">=", date_from),
         ]
-        if active_mien:
-            domain.append(("employee_leave_mien", "=", active_mien))
+        domain = self._append_leave_mien_domain(domain, active_mien)
         if filters.get("store_id"):
             domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
         if filters.get("department_id"):
@@ -466,8 +484,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_from", "<=", date_to),
             ("request_date_to", ">=", date_from),
         ]
-        if active_mien:
-            period_domain.append(("employee_leave_mien", "=", active_mien))
+        period_domain = self._append_leave_mien_domain(period_domain, active_mien)
         if filters.get("store_id"):
             period_domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
         if filters.get("department_id"):
@@ -527,8 +544,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_from", "<=", today),
             ("request_date_to", ">=", today),
         ]
-        if filters.get("employee_mien"):
-            on_leave_domain.append(("employee_leave_mien", "=", filters["employee_mien"]))
+        on_leave_domain = self._append_leave_mien_domain(on_leave_domain, filters.get("employee_mien"))
         if filters.get("store_id"):
             on_leave_domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
         if filters.get("department_id"):
@@ -615,8 +631,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         else:
             return Leave.browse()
 
-        if filters.get("employee_mien"):
-            domain.append(("employee_leave_mien", "=", filters["employee_mien"]))
+        domain = self._append_leave_mien_domain(domain, filters.get("employee_mien"))
         if filters.get("store_id"):
             domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
         if filters.get("department_id"):
@@ -726,8 +741,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
                 ("request_date_from", "<=", month_end),
                 ("request_date_to", ">=", month_start),
             ]
-            if filters.get("employee_mien"):
-                domain.append(("employee_leave_mien", "=", filters["employee_mien"]))
+            domain = self._append_leave_mien_domain(domain, filters.get("employee_mien"))
             if filters.get("store_id"):
                 domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
             if filters.get("department_id"):
@@ -819,8 +833,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_to", ">=", today),
             ("number_of_days", ">=", 5),
         ]
-        if filters.get("employee_mien"):
-            consecutive_domain.append(("employee_leave_mien", "=", filters["employee_mien"]))
+        consecutive_domain = self._append_leave_mien_domain(consecutive_domain, filters.get("employee_mien"))
         for leave in Leave.search(consecutive_domain, limit=20):
             employee = leave.employee_id
             if not employee or not self._employee_matches_filters(employee, filters):
@@ -854,8 +867,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_from", "<=", today),
             ("request_date_to", ">=", today),
         ]
-        if filters.get("employee_mien"):
-            on_leave_domain.append(("employee_leave_mien", "=", filters["employee_mien"]))
+        on_leave_domain = self._append_leave_mien_domain(on_leave_domain, filters.get("employee_mien"))
         for leave in Leave.search(on_leave_domain):
             employee = leave.employee_id
             if not employee or not employee.department_id:
@@ -1004,8 +1016,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_from", "<=", today),
             ("request_date_to", ">=", today),
         ]
-        if active_mien:
-            on_leave_domain.append(("employee_leave_mien", "=", active_mien))
+        on_leave_domain = self._append_leave_mien_domain(on_leave_domain, active_mien)
 
         for leave in Leave.search(on_leave_domain):
             employee = leave.employee_id
@@ -1463,8 +1474,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         if pending_type == "approval":
             name = "Đơn chờ duyệt"
             base_domain = [("state", "in", ("confirm", "validate1"))]
-            if filters.get("employee_mien"):
-                base_domain.append(("employee_leave_mien", "=", filters["employee_mien"]))
+            base_domain = self._append_leave_mien_domain(base_domain, filters.get("employee_mien"))
             if filters.get("store_id"):
                 base_domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
             if filters.get("department_id"):
@@ -1480,8 +1490,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         elif pending_type == "handover":
             name = "Đơn chờ bàn giao"
             base_domain = [("state", "in", ("confirm", "validate1"))]
-            if filters.get("employee_mien"):
-                base_domain.append(("employee_leave_mien", "=", filters["employee_mien"]))
+            base_domain = self._append_leave_mien_domain(base_domain, filters.get("employee_mien"))
             if filters.get("store_id"):
                 base_domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
             if filters.get("department_id"):
@@ -1517,8 +1526,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             name = "Đơn từ chối trong kỳ"
 
         if pending_type not in ("approval", "handover"):
-            if filters.get("employee_mien"):
-                domain.append(("employee_leave_mien", "=", filters["employee_mien"]))
+            domain = self._append_leave_mien_domain(domain, filters.get("employee_mien"))
             if filters.get("store_id"):
                 domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
             if filters.get("department_id"):
