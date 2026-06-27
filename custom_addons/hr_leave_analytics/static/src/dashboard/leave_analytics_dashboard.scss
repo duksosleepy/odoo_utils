@@ -28,6 +28,101 @@
         color: #4b5563;
     }
 
+    .o_filter_bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 1rem 1.25rem;
+        padding: 0.85rem 1.15rem;
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    }
+
+    .o_filter_item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        min-width: 110px;
+    }
+
+    .o_filter_item_wide {
+        flex: 1 1 220px;
+        min-width: 200px;
+        max-width: 320px;
+    }
+
+    .o_filter_item_inline {
+        min-width: 180px;
+    }
+
+    .o_filter_label {
+        margin: 0;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #374151;
+        line-height: 1.2;
+    }
+
+    .o_filter_select {
+        min-width: 110px;
+        height: 2rem;
+        padding: 0.2rem 1.75rem 0.2rem 0.65rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #111827;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background-color: #fff;
+        box-shadow: none;
+
+        &:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+        }
+    }
+
+    .o_filter_select_wide {
+        min-width: 200px;
+        width: 100%;
+    }
+
+    .o_filter_actions {
+        display: flex;
+        align-items: flex-end;
+        margin-left: auto;
+    }
+
+    .o_filter_reset {
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        color: #6b7280;
+
+        &:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+    }
+
+    .o_detail_filter_bar {
+        .o_filter_label {
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 0.72rem;
+        }
+
+        .o_filter_select {
+            min-width: 160px;
+            height: 1.85rem;
+            font-size: 0.8rem;
+            border-color: rgba(255, 255, 255, 0.35);
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+    }
+
     .o_filter_card {
         border: none;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);

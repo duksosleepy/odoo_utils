@@ -85,7 +85,7 @@ export class LeaveAnalyticsDashboard extends Component {
             data: null,
             filterYear: today.getFullYear(),
             filterMonth: today.getMonth() + 1,
-            filterStoreId: false,
+            filterMaBoPhanId: false,
             filterDepartmentId: false,
             activeKpiDrill: null,
             kpiDrillTitle: "",
@@ -110,7 +110,7 @@ export class LeaveAnalyticsDashboard extends Component {
             employee_mien: this.fixedMien || false,
             year: this.state.filterYear,
             month: this.state.filterMonth,
-            store_id: this.state.filterStoreId || false,
+            ma_bo_phan_id: this.state.filterMaBoPhanId || false,
             department_id: this.state.filterDepartmentId || false,
         };
     }
@@ -153,6 +153,18 @@ export class LeaveAnalyticsDashboard extends Component {
 
     get topStores() {
         return this.state.data?.top_stores || [];
+    }
+
+    get isVpDashboard() {
+        return this.fixedMien === "VP" || !!this.state.data?.is_vp_dashboard;
+    }
+
+    get locationColumnLabel() {
+        return this.state.data?.location_column_label || "Mã bộ phận";
+    }
+
+    get topLocationTitle() {
+        return this.state.data?.top_location_title || "Top mã bộ phận nghỉ nhiều";
     }
 
     get onLeaveTodayList() {
@@ -289,7 +301,7 @@ export class LeaveAnalyticsDashboard extends Component {
         if (data.filters) {
             this.state.filterYear = data.filters.year || this.state.filterYear;
             this.state.filterMonth = data.filters.month || this.state.filterMonth;
-            this.state.filterStoreId = data.filters.store_id || false;
+            this.state.filterMaBoPhanId = data.filters.ma_bo_phan_id || false;
             this.state.filterDepartmentId = data.filters.department_id || false;
         }
         this.state.data = data;
@@ -304,7 +316,7 @@ export class LeaveAnalyticsDashboard extends Component {
         const today = new Date();
         this.state.filterYear = today.getFullYear();
         this.state.filterMonth = today.getMonth() + 1;
-        this.state.filterStoreId = false;
+        this.state.filterMaBoPhanId = false;
         this.state.filterDepartmentId = false;
         await this.loadDashboard();
     }

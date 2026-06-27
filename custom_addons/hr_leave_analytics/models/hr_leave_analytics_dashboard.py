@@ -126,6 +126,8 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
 
         store_id = filters.get("store_id")
 
+        ma_bo_phan_id = filters.get("ma_bo_phan_id")
+
         department_id = filters.get("department_id")
 
         return {
@@ -139,6 +141,8 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             "month": date_from.month,
 
             "employee_mien": active_mien,
+
+            "ma_bo_phan_id": int(ma_bo_phan_id) if ma_bo_phan_id else False,
 
             "store_id": int(store_id) if store_id else False,
 
@@ -163,6 +167,19 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
 
 
     @api.model
+    def _append_scope_filters(self, domain, filters):
+        """Lọc thêm theo mã bộ phận / phòng ban trên đơn nghỉ."""
+        if filters.get("ma_bo_phan_id"):
+            domain.append(("employee_id.ma_bo_phan_id", "=", filters["ma_bo_phan_id"]))
+        elif filters.get("store_id"):
+            domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
+        if filters.get("department_id"):
+            domain.append(("employee_id.department_id", "=", filters["department_id"]))
+        return domain
+
+
+
+    @api.model
 
     def _employee_matches_filters(self, employee, filters):
 
@@ -174,13 +191,19 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
 
             return False
 
-        store_id = filters.get("store_id")
+        ma_bo_phan_id = filters.get("ma_bo_phan_id")
 
-        if store_id:
+        if ma_bo_phan_id:
+
+            if not employee.ma_bo_phan_id or employee.ma_bo_phan_id.id != ma_bo_phan_id:
+
+                return False
+
+        elif filters.get("store_id"):
 
             store = self._employee_store_info(employee)
 
-            if store.get("store_id") != store_id:
+            if store.get("store_id") != filters["store_id"]:
 
                 return False
 
@@ -356,17 +379,19 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         return "secondary"
 
     @api.model
-    def _serialize_leave_detail_row(self, leave, stt):
+    def _serialize_leave_detail_row(self, leave, stt, filters=None):
+        filters = filters or {}
         employee = leave.employee_id
         version = employee.current_version_id if employee else False
         job_title_key = (version.job_title if version else "") or (employee.job_title if employee else "")
+        location = self._employee_location_info(employee, filters.get("employee_mien")) if employee else {"label": "—"}
         return {
             "stt": stt,
             "leave_id": leave.id,
             "employee_mien": self._resolve_leave_mien(leave) or "",
             "employee_id_hrm": (employee.id_hrm or "").strip() if employee else "",
             "employee_name": (employee.name or "") if employee else "",
-            "ma_bo_phan": (employee.ma_bo_phan or "").strip().upper() if employee else "",
+            "ma_bo_phan": location["label"],
             "job_title": self._job_title_label(job_title_key, employee=employee),
             "request_date_from": self._format_vn_short_date(leave.request_date_from),
             "request_date_to": self._format_vn_short_date(leave.request_date_to),
@@ -391,10 +416,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_to", ">=", date_from),
         ]
         domain = self._append_leave_mien_domain(domain, active_mien)
-        if filters.get("store_id"):
-            domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-        if filters.get("department_id"):
-            domain.append(("employee_id.department_id", "=", filters["department_id"]))
+        domain = self._append_scope_filters(domain, filters)
 
         Leave = self.env["hr.leave"].sudo().with_context(active_test=False)
         leaves = Leave.search(
@@ -412,7 +434,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
                 continue
             if not self._employee_matches_filters(employee, filters):
                 continue
-            rows.append(self._serialize_leave_detail_row(leave, idx))
+            rows.append(self._serialize_leave_detail_row(leave, idx, filters))
         return rows
 
     @api.model
@@ -423,6 +445,25 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         return (version.job_title if version else "") or employee.job_title or ""
 
     @api.model
+    def _employee_ma_bo_phan_code(self, employee):
+        if not employee:
+            return "—"
+        code = (employee.ma_bo_phan or "").strip()
+        if not code and employee.ma_bo_phan_id:
+            code = (employee.ma_bo_phan_id.code or "").strip()
+        return code.upper() if code else "—"
+
+    @api.model
+    def _employee_location_info(self, employee, active_mien=None):
+        """Nhãn hiển thị + khóa gom nhóm theo mã bộ phận trong hồ sơ NV."""
+        if not employee:
+            return {"label": "—", "group_key": False, "group_id": False}
+        label = self._employee_ma_bo_phan_code(employee)
+        group_id = employee.ma_bo_phan_id.id if employee.ma_bo_phan_id else False
+        group_key = group_id or (label if label != "—" else False)
+        return {"label": label, "group_key": group_key, "group_id": group_id}
+
+    @api.model
     def _employee_store_info(self, employee):
         if not employee or not employee.ma_bo_phan_id:
             return {"store_name": "—", "store_id": False, "store_key": False}
@@ -430,6 +471,13 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         store_name = (store_code.code or "").strip() or "—"
         store_id = store_code.store_id.id if store_code.store_id else store_code.id
         return {"store_name": store_name, "store_id": store_id, "store_key": store_id}
+
+    @api.model
+    def _dashboard_location_labels(self, active_mien):
+        return {
+            "location_column_label": "Mã bộ phận",
+            "top_location_title": "Top mã bộ phận nghỉ nhiều",
+        }
 
     @api.model
     def _employee_matches_mien(self, employee, active_mien):
@@ -451,10 +499,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_to", ">=", date_from),
         ]
         domain = self._append_leave_mien_domain(domain, active_mien)
-        if filters.get("store_id"):
-            domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-        if filters.get("department_id"):
-            domain.append(("employee_id.department_id", "=", filters["department_id"]))
+        domain = self._append_scope_filters(domain, filters)
 
         Leave = self.env["hr.leave"].sudo().with_context(active_test=False)
         leaves = Leave.search(domain)
@@ -485,10 +530,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_to", ">=", date_from),
         ]
         period_domain = self._append_leave_mien_domain(period_domain, active_mien)
-        if filters.get("store_id"):
-            period_domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-        if filters.get("department_id"):
-            period_domain.append(("employee_id.department_id", "=", filters["department_id"]))
+        period_domain = self._append_scope_filters(period_domain, filters)
 
         Leave = self.env["hr.leave"].sudo().with_context(active_test=False)
         period_leaves = Leave.search(period_domain)
@@ -545,10 +587,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             ("request_date_to", ">=", today),
         ]
         on_leave_domain = self._append_leave_mien_domain(on_leave_domain, filters.get("employee_mien"))
-        if filters.get("store_id"):
-            on_leave_domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-        if filters.get("department_id"):
-            on_leave_domain.append(("employee_id.department_id", "=", filters["department_id"]))
+        on_leave_domain = self._append_scope_filters(on_leave_domain, filters)
 
         Leave = self.env["hr.leave"].sudo().with_context(active_test=False)
         on_leave_employee_ids = set()
@@ -585,15 +624,18 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         }
 
     @api.model
-    def _serialize_leave_table_row(self, leave, stt):
+    def _serialize_leave_table_row(self, leave, stt, filters=None):
+        filters = filters or {}
         employee = leave.employee_id
-        store = self._employee_store_info(employee) if employee else {"store_name": "—"}
+        active_mien = filters.get("employee_mien")
+        location = self._employee_location_info(employee, active_mien) if employee else {"label": "—"}
         job_title_key = self._employee_job_title_key(employee) if employee else ""
         return {
             "stt": stt,
             "leave_id": leave.id,
             "employee_name": (employee.name or "") if employee else "",
-            "store_name": store["store_name"],
+            "store_name": location["label"],
+            "ma_bo_phan": location["label"],
             "job_title": self._job_title_label(job_title_key, employee=employee) or "—",
             "number_of_days": round(leave.number_of_days or 0.0, 2),
         }
@@ -632,10 +674,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             return Leave.browse()
 
         domain = self._append_leave_mien_domain(domain, filters.get("employee_mien"))
-        if filters.get("store_id"):
-            domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-        if filters.get("department_id"):
-            domain.append(("employee_id.department_id", "=", filters["department_id"]))
+        domain = self._append_scope_filters(domain, filters)
 
         leaves = Leave.search(domain, order=order)
         if drill_type == "pending_approval":
@@ -656,7 +695,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             employee = leave.employee_id
             if not employee or not self._employee_matches_filters(employee, filters):
                 continue
-            rows.append(self._serialize_leave_table_row(leave, len(rows) + 1))
+            rows.append(self._serialize_leave_table_row(leave, len(rows) + 1, filters))
             if len(rows) >= limit:
                 break
         return rows
@@ -674,14 +713,17 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         return self._get_leave_table("on_leave_today", filters, limit)
 
     @api.model
-    def _serialize_drill_leave_row(self, leave):
+    def _serialize_drill_leave_row(self, leave, filters=None):
+        filters = filters or {}
         employee = leave.employee_id
-        store = self._employee_store_info(employee) if employee else {"store_name": "—"}
+        active_mien = filters.get("employee_mien")
+        location = self._employee_location_info(employee, active_mien) if employee else {"label": "—"}
         return {
             "leave_id": leave.id,
             "employee_id": employee.id if employee else False,
             "employee_name": (employee.name or "") if employee else "",
-            "store_name": store["store_name"],
+            "store_name": location["label"],
+            "ma_bo_phan": location["label"],
             "leave_type": leave.holiday_status_id.name or "—",
             "request_date_from": self._format_vn_short_date(leave.request_date_from),
             "request_date_to": self._format_vn_short_date(leave.request_date_to),
@@ -697,7 +739,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             employee = leave.employee_id
             if not employee or not self._employee_matches_filters(employee, filters):
                 continue
-            rows.append(self._serialize_drill_leave_row(leave))
+            rows.append(self._serialize_drill_leave_row(leave, filters))
         return rows
 
     @api.model
@@ -742,10 +784,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
                 ("request_date_to", ">=", month_start),
             ]
             domain = self._append_leave_mien_domain(domain, filters.get("employee_mien"))
-            if filters.get("store_id"):
-                domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-            if filters.get("department_id"):
-                domain.append(("employee_id.department_id", "=", filters["department_id"]))
+            domain = self._append_scope_filters(domain, filters)
 
             leave_days = 0.0
             for leave in Leave.search(domain):
@@ -915,10 +954,11 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         rows = []
         for row in ranked[:limit]:
             employee = row["employee"]
-            store = self._employee_store_info(employee)
+            location = self._employee_location_info(employee, filters.get("employee_mien"))
             rows.append({
                 "employee_name": employee.name or "",
-                "store_name": store["store_name"],
+                "store_name": location["label"],
+                "ma_bo_phan": location["label"],
                 "job_title": self._job_title_label(
                     self._employee_job_title_key(employee), employee=employee
                 ) or "—",
@@ -929,72 +969,73 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
 
     @api.model
     def _get_top_stores(self, filters, limit=10):
-        """Top cửa hàng theo tỷ lệ NV nghỉ trong kỳ (NV nghỉ / tổng NV)."""
+        """Top cửa hàng / mã bộ phận theo tỷ lệ NV nghỉ trong kỳ."""
         from collections import defaultdict
 
         filters = self._parse_filters(filters)
         active_mien = filters.get("employee_mien")
 
-        employees_on_leave_by_store = defaultdict(set)
-        leave_days_by_store = defaultdict(float)
-        top_employee_by_store = defaultdict(lambda: {"leave_days": 0.0, "job_title": ""})
-        store_meta = {}
+        employees_on_leave_by_group = defaultdict(set)
+        leave_days_by_group = defaultdict(float)
+        top_employee_by_group = defaultdict(lambda: {"leave_days": 0.0, "job_title": ""})
+        group_meta = {}
 
         for leave in self._month_validated_leaves(filters):
             employee = leave.employee_id
-            store = self._employee_store_info(employee)
-            store_key = store["store_key"]
-            if not store_key:
+            location = self._employee_location_info(employee, active_mien)
+            group_key = location["group_key"]
+            if not group_key:
                 continue
-            store_meta[store_key] = store
-            employees_on_leave_by_store[store_key].add(employee.id)
+            group_meta[group_key] = location
+            employees_on_leave_by_group[group_key].add(employee.id)
             days = leave.number_of_days or 0.0
-            leave_days_by_store[store_key] += days
-            top_row = top_employee_by_store[store_key]
+            leave_days_by_group[group_key] += days
+            top_row = top_employee_by_group[group_key]
             if days > top_row["leave_days"]:
                 top_row["leave_days"] = days
                 top_row["job_title"] = self._employee_job_title_key(employee)
 
-        employee_count_by_store = defaultdict(set)
+        employee_count_by_group = defaultdict(set)
         Employee = self.env["hr.employee"].sudo().with_context(active_test=False)
         emp_domain = [("active", "=", True), ("company_id", "in", self.env.companies.ids)]
         for employee in Employee.search(emp_domain):
             if not self._employee_matches_filters(employee, filters):
                 continue
-            store = self._employee_store_info(employee)
-            if store["store_key"]:
-                employee_count_by_store[store["store_key"]].add(employee.id)
-                store_meta.setdefault(store["store_key"], store)
+            location = self._employee_location_info(employee, active_mien)
+            if location["group_key"]:
+                employee_count_by_group[location["group_key"]].add(employee.id)
+                group_meta.setdefault(location["group_key"], location)
 
-        store_keys = set(store_meta.keys()) | set(employees_on_leave_by_store.keys())
+        group_keys = set(group_meta.keys()) | set(employees_on_leave_by_group.keys())
         ranked_keys = sorted(
-            store_keys,
+            group_keys,
             key=lambda key: (
                 -(
-                    len(employees_on_leave_by_store.get(key, set()))
-                    / max(len(employee_count_by_store.get(key, set())), 1)
+                    len(employees_on_leave_by_group.get(key, set()))
+                    / max(len(employee_count_by_group.get(key, set())), 1)
                 ),
-                -len(employees_on_leave_by_store.get(key, set())),
-                store_meta.get(key, {}).get("store_name", ""),
+                -len(employees_on_leave_by_group.get(key, set())),
+                group_meta.get(key, {}).get("label", ""),
             ),
         )
         rows = []
-        for store_key in ranked_keys[:limit]:
-            if not employees_on_leave_by_store.get(store_key):
+        for group_key in ranked_keys[:limit]:
+            if not employees_on_leave_by_group.get(group_key):
                 continue
-            meta = store_meta[store_key]
-            emp_count = len(employee_count_by_store.get(store_key, set()))
-            on_leave_count = len(employees_on_leave_by_store.get(store_key, set()))
+            meta = group_meta[group_key]
+            emp_count = len(employee_count_by_group.get(group_key, set()))
+            on_leave_count = len(employees_on_leave_by_group.get(group_key, set()))
             leave_rate = round((on_leave_count / emp_count) * 100, 1) if emp_count else 0.0
-            top_job = top_employee_by_store[store_key]["job_title"]
+            top_job = top_employee_by_group[group_key]["job_title"]
             rows.append({
-                "store_name": meta["store_name"],
+                "store_name": meta["label"],
+                "ma_bo_phan": meta["label"],
                 "job_title": self._job_title_label(top_job) or "—",
                 "employee_count": emp_count,
                 "on_leave_count": on_leave_count,
-                "leave_days": round(leave_days_by_store.get(store_key, 0.0), 2),
+                "leave_days": round(leave_days_by_group.get(group_key, 0.0), 2),
                 "leave_rate": leave_rate,
-                "store_id": meta["store_id"],
+                "store_id": meta.get("group_id") or group_key,
             })
         return rows
 
@@ -1258,11 +1299,32 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         active_mien = filters.get("employee_mien")
         today = fields.Date.context_today(self)
 
-        Store = self.env["hr.store"].sudo()
-        store_domain = []
+        StoreCode = self.env["hr.store.code"].sudo()
+        code_domain = []
         if active_mien:
-            store_domain.append(("mien", "=", active_mien))
-        stores = Store.search_read(store_domain, ["id", "name"], order="name")
+            code_domain.append(("mien", "=", active_mien))
+        code_map = {
+            row["id"]: (row["code"] or "").strip()
+            for row in StoreCode.search_read(code_domain, ["id", "code"], order="code")
+            if row.get("code")
+        }
+
+        Employee = self.env["hr.employee"].sudo().with_context(active_test=False)
+        for employee in Employee.search([
+            ("active", "=", True),
+            ("company_id", "in", self.env.companies.ids),
+        ]):
+            if active_mien and not self._employee_matches_mien(employee, active_mien):
+                continue
+            if employee.ma_bo_phan_id:
+                code = (employee.ma_bo_phan_id.code or "").strip()
+                if code:
+                    code_map.setdefault(employee.ma_bo_phan_id.id, code)
+
+        ma_bo_phans = [
+            {"id": rec_id, "name": code}
+            for rec_id, code in sorted(code_map.items(), key=lambda item: item[1])
+        ]
 
         Department = self.env["hr.department"].sudo()
         departments = Department.search_read([], ["id", "name"], order="name", limit=200)
@@ -1273,7 +1335,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         return {
             "years": years,
             "months": months,
-            "stores": [{"id": s["id"], "name": s["name"]} for s in stores],
+            "ma_bo_phans": ma_bo_phans,
             "departments": [{"id": d["id"], "name": d["name"]} for d in departments],
             "current_year": filters["year"],
             "current_month": filters["month"],
@@ -1333,6 +1395,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
         }
 
         dashboard_title = f"Dashboard {mien_label}" if mien_label else "Dashboard Tổng quan"
+        location_labels = self._dashboard_location_labels(active_mien)
 
         return {
 
@@ -1345,6 +1408,12 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             "period_label": self._period_label(filters),
 
             "is_regional_dashboard": bool(active_mien),
+
+            "is_vp_dashboard": active_mien == "VP",
+
+            "location_column_label": location_labels["location_column_label"],
+
+            "top_location_title": location_labels["top_location_title"],
 
             "mien_chart_title": (
 
@@ -1369,6 +1438,8 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
                 "month": filters["month"],
 
                 "employee_mien": active_mien or False,
+
+                "ma_bo_phan_id": filters.get("ma_bo_phan_id") or False,
 
                 "store_id": filters.get("store_id") or False,
 
@@ -1475,10 +1546,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             name = "Đơn chờ duyệt"
             base_domain = [("state", "in", ("confirm", "validate1"))]
             base_domain = self._append_leave_mien_domain(base_domain, filters.get("employee_mien"))
-            if filters.get("store_id"):
-                base_domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-            if filters.get("department_id"):
-                base_domain.append(("employee_id.department_id", "=", filters["department_id"]))
+            base_domain = self._append_scope_filters(base_domain, filters)
             leave_ids = [
                 leave.id
                 for leave in Leave.search(base_domain, order="create_date desc, id desc")
@@ -1491,10 +1559,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
             name = "Đơn chờ bàn giao"
             base_domain = [("state", "in", ("confirm", "validate1"))]
             base_domain = self._append_leave_mien_domain(base_domain, filters.get("employee_mien"))
-            if filters.get("store_id"):
-                base_domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-            if filters.get("department_id"):
-                base_domain.append(("employee_id.department_id", "=", filters["department_id"]))
+            base_domain = self._append_scope_filters(base_domain, filters)
             leave_ids = [
                 leave.id
                 for leave in Leave.search(base_domain, order="create_date desc, id desc")
@@ -1527,10 +1592,7 @@ class HrLeaveAnalyticsDashboard(models.AbstractModel):
 
         if pending_type not in ("approval", "handover"):
             domain = self._append_leave_mien_domain(domain, filters.get("employee_mien"))
-            if filters.get("store_id"):
-                domain.append(("employee_id.ma_bo_phan_id.store_id", "=", filters["store_id"]))
-            if filters.get("department_id"):
-                domain.append(("employee_id.department_id", "=", filters["department_id"]))
+            domain = self._append_scope_filters(domain, filters)
 
         action = self.env.ref(
             "hr_holidays.hr_leave_action_action_approve_department"

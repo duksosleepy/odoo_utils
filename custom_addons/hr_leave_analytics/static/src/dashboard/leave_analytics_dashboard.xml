@@ -16,49 +16,36 @@
 
             <t t-elif="state.data">
                 <!-- 1. Bộ lọc -->
-                <div class="card mb-3 o_filter_card">
-                    <div class="card-body py-2">
-                        <div class="row g-2 align-items-end">
-                            <div class="col-auto">
-                                <label class="form-label mb-0 small fw-bold">Năm</label>
-                                <select class="form-select form-select-sm" t-model.number="state.filterYear" t-on-change="onFilterChange">
-                                    <t t-foreach="filterOptions.years || []" t-as="year" t-key="year">
-                                        <option t-att-value="year" t-esc="year"/>
-                                    </t>
-                                </select>
-                            </div>
-                            <div class="col-auto">
-                                <label class="form-label mb-0 small fw-bold">Tháng</label>
-                                <select class="form-select form-select-sm" t-model.number="state.filterMonth" t-on-change="onFilterChange">
-                                    <t t-foreach="filterOptions.months || []" t-as="month" t-key="month.value">
-                                        <option t-att-value="month.value" t-esc="month.label"/>
-                                    </t>
-                                </select>
-                            </div>
-                            <div class="col-auto">
-                                <label class="form-label mb-0 small fw-bold">Cửa hàng</label>
-                                <select class="form-select form-select-sm" t-model="state.filterStoreId" t-on-change="onFilterChange">
-                                    <option value="">Tất cả</option>
-                                    <t t-foreach="filterOptions.stores || []" t-as="store" t-key="store.id">
-                                        <option t-att-value="store.id" t-esc="store.name"/>
-                                    </t>
-                                </select>
-                            </div>
-                            <div class="col-auto">
-                                <label class="form-label mb-0 small fw-bold">Phòng ban</label>
-                                <select class="form-select form-select-sm" t-model="state.filterDepartmentId" t-on-change="onFilterChange">
-                                    <option value="">Tất cả</option>
-                                    <t t-foreach="filterOptions.departments || []" t-as="dept" t-key="dept.id">
-                                        <option t-att-value="dept.id" t-esc="dept.name"/>
-                                    </t>
-                                </select>
-                            </div>
-                            <div class="col-auto">
-                                <button class="btn btn-sm btn-outline-secondary" t-on-click="resetFilters">
-                                    <i class="fa fa-refresh me-1"/>Đặt lại
-                                </button>
-                            </div>
-                        </div>
+                <div class="o_filter_bar mb-3">
+                    <div class="o_filter_item">
+                        <label class="o_filter_label">Năm</label>
+                        <select class="form-select form-select-sm o_filter_select" t-model.number="state.filterYear" t-on-change="onFilterChange">
+                            <t t-foreach="filterOptions.years || []" t-as="year" t-key="year">
+                                <option t-att-value="year" t-esc="year"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="o_filter_item">
+                        <label class="o_filter_label">Tháng</label>
+                        <select class="form-select form-select-sm o_filter_select" t-model.number="state.filterMonth" t-on-change="onFilterChange">
+                            <t t-foreach="filterOptions.months || []" t-as="month" t-key="month.value">
+                                <option t-att-value="month.value" t-esc="month.label"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="o_filter_item o_filter_item_wide">
+                        <label class="o_filter_label">Mã bộ phận</label>
+                        <select class="form-select form-select-sm o_filter_select o_filter_select_wide" t-model.number="state.filterMaBoPhanId" t-on-change="onFilterChange">
+                            <option value="">Tất cả</option>
+                            <t t-foreach="filterOptions.ma_bo_phans || []" t-as="code" t-key="code.id">
+                                <option t-att-value="code.id" t-esc="code.name"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="o_filter_actions">
+                        <button type="button" class="btn btn-sm btn-light o_filter_reset" t-on-click="resetFilters" title="Đặt lại bộ lọc">
+                            <i class="fa fa-refresh"/>
+                        </button>
                     </div>
                 </div>
 
@@ -106,7 +93,7 @@
                                     <thead>
                                         <tr>
                                             <th>Nhân viên</th>
-                                            <th>Cửa hàng</th>
+                                            <th t-esc="locationColumnLabel"/>
                                             <th>Loại nghỉ</th>
                                             <th>Từ ngày</th>
                                             <th>Đến ngày</th>
@@ -182,7 +169,7 @@
                     <div class="col-lg-5">
                         <div class="card h-100 o_panel_card">
                             <div class="card-header o_header_store d-flex justify-content-between">
-                                <span>Top cửa hàng nghỉ nhiều</span>
+                                <span t-esc="topLocationTitle"/>
                                 <button class="btn btn-sm btn-outline-light py-0 px-2" t-on-click="() => this.openList('top_stores')">
                                     <i class="fa fa-file-excel-o"/>
                                 </button>
@@ -191,7 +178,7 @@
                                 <table class="table table-sm mb-0 o_compact_table o_grid_table">
                                     <thead>
                                         <tr>
-                                            <th>Cửa hàng</th>
+                                            <th t-esc="locationColumnLabel"/>
                                             <th>Tỷ lệ (%)</th>
                                             <th>NV nghỉ</th>
                                         </tr>
@@ -240,7 +227,7 @@
                                             <thead>
                                                 <tr>
                                                     <th>Tên NV</th>
-                                                    <th>Cửa hàng</th>
+                                                    <th t-esc="locationColumnLabel"/>
                                                     <th>Chức danh</th>
                                                     <th>Số ngày nghỉ</th>
                                                 </tr>
@@ -290,17 +277,30 @@
 
                 <!-- Chi tiết đơn (thu gọn) -->
                 <div class="card o_panel_card o_detail_card">
-                    <div class="card-header o_header_detail d-flex justify-content-between">
+                    <div class="card-header o_header_detail d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <span>Chi tiết đơn nghỉ trong kỳ</span>
-                        <button class="btn btn-sm btn-outline-light py-0 px-2" t-on-click="() => this.openList('leave_details')">
-                            <i class="fa fa-file-excel-o me-1"/>Xuất Excel
-                        </button>
+                        <div class="d-flex align-items-end gap-2 o_detail_filter_bar">
+                            <div class="o_filter_item o_filter_item_inline">
+                                <label class="o_filter_label">Mã bộ phận</label>
+                                <select class="form-select form-select-sm o_filter_select o_filter_select_wide"
+                                        t-model.number="state.filterMaBoPhanId"
+                                        t-on-change="onFilterChange">
+                                    <option value="">Tất cả</option>
+                                    <t t-foreach="filterOptions.ma_bo_phans || []" t-as="code" t-key="'detail_' + code.id">
+                                        <option t-att-value="code.id" t-esc="code.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <button class="btn btn-sm btn-outline-light py-0 px-2 align-self-end" t-on-click="() => this.openList('leave_details')">
+                                <i class="fa fa-file-excel-o me-1"/>Xuất Excel
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body p-0 o_detail_table_wrap">
                         <table class="table table-sm mb-0 o_detail_table o_grid_table">
                             <thead>
                                 <tr>
-                                    <th>STT</th><th>Miền</th><th>Họ tên</th><th>Cửa hàng</th>
+                                    <th>STT</th><th>Miền</th><th>Họ tên</th><th t-esc="locationColumnLabel"/>
                                     <th>Loại nghỉ</th><th>Từ</th><th>Đến</th><th>Ngày</th><th>Trạng thái</th>
                                 </tr>
                             </thead>
