@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_lug_user_month_summary_list" model="ir.ui.view">
+        <field name="name">lug.user.month.summary.list</field>
+        <field name="model">lug.user.month.summary</field>
+        <field name="arch" type="xml">
+            <list string="Báo cáo thống kê theo User trong tháng"
+                  create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="month_label" string="Kỳ"/>
+                <field name="user_id" string="User"/>
+                <field name="employee_name" string="Họ tên"/>
+                <field name="job_id" string="Chức danh"/>
+                <field name="department_id" string="Phòng ban"/>
+                <field name="mien_label" string="Miền"/>
+                <field name="total_login_days" string="Số ngày Login"/>
+                <field name="total_hours_display" string="Tổng giờ"/>
+                <field name="average_hours_display" string="TB/ngày"/>
+                <field name="total_sessions" string="Số phiên"/>
+                <field name="device_count" string="Số thiết bị"/>
+                <field name="year" column_invisible="1"/>
+                <field name="month" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lug_user_month_summary_search" model="ir.ui.view">
+        <field name="name">lug.user.month.summary.search</field>
+        <field name="model">lug.user.month.summary</field>
+        <field name="arch" type="xml">
+            <search string="Báo cáo tháng theo User">
+                <field name="user_id"/>
+                <field name="employee_name"/>
+                <field name="department_id"/>
+                <field name="job_id"/>
+                <field name="mien_label"/>
+                <field name="year"/>
+                <field name="month"/>
+                <group>
+                    <filter name="group_month" string="Tháng" context="{'group_by': 'month_label'}"/>
+                    <filter name="group_department" string="Phòng ban" context="{'group_by': 'department_id'}"/>
+                    <filter name="group_mien" string="Miền" context="{'group_by': 'mien_label'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_lug_user_month_summary" model="ir.actions.act_window">
+        <field name="name">Báo cáo thống kê theo User trong tháng</field>
+        <field name="res_model">lug.user.month.summary</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_lug_user_month_summary_search"/>
+    </record>
+</odoo>

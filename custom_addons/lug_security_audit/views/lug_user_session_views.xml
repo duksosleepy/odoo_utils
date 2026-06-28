@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_lug_user_session_list" model="ir.ui.view">
+        <field name="name">lug.user.session.list</field>
+        <field name="model">lug.user.session</field>
+        <field name="arch" type="xml">
+            <list string="Phiên đăng nhập" create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="login_date_display" string="Ngày"/>
+                <field name="mien_label" string="Miền"/>
+                <field name="user_id" string="User"/>
+                <field name="department_id" string="Phòng ban"/>
+                <field name="job_title_label" string="Chức danh"/>
+                <field name="login_time_display" string="Login"/>
+                <field name="logout_time_display" string="Logout"/>
+                <field name="duration_display" string="Tổng thời gian"/>
+                <field name="device_category" string="Thiết bị"/>
+                <field name="ip_display" string="IP"/>
+                <field name="status_label" string="Trạng thái"/>
+                <field name="store_label" optional="hide"/>
+                <field name="login_date" column_invisible="1"/>
+                <field name="login_time" column_invisible="1"/>
+                <field name="logout_time" column_invisible="1"/>
+                <field name="job_id" column_invisible="1"/>
+                <field name="device_id" column_invisible="1"/>
+                <field name="ip_address" column_invisible="1"/>
+                <field name="is_online" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lug_user_session_form" model="ir.ui.view">
+        <field name="name">lug.user.session.form</field>
+        <field name="model">lug.user.session</field>
+        <field name="arch" type="xml">
+            <form string="Phiên đăng nhập" create="0" edit="0" delete="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="user_id"/>
+                            <field name="login_date_display" string="Ngày"/>
+                            <field name="login_time_display" string="Login"/>
+                            <field name="logout_time_display" string="Logout"/>
+                            <field name="duration_display"/>
+                            <field name="is_online"/>
+                            <field name="last_seen"/>
+                        </group>
+                        <group>
+                            <field name="device_category" string="Thiết bị"/>
+                            <field name="ip_display" string="IP"/>
+                            <field name="browser"/>
+                            <field name="os"/>
+                            <field name="department_id"/>
+                            <field name="job_title_label"/>
+                            <field name="mien_label"/>
+                            <field name="store_label"/>
+                            <field name="session_uuid"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_lug_user_session_search" model="ir.ui.view">
+        <field name="name">lug.user.session.search</field>
+        <field name="model">lug.user.session</field>
+        <field name="arch" type="xml">
+            <search string="Phiên đăng nhập">
+                <field name="user_id"/>
+                <field name="mien_label"/>
+                <field name="department_id"/>
+                <field name="job_title_label"/>
+                <field name="store_label"/>
+                <field name="device_category"/>
+                <field name="ip_address"/>
+                <field name="login_date"/>
+                <filter name="online" string="Online" domain="[('is_online', '=', True)]"/>
+                <filter name="offline" string="Offline" domain="[('is_online', '=', False)]"/>
+                <separator/>
+                <filter name="today" string="Hôm nay"
+                        domain="[('login_date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_mien" string="Miền" context="{'group_by': 'mien_label'}"/>
+                    <filter name="group_department" string="Phòng ban" context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_lug_user_session" model="ir.actions.act_window">
+        <field name="name">Phiên đăng nhập</field>
+        <field name="res_model">lug.user.session</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_lug_user_session_search"/>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+
+    <record id="action_lug_user_session_online" model="ir.actions.act_window">
+        <field name="name">User đang Online</field>
+        <field name="res_model">lug.user.session</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_online', '=', True)]</field>
+        <field name="search_view_id" ref="view_lug_user_session_search"/>
+        <field name="context">{'lug_security_export_online': 1}</field>
+    </record>
+</odoo>

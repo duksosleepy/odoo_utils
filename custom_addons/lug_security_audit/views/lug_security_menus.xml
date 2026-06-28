@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <menuitem id="menu_lug_security_root"
+              name="Lug Security"
+              parent="base.menu_administration"
+              sequence="16"
+              groups="base.group_system,lug_security_audit.group_lug_security_user"/>
+
+    <menuitem id="menu_lug_security_online"
+              name="User đang Online"
+              parent="menu_lug_security_root"
+              action="action_lug_security_dashboard"
+              sequence="10"
+              groups="base.group_system,lug_security_audit.group_lug_security_user"/>
+
+    <menuitem id="menu_lug_security_sessions"
+              name="Phiên đăng nhập"
+              parent="menu_lug_security_root"
+              action="action_lug_user_session"
+              sequence="20"
+              groups="base.group_system,lug_security_audit.group_lug_security_user"/>
+
+    <menuitem id="menu_lug_security_devices"
+              name="Thiết bị"
+              parent="menu_lug_security_root"
+              action="action_lug_device"
+              sequence="30"
+              groups="base.group_system,lug_security_audit.group_lug_security_user"/>
+
+    <menuitem id="menu_lug_security_daily"
+              name="Tổng hợp ngày"
+              parent="menu_lug_security_root"
+              action="action_lug_user_daily_summary_open"
+              sequence="40"
+              groups="base.group_system,lug_security_audit.group_lug_security_user"/>
+
+    <menuitem id="menu_lug_security_monthly"
+              name="Báo cáo tháng theo User"
+              parent="menu_lug_security_root"
+              action="action_lug_user_month_summary"
+              sequence="50"
+              groups="base.group_system,lug_security_audit.group_lug_security_user"/>
+</odoo>

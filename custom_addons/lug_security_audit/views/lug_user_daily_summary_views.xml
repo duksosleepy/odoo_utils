@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_lug_user_daily_summary_list" model="ir.ui.view">
+        <field name="name">lug.user.daily.summary.list</field>
+        <field name="model">lug.user.daily.summary</field>
+        <field name="arch" type="xml">
+            <list string="Tổng hợp ngày" create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="summary_date_display" string="Ngày"/>
+                <field name="mien_label" string="Miền"/>
+                <field name="user_id" string="User"/>
+                <field name="department_id" string="Phòng ban"/>
+                <field name="job_title_label" string="Chức danh"/>
+                <field name="total_hours_display" string="Tổng giờ"/>
+                <field name="total_sessions" string="Số phiên"/>
+                <field name="first_login_display" string="Login đầu"/>
+                <field name="last_logout_display" string="Logout cuối"/>
+                <field name="summary_date" column_invisible="1"/>
+                <field name="first_login" column_invisible="1"/>
+                <field name="last_logout" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lug_user_daily_summary_search" model="ir.ui.view">
+        <field name="name">lug.user.daily.summary.search</field>
+        <field name="model">lug.user.daily.summary</field>
+        <field name="arch" type="xml">
+            <search string="Tổng hợp ngày">
+                <field name="user_id"/>
+                <field name="mien_label"/>
+                <field name="department_id"/>
+                <field name="job_title_label"/>
+                <field name="summary_date"/>
+                <filter name="today" string="Hôm nay"
+                        domain="[('summary_date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter name="group_date" string="Ngày" context="{'group_by': 'summary_date'}"/>
+                    <filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_mien" string="Miền" context="{'group_by': 'mien_label'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_lug_user_daily_summary" model="ir.actions.act_window">
+        <field name="name">Tổng hợp ngày</field>
+        <field name="res_model">lug.user.daily.summary</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_lug_user_daily_summary_search"/>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+
+    <record id="action_lug_user_daily_summary_open" model="ir.actions.server">
+        <field name="name">Tổng hợp ngày</field>
+        <field name="model_id" ref="model_lug_user_session"/>
+        <field name="state">code</field>
+        <field name="code">action = env['lug.user.session'].action_open_daily_summary()</field>
+    </record>
+</odoo>

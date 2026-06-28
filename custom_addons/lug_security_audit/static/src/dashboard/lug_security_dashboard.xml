@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_security_audit.LugDonutCard">
+        <div class="o_lug_donut_inner">
+            <div class="o_lug_donut_title" t-esc="props.chart.title"/>
+            <div t-if="props.chart.subtitle" class="o_lug_donut_subtitle" t-esc="props.chart.subtitle"/>
+            <div class="o_lug_donut_canvas_wrap">
+                <canvas t-ref="canvas"/>
+            </div>
+            <div class="o_lug_donut_footer">
+                <t t-foreach="props.chart.footer_lines || []" t-as="line" t-key="line">
+                    <div class="o_lug_donut_footer_line" t-esc="line"/>
+                </t>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="lug_security_audit.LugHourlyBarCard">
+        <div class="o_lug_hourly_card">
+            <div class="o_lug_donut_title" t-esc="props.chart.title"/>
+            <div class="o_lug_hourly_canvas_wrap">
+                <canvas t-ref="canvas"/>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="lug_security_audit.LugSecurityDashboard">
+        <div class="o_lug_security_dashboard o_action">
+            <div class="o_lug_dashboard_header">
+            <div class="o_lug_title_row">
+                <h2 class="o_lug_main_title">Security Dashboard</h2>
+                <button type="button" class="btn btn-sm btn-outline-success" t-on-click="exportExcel">
+                    <i class="fa fa-file-excel-o me-1"/>Xuất Excel
+                </button>
+            </div>
+
+            </div>
+
+            <div class="o_lug_dashboard_body">
+            <t t-if="state.loading">
+                <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+            </t>
+
+            <t t-else="">
+                <t t-foreach="donutSections" t-as="section" t-key="section.key">
+                    <div class="o_lug_chart_section" t-if="section.charts.length">
+                        <h3 class="o_lug_section_title" t-esc="section.title"/>
+                        <t t-if="section.chart_rows">
+                            <div class="o_lug_chart_grid">
+                                <t t-foreach="section.chart_rows" t-as="row" t-key="row_index">
+                                    <div t-att-class="'o_lug_donut_row ' + (row.row_class || '')">
+                                        <t t-foreach="row.charts" t-as="chart" t-key="chart.key">
+                                            <div t-att-class="'o_lug_donut_card' + (isMienSelected(chart) ? ' o_lug_donut_card_active' : '')">
+                                                <t t-if="isDonutClickable(section)">
+                                                    <LugDonutCard chart="chart" onSelect="getMienClickHandler(chart)"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <LugDonutCard chart="chart"/>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <div class="o_lug_donut_row">
+                                <t t-foreach="section.charts" t-as="chart" t-key="chart.key">
+                                    <div class="o_lug_donut_card">
+                                        <LugDonutCard chart="chart"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+
+                <div class="o_lug_chart_section" t-if="state.data?.hourly_chart?.labels?.length">
+                    <h3 class="o_lug_section_title">Biểu đồ tổng quan — User Online theo thời gian</h3>
+                    <div class="o_lug_hourly_row">
+                        <LugHourlyBarCard chart="state.data.hourly_chart"/>
+                    </div>
+                </div>
+
+                <div class="o_lug_table_section mt-3">
+                    <div class="o_lug_table_toolbar">
+                        <div class="o_lug_filter_item">
+                            <label class="o_lug_filter_label">Ngày</label>
+                            <select class="form-select form-select-sm" t-model.number="state.filterDay" t-on-change="onFilterChange">
+                                <t t-foreach="state.data?.filter_options?.days || []" t-as="day" t-key="day">
+                                    <option t-att-value="day" t-esc="day"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_lug_filter_item">
+                            <label class="o_lug_filter_label">Tháng</label>
+                            <select class="form-select form-select-sm" t-model.number="state.filterMonth" t-on-change="onFilterChange">
+                                <t t-foreach="state.data?.filter_options?.months || []" t-as="month" t-key="month.value">
+                                    <option t-att-value="month.value" t-esc="month.label"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_lug_filter_item">
+                            <label class="o_lug_filter_label">Năm</label>
+                            <select class="form-select form-select-sm" t-model.number="state.filterYear" t-on-change="onFilterChange">
+                                <t t-foreach="state.data?.filter_options?.years || []" t-as="year" t-key="year">
+                                    <option t-att-value="year" t-esc="year"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_lug_table_search">
+                            <label class="o_lug_filter_label">Tìm kiếm</label>
+                            <div class="o_lug_table_search_inputs">
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       placeholder="Tên, login, mã HRM, phòng ban, chức danh..."
+                                       t-model="state.tableSearchText"
+                                       t-on-keydown="onTableSearchKeydown"/>
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        t-att-disabled="state.tableLoading"
+                                        t-on-click="loadTableRows">
+                                    <i class="fa fa-search me-1"/>Tìm
+                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-light"
+                                        t-if="state.tableSearchText"
+                                        t-on-click="clearTableSearch">
+                                    Xóa
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light" t-on-click="resetFilters" title="Đặt lại">
+                                    <i class="fa fa-refresh"/>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="o_lug_section_title">Chi tiết User đang Online</h3>
+                <div class="o_lug_table_wrap" t-att-class="state.tableLoading ? 'o_lug_table_loading' : ''">
+                    <table class="o_lug_data_table">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Miền</th>
+                                <th>User</th>
+                                <th>Phòng ban</th>
+                                <th>Chức danh</th>
+                                <th>Login</th>
+                                <th>Logout</th>
+                                <th>Tổng thời gian</th>
+                                <th>Thiết bị</th>
+                                <th>IP</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="!state.data?.rows?.length">
+                                <tr>
+                                    <td colspan="11" class="o_lug_empty">Không có user online theo bộ lọc.</td>
+                                </tr>
+                            </t>
+                            <t t-foreach="state.data?.rows || []" t-as="row" t-key="row.id">
+                                <tr>
+                                    <td t-esc="row.login_date_display"/>
+                                    <td t-esc="row.mien_label"/>
+                                    <td t-esc="row.user_name"/>
+                                    <td t-esc="row.department_name"/>
+                                    <td t-esc="row.job_title_label"/>
+                                    <td t-esc="row.login_time_display"/>
+                                    <td t-esc="row.logout_time_display"/>
+                                    <td t-esc="row.duration_display"/>
+                                    <td t-esc="row.device_category"/>
+                                    <td t-esc="row.ip_display"/>
+                                    <td t-esc="row.status_label"/>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+                </div>
+            </t>
+            </div>
+        </div>
+    </t>
+</templates>

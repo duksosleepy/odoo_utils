@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_lug_device_user,lug.device user,model_lug_device,base.group_system,1,0,0,0
+access_lug_device_manager,lug.device manager,model_lug_device,group_lug_security_manager,1,1,1,1
+access_lug_user_session_user,lug.user.session user,model_lug_user_session,base.group_system,1,0,0,0
+access_lug_user_session_manager,lug.user.session manager,model_lug_user_session,group_lug_security_manager,1,1,1,1
+access_lug_user_daily_summary_user,lug.user.daily.summary user,model_lug_user_daily_summary,base.group_system,1,0,0,0
+access_lug_user_daily_summary_manager,lug.user.daily.summary manager,model_lug_user_daily_summary,group_lug_security_manager,1,1,1,1
+access_lug_user_month_summary_user,lug.user.month.summary user,model_lug_user_month_summary,base.group_system,1,0,0,0
+access_lug_user_month_summary_manager,lug.user.month.summary manager,model_lug_user_month_summary,group_lug_security_manager,1,1,1,1
+access_lug_security_dashboard_user,lug.security.dashboard user,model_lug_security_dashboard,group_lug_security_user,1,1,1,1
+access_lug_security_dashboard_system,lug.security.dashboard system,model_lug_security_dashboard,base.group_system,1,1,1,1
