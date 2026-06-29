@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from odoo import api, models
+from datetime import datetime, timedelta
 
-from .resource_calendar_leaves import HOLIDAY_SCOPE_CH, HOLIDAY_SCOPE_VP
+from odoo import api, fields, models
+
+from .resource_calendar_leaves import (
+    HOLIDAY_SCOPE_CH,
+    HOLIDAY_SCOPE_VP,
+    SKIP_HOLIDAY_SCOPE_SEARCH_CTX,
+)
 
 _STORE_MIENS = frozenset({"Bắc", "Nam", "ĐTT"})
 _STORE_CALENDAR_XMLID = "hr_public_holiday_mien.resource_calendar_store_full_week"
@@ -41,15 +47,71 @@ class HrEmployee(models.Model):
             return False
         return employee._public_holiday_scope_for_employee()
 
-    def _get_public_holidays(self, date_start, date_end):
+    def _public_holiday_search_env(self):
+        """Calendar leaves env without per-user scope filter (scope applied below)."""
+        return self.env["resource.calendar.leaves"].with_context(
+            **{SKIP_HOLIDAY_SCOPE_SEARCH_CTX: True}
+        ).sudo()
+
+    def _public_holiday_base_domain(self, date_start, date_end):
         self.ensure_one()
-        if self._uses_store_full_week_schedule():
-            return self.env["resource.calendar.leaves"]
-        holidays = super()._get_public_holidays(date_start, date_end)
+        return [
+            ("resource_id", "=", False),
+            ("company_id", "in", self.env.companies.ids),
+            ("date_from", "<=", date_end),
+            ("date_to", ">=", date_start),
+            "|",
+            ("calendar_id", "=", False),
+            ("calendar_id", "=", self.resource_calendar_id.id),
+        ]
+
+    def _filter_public_holidays_by_mien(self, holidays):
+        self.ensure_one()
         scope = self._public_holiday_scope_for_employee()
-        if scope:
-            holidays = holidays.filtered(lambda leave: leave.holiday_scope == scope)
-        return holidays
+        if not scope:
+            return holidays
+        scoped = holidays.filtered(lambda leave: leave.holiday_scope == scope)
+        if scope == HOLIDAY_SCOPE_CH and not scoped:
+            # Holidays are usually configured as VP; show them to CH staff until
+            # dedicated CH entries exist.
+            scoped = holidays.filtered(lambda leave: leave.holiday_scope == HOLIDAY_SCOPE_VP)
+        return scoped
+
+    def _get_public_holidays(self, date_start, date_end):
+        """Return public holidays for sidebar / overlap rules, scoped by Miền.
+
+        Store staff keep the 7-day working calendar (no holiday deduction in leave
+        duration); this method only controls which holidays are shown on the time-off
+        calendar and used by tenure/overlap checks.
+        """
+        self.ensure_one()
+        holidays = self._public_holiday_search_env().search(
+            self._public_holiday_base_domain(date_start, date_end)
+        )
+        return self._filter_public_holidays_by_mien(holidays)
+
+    def _parse_unusual_day_range(self, date_from, date_to=None):
+        if isinstance(date_from, str):
+            date_from = datetime.strptime(date_from, "%Y-%m-%d %H:%M:%S")
+        if date_to is None:
+            date_to = date_from
+        elif isinstance(date_to, str):
+            date_to = datetime.strptime(date_to, "%Y-%m-%d %H:%M:%S")
+        return date_from, date_to
+
+    def _get_unusual_days(self, date_from, date_to=None):
+        unusual_days = super()._get_unusual_days(date_from, date_to)
+        self.ensure_one()
+        range_start, range_end = self._parse_unusual_day_range(date_from, date_to)
+        holidays = self._get_public_holidays(range_start, range_end)
+        for holiday in holidays:
+            ph_start = fields.Datetime.to_datetime(holiday.date_from).date()
+            ph_end = fields.Datetime.to_datetime(holiday.date_to).date()
+            current = ph_start
+            while current <= ph_end:
+                unusual_days[fields.Date.to_string(current)] = True
+                current += timedelta(days=1)
+        return unusual_days
 
     def _recompute_open_leaves_calendar(self):
         if not self:

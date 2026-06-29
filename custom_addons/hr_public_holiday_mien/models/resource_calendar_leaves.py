@@ -5,6 +5,8 @@ from odoo.fields import Domain
 
 HOLIDAY_SCOPE_VP = "vp"
 HOLIDAY_SCOPE_CH = "ch"
+# Skip ir.rule-like scope injection when resolving holidays for an employee record.
+SKIP_HOLIDAY_SCOPE_SEARCH_CTX = "hr_public_holiday_mien_skip_scope_search"
 
 
 class ResourceCalendarLeaves(models.Model):
@@ -33,7 +35,10 @@ class ResourceCalendarLeaves(models.Model):
     @api.model
     def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
         domain = Domain(domain)
-        if not self.env.user.has_group("hr_holidays.group_hr_holidays_manager"):
+        if (
+            not self.env.context.get(SKIP_HOLIDAY_SCOPE_SEARCH_CTX)
+            and not self.env.user.has_group("hr_holidays.group_hr_holidays_manager")
+        ):
             scope = self.env["hr.employee"]._public_holiday_scope_for_current_user()
             if scope:
                 domain &= Domain("holiday_scope", "=", scope)
