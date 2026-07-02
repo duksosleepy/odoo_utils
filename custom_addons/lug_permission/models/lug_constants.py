@@ -9,6 +9,7 @@ LUG_PERMISSION_FIELDS = [
     ("perm_export", "export"),
     ("perm_import", "import"),
     ("perm_print", "print"),
+    ("perm_admin", "admin"),
 ]
 
 LUG_DATA_SCOPES = [
@@ -67,7 +68,7 @@ LUG_DISCUSS_EMPLOYEE_HIDDEN_MENU_XMLIDS = [
     "mail.menu_configuration",
 ]
 LUG_DISCUSS_ADMIN_MENU_PERMISSIONS = frozenset(
-    {"edit", "delete", "approve", "export", "import", "print"}
+    {"edit", "delete", "approve", "export", "import", "print", "admin"}
 )
 
 # HR submenus hidden when the user only has View on the HR app.

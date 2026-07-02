@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "LUG Permission Center",
-    "version": "19.0.1.0.29",
+    "version": "19.0.1.0.30",
     "category": "Administration",
     "summary": "Centralized application permission management for Odoo",
     "description": """
@@ -9,7 +9,7 @@ LUG Permission Center
 =====================
 Independent permission layer: User → Group → Application → Permission → Data Scope.
 
-- Manage app access and actions (View, Create, Edit, Delete, Approve, Export, Import, Print)
+- Manage app access and actions (View, Create, Edit, Delete, Approve, Export, Import, Print, Admin)
 - Assign permissions to groups and users in bulk
 - Hide application menus based on effective View permission
 - Does not modify existing business tables (hr_employee, account_move, etc.)

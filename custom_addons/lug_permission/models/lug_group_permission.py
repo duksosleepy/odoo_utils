@@ -19,6 +19,14 @@ class LugPermissionLineMixin(models.AbstractModel):
     perm_export = fields.Boolean(string="Xuất", default=False)
     perm_import = fields.Boolean(string="Nhập", default=False)
     perm_print = fields.Boolean(string="In", default=False)
+    perm_admin = fields.Boolean(
+        string="Quản trị",
+        default=False,
+        help=(
+            "Cấp quyền Quản trị viên của ứng dụng (ví dụ Ngày nghỉ: quản lý "
+            "toàn bộ đơn, tạo ngày lễ, cấu hình loại nghỉ)."
+        ),
+    )
 
     def _active_permission_codes(self):
         self.ensure_one()
@@ -56,6 +64,7 @@ class LugGroupPermission(models.Model):
         "perm_export",
         "perm_import",
         "perm_print",
+        "perm_admin",
     )
     def _check_view_required_for_actions(self):
         for line in self:

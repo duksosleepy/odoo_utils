@@ -33,6 +33,7 @@ class LugUserPermission(models.Model):
         "perm_export",
         "perm_import",
         "perm_print",
+        "perm_admin",
     )
     def _check_view_required_for_actions(self):
         for line in self:
