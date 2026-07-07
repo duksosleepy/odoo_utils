@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý tài khoản email",
-    "version": "19.0.1.9.2",
+    "version": "19.0.2.0.1",
     "category": "Operations/Email",
     "summary": "Đăng ký và quản lý tài khoản email theo phòng ban, chức năng, mục đích sử dụng",
     "description": """
@@ -27,6 +27,8 @@ Vị trí, Mục đích sử dụng, Đối tượng sử dụng, Trạng thái,
         "data/lug_app_data.xml",
         "views/lug_email_status_views.xml",
         "views/lug_email_account_views.xml",
+        "views/lug_email_access_views.xml",
+        "views/lug_email_report_views.xml",
         "views/lug_email_dashboard_views.xml",
         "views/lug_email_menus.xml",
         "data/lug_email_demo.xml",
@@ -44,4 +46,5 @@ Vị trí, Mục đích sử dụng, Đối tượng sử dụng, Trạng thái,
     "installable": True,
     "application": True,
     "auto_install": False,
+    "post_init_hook": "post_init_hook",
 }

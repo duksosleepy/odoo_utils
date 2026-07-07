@@ -1,30 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record model="res.groups.privilege" id="res_groups_privilege_lug_email">
-        <field name="name">Quản lý tài khoản email</field>
+        <field name="name">Quản lý Email</field>
         <field name="category_id" ref="base.module_category_operations"/>
         <field name="sequence">47</field>
     </record>
 
     <record id="group_lug_email_user" model="res.groups">
-        <field name="name">Nhân viên</field>
+        <field name="name">Nhân viên Email</field>
         <field name="privilege_id" ref="res_groups_privilege_lug_email"/>
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
-        <field name="comment">Xem danh sách tài khoản email.</field>
+        <field name="comment">Xem email theo phạm vi phòng ban được cấp.</field>
     </record>
 
     <record id="group_lug_email_manager" model="res.groups">
-        <field name="name">Quản lý</field>
+        <field name="name">Quản lý Email</field>
         <field name="privilege_id" ref="res_groups_privilege_lug_email"/>
         <field name="implied_ids" eval="[(4, ref('group_lug_email_user'))]"/>
-        <field name="comment">Tạo và cập nhật tài khoản email.</field>
+        <field name="comment">Tạo và cập nhật email theo phạm vi phòng ban được cấp.</field>
     </record>
 
     <record id="group_lug_email_admin" model="res.groups">
-        <field name="name">Quản trị</field>
+        <field name="name">Quản trị Email</field>
         <field name="privilege_id" ref="res_groups_privilege_lug_email"/>
         <field name="implied_ids" eval="[(4, ref('group_lug_email_manager'))]"/>
         <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
+        <field name="comment">Toàn quyền quản lý email và phân quyền.</field>
     </record>
 
     <record id="rule_lug_email_multi_company" model="ir.rule">
@@ -32,5 +33,19 @@
         <field name="model_id" ref="model_lug_email_account"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_lug_email_department_scope" model="ir.rule">
+        <field name="name">Email account: phạm vi phòng ban</field>
+        <field name="model_id" ref="model_lug_email_account"/>
+        <field name="groups" eval="[(4, ref('group_lug_email_user')), (4, ref('group_lug_email_manager'))]"/>
+        <field name="domain_force">['|', ('department_id', 'in', user.lug_email_allowed_department_ids.ids), '&amp;', ('department_id', '=', False), ('department', 'in', user.lug_email_allowed_department_ids.mapped('name'))]</field>
+    </record>
+
+    <record id="rule_lug_email_admin_unrestricted" model="ir.rule">
+        <field name="name">Email account: quản trị xem toàn bộ</field>
+        <field name="model_id" ref="model_lug_email_account"/>
+        <field name="groups" eval="[(4, ref('group_lug_email_admin'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
     </record>
 </odoo>

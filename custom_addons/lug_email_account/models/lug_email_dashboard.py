@@ -14,7 +14,11 @@ class LugEmailDashboard(models.AbstractModel):
 
     @api.model
     def _base_domain(self):
-        return [("active", "=", True)]
+        domain = [("active", "=", True)]
+        scope_domain = self.env.user._lug_email_scope_domain()
+        if scope_domain:
+            domain = ["&"] + domain + scope_domain
+        return domain
 
     @api.model
     def _parse_month_key(self, record):

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="menu_lug_email_root"
-              name="Quản lý tài khoản email"
+              name="Quản lý Email"
               sequence="47"
               groups="lug_email_account.group_lug_email_user"/>
 
@@ -12,22 +12,47 @@
               sequence="5"/>
 
     <menuitem id="menu_lug_email_list_all"
-              name="Danh sách tổng email"
+              name="Danh sách Email"
               parent="menu_lug_email_root"
               action="action_lug_email_list_all"
               sequence="10"/>
 
     <menuitem id="menu_lug_email_create"
-              name="Nhập tạo user email"
+              name="Nhập tạo User Email"
               parent="menu_lug_email_root"
               action="action_lug_email_create"
               sequence="20"
               groups="lug_email_account.group_lug_email_manager"/>
 
-    <menuitem id="menu_lug_email_search"
-              name="Bộ lọc tìm tên email"
+    <menuitem id="menu_lug_email_access"
+              name="Phân quyền xem Email"
               parent="menu_lug_email_root"
-              action="action_lug_email_search"
+              action="action_lug_email_access"
+              sequence="30"
+              groups="lug_email_account.group_lug_email_admin"/>
+
+    <menuitem id="menu_lug_email_report"
+              name="Báo cáo"
+              parent="menu_lug_email_root"
+              sequence="40"
+              groups="lug_email_account.group_lug_email_user"/>
+
+    <menuitem id="menu_lug_email_report_department"
+              name="Email theo phòng ban"
+              parent="menu_lug_email_report"
+              action="action_lug_email_report_department"
+              sequence="10"/>
+
+    <menuitem id="menu_lug_email_report_status"
+              name="Email theo trạng thái"
+              parent="menu_lug_email_report"
+              action="action_lug_email_report_status"
+              sequence="20"/>
+
+    <menuitem id="menu_lug_email_report_pivot"
+              name="Tổng hợp email"
+              parent="menu_lug_email_report"
+              action="action_lug_email_report_pivot"
               sequence="30"/>
 
     <menuitem id="menu_lug_email_config"

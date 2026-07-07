@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_lug_email_account_graph_department" model="ir.ui.view">
+        <field name="name">lug.email.account.graph.department</field>
+        <field name="model">lug.email.account</field>
+        <field name="arch" type="xml">
+            <graph string="Email theo phòng ban" type="pie">
+                <field name="department_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_lug_email_account_graph_status" model="ir.ui.view">
+        <field name="name">lug.email.account.graph.status</field>
+        <field name="model">lug.email.account</field>
+        <field name="arch" type="xml">
+            <graph string="Email theo trạng thái" type="pie">
+                <field name="status_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_lug_email_account_pivot" model="ir.ui.view">
+        <field name="name">lug.email.account.pivot</field>
+        <field name="model">lug.email.account</field>
+        <field name="arch" type="xml">
+            <pivot string="Báo cáo email">
+                <field name="department_id" type="row"/>
+                <field name="status_id" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_lug_email_report_department" model="ir.actions.act_window">
+        <field name="name">Email theo phòng ban</field>
+        <field name="res_model">lug.email.account</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_lug_email_account_graph_department"/>
+        <field name="search_view_id" ref="view_lug_email_account_search"/>
+    </record>
+
+    <record id="action_lug_email_report_status" model="ir.actions.act_window">
+        <field name="name">Email theo trạng thái</field>
+        <field name="res_model">lug.email.account</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_lug_email_account_graph_status"/>
+        <field name="search_view_id" ref="view_lug_email_account_search"/>
+    </record>
+
+    <record id="action_lug_email_report_pivot" model="ir.actions.act_window">
+        <field name="name">Tổng hợp email</field>
+        <field name="res_model">lug.email.account</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="view_id" ref="view_lug_email_account_pivot"/>
+        <field name="search_view_id" ref="view_lug_email_account_search"/>
+    </record>
+</odoo>

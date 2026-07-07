@@ -268,7 +268,11 @@ class LugEmailAccount(models.Model):
 
     @api.model
     def get_list_filter_options(self):
-        departments = self.env["hr.department"].search([], order="name")
+        user = self.env.user
+        if user.lug_email_scope_unrestricted:
+            departments = self.env["hr.department"].search([], order="name")
+        else:
+            departments = user.lug_email_allowed_department_ids.sorted("name")
         statuses = self.env["lug.email.account.status"].search(
             [("active", "=", True)],
             order="sequence, name",
