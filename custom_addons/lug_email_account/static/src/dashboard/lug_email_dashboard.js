@@ -17,6 +17,14 @@ const STATUS_COLORS = {
     "Hủy": "#ef4444",
 };
 
+const REGION_COLORS = {
+    "Miền Nam": "#2563eb",
+    "Miền DTT": "#14b8a6",
+    "Miền Bắc": "#dc2626",
+    "VPHN": "#8b5cf6",
+    "Chưa phân loại": "#ef4444",
+};
+
 const KPI_STATUS_CHARTS = [
     { key: "active", ref: "activeChartRef", chartKey: "active", label: "Đang hoạt động", color: "#22c55e" },
     { key: "cancel", ref: "cancelChartRef", chartKey: "cancel", label: "Đang hủy", color: "#ef4444" },
@@ -31,14 +39,14 @@ export class LugEmailDashboard extends Component {
         this.orm = useService("orm");
         this.actionService = useService("action");
         this.departmentChartRef = useRef("departmentChart");
-        this.statusChartRef = useRef("statusChart");
+        this.regionChartRef = useRef("regionChart");
         this.monthChartRef = useRef("monthChart");
         this.activeChartRef = useRef("activeChart");
         this.cancelChartRef = useRef("cancelChart");
         this.lockChartRef = useRef("lockChart");
         this.charts = {
             department: null,
-            status: null,
+            region: null,
             month: null,
             active: null,
             cancel: null,
@@ -71,13 +79,117 @@ export class LugEmailDashboard extends Component {
         }
     }
 
+    _colorForDepartment(label, index) {
+        if (label === "Chưa phân loại") {
+            return "#ef4444";
+        }
+        return CHART_COLORS[(index + 1) % CHART_COLORS.length];
+    }
+
+    _colorForRegion(label) {
+        return REGION_COLORS[label] || CHART_COLORS[0];
+    }
+
+    _decorateRegionData(data) {
+        const rows = data.by_region || [];
+        const total = data.total || 0;
+        const summary = data.region_summary || {};
+        const uncategorized = rows.find((row) => row.label === "Chưa phân loại");
+        const classifiedCount = summary.classified_count ?? (total - (uncategorized?.count || 0));
+        const classifiedTotal = classifiedCount || 1;
+
+        const decoratedRows = rows.map((row) => ({
+            ...row,
+            color: this._colorForRegion(row.label),
+        }));
+        const legendRows = (summary.legend_rows || decoratedRows.filter(
+            (row) => row.label !== "Chưa phân loại"
+        )).map((row) => ({
+            ...row,
+            color: this._colorForRegion(row.label),
+            share_percent: row.share_percent ?? Math.round((row.count * 1000) / classifiedTotal) / 10,
+        }));
+
+        return {
+            ...data,
+            by_region: decoratedRows,
+            region_summary: {
+                total: summary.total ?? total,
+                classified_count: classifiedCount,
+                uncategorized_count: summary.uncategorized_count ?? (uncategorized?.count || 0),
+                legend_rows: legendRows,
+            },
+        };
+    }
+
+    _decorateDepartmentData(data) {
+        const rows = data.by_department || [];
+        const total = data.total || 0;
+        const summary = data.department_summary || {};
+        const uncategorized = rows.find((row) => row.label === "Chưa phân loại");
+        const classifiedCount = summary.classified_count ?? (total - (uncategorized?.count || 0));
+        const classifiedTotal = classifiedCount || 1;
+
+        const colorsByLabel = {};
+        rows.forEach((row, index) => {
+            colorsByLabel[row.label] = this._colorForDepartment(row.label, index);
+        });
+        const decoratedRows = rows.map((row) => ({
+            ...row,
+            color: colorsByLabel[row.label],
+        }));
+        const legendRows = (summary.legend_rows || decoratedRows.filter(
+            (row) => row.label !== "Chưa phân loại"
+        )).map((row) => ({
+            ...row,
+            color: colorsByLabel[row.label],
+            share_percent: row.share_percent ?? Math.round((row.count * 1000) / classifiedTotal) / 10,
+        }));
+
+        return {
+            ...data,
+            by_department: decoratedRows,
+            department_summary: {
+                total: summary.total ?? total,
+                classified_count: classifiedCount,
+                uncategorized_count: summary.uncategorized_count ?? (uncategorized?.count || 0),
+                legend_rows: legendRows,
+            },
+        };
+    }
+
+    get regionSummary() {
+        const summary = this.state.data?.region_summary;
+        const total = this.state.data?.total || 0;
+        return {
+            total: summary?.total ?? total,
+            classified_count: summary?.classified_count ?? 0,
+            uncategorized_count: summary?.uncategorized_count ?? 0,
+            legend_rows: summary?.legend_rows || [],
+        };
+    }
+
+    get departmentSummary() {
+        const summary = this.state.data?.department_summary;
+        const total = this.state.data?.total || 0;
+        return {
+            total: summary?.total ?? total,
+            classified_count: summary?.classified_count ?? 0,
+            uncategorized_count: summary?.uncategorized_count ?? 0,
+            legend_rows: summary?.legend_rows || [],
+        };
+    }
+
     async loadDashboard() {
         this.state.loading = true;
         try {
-            this.state.data = await this.orm.call(
+            const data = await this.orm.call(
                 "lug.email.dashboard",
                 "get_dashboard_data",
                 []
+            );
+            this.state.data = this._decorateRegionData(
+                this._decorateDepartmentData(data)
             );
         } finally {
             this.state.loading = false;
@@ -92,7 +204,7 @@ export class LugEmailDashboard extends Component {
         return `${row.label} (${row.count} - ${row.percent || 0}%)`;
     }
 
-    renderDoughnutChart(refName, chartKey, rows, title, { withCounts = false } = {}) {
+    renderDoughnutChart(refName, chartKey, rows, title, { withCounts = false, showLegend = true } = {}) {
         const canvas = this[refName].el;
         if (!canvas || !window.Chart) {
             return;
@@ -104,6 +216,9 @@ export class LugEmailDashboard extends Component {
             ? rows.map((row) => this._legendLabel(row))
             : rows.map((row) => row.label);
         const data = rows.map((row) => row.count);
+        const backgroundColor = rows.map(
+            (row, index) => row.color || this._colorForDepartment(row.label, index)
+        );
         this.charts[chartKey] = new window.Chart(canvas, {
             type: "doughnut",
             data: {
@@ -112,7 +227,7 @@ export class LugEmailDashboard extends Component {
                     {
                         label: title,
                         data,
-                        backgroundColor: this._colorsForLabels(rows.map((row) => row.label)),
+                        backgroundColor,
                         borderWidth: 1,
                         borderColor: "#fff",
                     },
@@ -121,8 +236,10 @@ export class LugEmailDashboard extends Component {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: "62%",
                 plugins: {
                     legend: {
+                        display: showLegend,
                         position: "bottom",
                         labels: { boxWidth: 12, padding: 12, font: { size: 11 } },
                     },
@@ -227,14 +344,14 @@ export class LugEmailDashboard extends Component {
             "department",
             data.by_department || [],
             "Email theo phòng ban",
-            { withCounts: true }
+            { showLegend: false }
         );
         this.renderDoughnutChart(
-            "statusChartRef",
-            "status",
-            data.by_status || [],
-            "Trạng thái email",
-            { withCounts: true }
+            "regionChartRef",
+            "region",
+            data.by_region || [],
+            "Email theo miền",
+            { showLegend: false }
         );
         for (const card of KPI_STATUS_CHARTS) {
             this.renderStatusKpiChart(card);

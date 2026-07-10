@@ -18,9 +18,7 @@ POSITION_SELECTION = [
     ("other", "Khác"),
 ]
 
-POSITION_IMPORT_MAP = {
-    label.lower(): key for key, label in POSITION_SELECTION
-}
+POSITION_LABEL_MAP = dict(POSITION_SELECTION)
 
 STATE_IMPORT_MAP = {
     "đang sử dụng": "active",
@@ -82,10 +80,15 @@ class LugEmailAccount(models.Model):
         required=True,
         tracking=True,
     )
-    position = fields.Selection(
-        selection=POSITION_SELECTION,
+    job_id = fields.Many2one(
+        "hr.job",
         string="Vị trí",
-        default="other",
+        tracking=True,
+        ondelete="set null",
+        help="Job Position từ hồ sơ nhân viên (hr.job).",
+    )
+    phone = fields.Char(
+        string="Số điện thoại",
         tracking=True,
     )
     purpose = fields.Text(
@@ -182,7 +185,7 @@ class LugEmailAccount(models.Model):
         if not (vals.get("usage_target") or "").strip():
             vals["usage_target"] = "Nội bộ"
 
-        vals["position"] = self._normalize_position(vals.get("position"))
+        vals = self._sync_employee_fields(vals)
 
         if vals.get("status_id"):
             vals["status_id"] = self._resolve_status_id(vals["status_id"])
@@ -210,15 +213,56 @@ class LugEmailAccount(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
-        if "position" in vals:
-            vals["position"] = self._normalize_position(vals.get("position"))
         if "status_id" in vals:
             vals["status_id"] = self._resolve_status_id(vals.get("status_id"))
         if vals.get("state"):
             vals["status_id"] = self._resolve_status_id(vals.pop("state"))
         if vals.get("department_id") or vals.get("department"):
             vals = self._sync_department_fields(vals)
+        if any(key in vals for key in ("employee_id", "job_id", "phone", "position")):
+            vals = self._sync_employee_fields(vals)
         return super().write(vals)
+
+    @api.model
+    def _sync_employee_fields(self, vals):
+        Employee = self.env["hr.employee"]
+        if vals.get("employee_id") and not vals.get("job_id"):
+            employee = Employee.browse(vals["employee_id"])
+            if employee.exists() and employee.job_id:
+                vals["job_id"] = employee.job_id.id
+
+        if vals.get("employee_id") and not (vals.get("phone") or "").strip():
+            employee = Employee.browse(vals["employee_id"])
+            if employee.exists():
+                vals["phone"] = employee.mobile_phone or employee.work_phone or vals.get("phone")
+
+        position_value = vals.pop("position", None)
+        if position_value and not vals.get("job_id"):
+            job = self._resolve_job_from_text(position_value)
+            if job:
+                vals["job_id"] = job.id
+
+        if vals.get("job_id") and isinstance(vals.get("job_id"), str):
+            job = self._resolve_job_from_text(vals["job_id"])
+            if job:
+                vals["job_id"] = job.id
+
+        return vals
+
+    @api.model
+    def _resolve_job_from_text(self, value):
+        Job = self.env["hr.job"]
+        if not value:
+            return Job.browse()
+        if isinstance(value, int):
+            job = Job.browse(value)
+            return job if job.exists() else Job.browse()
+        text = str(value).strip()
+        if not text:
+            return Job.browse()
+        if text in POSITION_LABEL_MAP:
+            text = POSITION_LABEL_MAP[text]
+        return Job.search([("name", "=ilike", text)], limit=1)
 
     @api.model
     def _sync_department_fields(self, vals):
@@ -236,15 +280,6 @@ class LugEmailAccount(models.Model):
                     vals["department"] = dept.name
         return vals
 
-    @api.model
-    def _normalize_position(self, value):
-        if not value:
-            return "other"
-        valid = dict(POSITION_SELECTION)
-        if value in valid:
-            return value
-        return POSITION_IMPORT_MAP.get(str(value).strip().lower(), "other")
-
     @api.onchange("employee_id")
     def _onchange_employee_id(self):
         for record in self:
@@ -257,6 +292,10 @@ class LugEmailAccount(models.Model):
                 record.department_id = employee.department_id
             if employee.department_id and not record.department:
                 record.department = employee.department_id.name
+            if employee.job_id:
+                record.job_id = employee.job_id
+            if not record.phone:
+                record.phone = employee.mobile_phone or employee.work_phone
             if not record.email and employee.work_email:
                 record.email = employee.work_email
 

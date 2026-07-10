@@ -10,10 +10,11 @@
                 <field name="stt" string="STT" width="60" class="o_lug_email_stt_center"/>
                 <field name="department_id" string="Phòng ban" width="120"/>
                 <field name="department" column_invisible="1"/>
-                <field name="function_name" string="Chức năng" width="130"/>
                 <field name="employee_name" string="Họ và tên NV" width="150"/>
                 <field name="email" string="Email" widget="email" width="220"/>
-                <field name="position" string="Vị trí" width="100"/>
+                <field name="phone" string="Số điện thoại" width="120"/>
+                <field name="job_id" string="Vị trí" width="130" options="{'no_create': True}"/>
+                <field name="function_name" string="Chức năng" width="130"/>
                 <field name="purpose" string="Mục đích sử dụng" width="180"/>
                 <field name="date_created" string="Ngày tạo" width="100"/>
                 <field name="usage_target" string="Đối tượng sử dụng" width="110"/>
@@ -52,14 +53,15 @@
                         <group>
                             <field name="department_id" options="{'no_create': True}"/>
                             <field name="department" invisible="1"/>
-                            <field name="function_name" placeholder="VD: Tuyển dụng, Kho tổng, Công nợ..."/>
                             <field name="employee_name"/>
                             <field name="employee_id" options="{'no_create': True}" optional="hide"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                         <group>
                             <field name="email" placeholder="vd: hr@company.com" widget="email"/>
-                            <field name="position"/>
+                            <field name="phone" placeholder="VD: 0901234567"/>
+                            <field name="job_id" string="Vị trí" options="{'no_create': True}"/>
+                            <field name="function_name" placeholder="VD: Tuyển dụng, Kho tổng, Công nợ..."/>
                             <field name="status_id" string="Trạng thái" required="1"
                                    options="{'no_create': True, 'no_open': True}"/>
                             <field name="usage_target" placeholder="VD: Nội bộ, Cá nhân, Đối tác..."/>
@@ -89,7 +91,8 @@
                 <field name="department_id" string="Phòng ban"/>
                 <field name="department" string="Phòng ban (text)"/>
                 <field name="function_name" string="Chức năng"/>
-                <field name="position" string="Vị trí"/>
+                <field name="job_id" string="Vị trí"/>
+                <field name="phone" string="Số điện thoại"/>
                 <field name="status_id" string="Trạng thái"/>
                 <separator/>
                 <filter name="filter_archived" string="Đã lưu trữ"
@@ -98,7 +101,7 @@
                     <filter name="group_department" string="Phòng ban"
                             context="{'group_by': 'department_id'}"/>
                     <filter name="group_position" string="Vị trí"
-                            context="{'group_by': 'position'}"/>
+                            context="{'group_by': 'job_id'}"/>
                     <filter name="group_status" string="Trạng thái"
                             context="{'group_by': 'status_id'}"/>
                     <filter name="group_date_created" string="Ngày tạo"

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý tài khoản email",
-    "version": "19.0.2.0.1",
+    "version": "19.0.2.0.7",
     "category": "Operations/Email",
     "summary": "Đăng ký và quản lý tài khoản email theo phòng ban, chức năng, mục đích sử dụng",
     "description": """

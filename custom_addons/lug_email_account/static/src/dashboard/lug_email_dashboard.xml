@@ -6,7 +6,7 @@
                 <div>
                     <h2>Dashboard Email</h2>
                     <p class="o_lug_email_dashboard_subtitle">
-                        Tổng quan tài khoản email theo phòng ban, trạng thái và xu hướng tạo mới.
+                        Tổng quan tài khoản email theo phòng ban và xu hướng tạo mới.
                     </p>
                 </div>
                 <button type="button" class="btn btn-primary btn-sm" t-on-click="openAllEmails">
@@ -71,20 +71,141 @@
 
                 <div class="row g-3 mt-1">
                     <div class="col-lg-6">
-                        <div class="o_lug_email_panel">
-                            <h5>Tỷ lệ email theo phòng ban</h5>
-                            <p class="o_lug_email_panel_hint">Phân bố số lượng email theo từng phòng ban.</p>
-                            <div class="o_lug_email_chart_wrap">
-                                <canvas t-ref="departmentChart"/>
+                        <div class="o_lug_email_panel o_lug_email_panel--department">
+                            <div class="o_lug_email_department_header">
+                                <h5>
+                                    <i class="fa fa-envelope-o me-2"/>
+                                    Email theo phòng ban
+                                </h5>
+                                <div class="o_lug_email_department_summary">
+                                    <span>
+                                        Tổng:
+                                        <strong t-esc="departmentSummary.total"/>
+                                    </span>
+                                    <span class="o_lug_email_department_divider">|</span>
+                                    <span>
+                                        Đã phân loại:
+                                        <strong t-esc="departmentSummary.classified_count"/>
+                                    </span>
+                                    <span class="o_lug_email_department_divider">|</span>
+                                    <span>
+                                        Chưa phân loại:
+                                        <strong t-esc="departmentSummary.uncategorized_count"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="o_lug_email_department_layout">
+                                <div class="o_lug_email_chart_wrap o_lug_email_chart_wrap--donut">
+                                    <canvas t-ref="departmentChart"/>
+                                    <div class="o_lug_email_donut_center">
+                                        <strong t-esc="departmentSummary.total"/>
+                                        <span>Email</span>
+                                    </div>
+                                </div>
+                                <div class="o_lug_email_department_table_wrap">
+                                    <table class="table table-sm mb-0 o_lug_email_department_table">
+                                        <colgroup>
+                                            <col class="o_col_department"/>
+                                            <col class="o_col_sl"/>
+                                            <col class="o_col_rate"/>
+                                        </colgroup>
+                                        <thead>
+                                            <tr>
+                                                <th class="o_th_department">Phòng ban</th>
+                                                <th class="o_th_sl">SL</th>
+                                                <th class="o_th_rate">Tỷ lệ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-if="!departmentSummary.legend_rows.length">
+                                                <tr>
+                                                    <td colspan="3" class="text-muted">
+                                                        Chưa có phòng ban đã phân loại
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                            <t t-foreach="departmentSummary.legend_rows" t-as="row" t-key="row.label">
+                                                <tr>
+                                                    <td class="o_td_department">
+                                                        <span class="o_lug_email_legend_dot me-2"
+                                                              t-attf-style="background-color: {{ row.color }}"/>
+                                                        <span class="o_department_name" t-esc="row.label"/>
+                                                    </td>
+                                                    <td class="o_td_sl" t-esc="row.count"/>
+                                                    <td class="o_td_rate">
+                                                        <t t-esc="row.share_percent"/>%
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="o_lug_email_panel">
-                            <h5>Trạng thái Email</h5>
-                            <p class="o_lug_email_panel_hint">Tỷ lệ email theo trạng thái sử dụng.</p>
-                            <div class="o_lug_email_chart_wrap">
-                                <canvas t-ref="statusChart"/>
+                        <div class="o_lug_email_panel o_lug_email_panel--department o_lug_email_panel--region">
+                            <div class="o_lug_email_department_header">
+                                <h5>
+                                    <i class="fa fa-map-marker me-2"/>
+                                    Email theo miền
+                                </h5>
+                                <div class="o_lug_email_department_summary">
+                                    <span>
+                                        Tổng:
+                                        <strong t-esc="regionSummary.total"/>
+                                    </span>
+                                    <span class="o_lug_email_department_divider">|</span>
+                                    <span>
+                                        Đã phân loại:
+                                        <strong t-esc="regionSummary.classified_count"/>
+                                    </span>
+                                    <span class="o_lug_email_department_divider">|</span>
+                                    <span>
+                                        Chưa phân loại:
+                                        <strong t-esc="regionSummary.uncategorized_count"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="o_lug_email_department_layout">
+                                <div class="o_lug_email_chart_wrap o_lug_email_chart_wrap--donut">
+                                    <canvas t-ref="regionChart"/>
+                                    <div class="o_lug_email_donut_center">
+                                        <strong t-esc="regionSummary.total"/>
+                                        <span>Email</span>
+                                    </div>
+                                </div>
+                                <div class="o_lug_email_department_table_wrap">
+                                    <table class="table table-sm mb-0 o_lug_email_department_table">
+                                        <colgroup>
+                                            <col class="o_col_department"/>
+                                            <col class="o_col_sl"/>
+                                            <col class="o_col_rate"/>
+                                        </colgroup>
+                                        <thead>
+                                            <tr>
+                                                <th class="o_th_department">Miền</th>
+                                                <th class="o_th_sl">SL</th>
+                                                <th class="o_th_rate">Tỷ lệ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="regionSummary.legend_rows" t-as="row" t-key="row.label">
+                                                <tr>
+                                                    <td class="o_td_department">
+                                                        <span class="o_lug_email_legend_dot me-2"
+                                                              t-attf-style="background-color: {{ row.color }}"/>
+                                                        <span class="o_department_name" t-esc="row.label"/>
+                                                    </td>
+                                                    <td class="o_td_sl" t-esc="row.count"/>
+                                                    <td class="o_td_rate">
+                                                        <t t-esc="row.share_percent"/>%
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
