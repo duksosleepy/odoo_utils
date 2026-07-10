@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import re
 from collections import defaultdict
 from datetime import datetime
 
@@ -151,9 +152,9 @@ class LugEmailDashboard(models.AbstractModel):
             return "VPHN"
         if "ĐTT" in upper or "DTT" in upper:
             return "Miền DTT"
-        if "BẮC" in upper or "BAC" in upper:
+        if re.search(r"MI[ÊE]N\s*B[ẮA]C", upper) or re.search(r"\bB[ẮA]C\b", upper):
             return "Miền Bắc"
-        if "NAM" in upper:
+        if re.search(r"MI[ÊE]N\s*NAM", upper) or re.search(r"\bMI[ỀE]N\s*NAM\b", upper):
             return "Miền Nam"
         return False
 

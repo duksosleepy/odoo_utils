@@ -17,6 +17,8 @@ const STATUS_COLORS = {
     "Hủy": "#ef4444",
 };
 
+const REGION_ORDER = ["Miền Nam", "Miền DTT", "Miền Bắc", "VPHN"];
+
 const REGION_COLORS = {
     "Miền Nam": "#2563eb",
     "Miền DTT": "#14b8a6",
@@ -62,12 +64,15 @@ export class LugEmailDashboard extends Component {
             await this.loadDashboard();
         });
 
-        useEffect(() => {
-            if (!this.state.loading && this.state.data) {
-                this.renderCharts();
-            }
-            return () => this.destroyCharts();
-        });
+        useEffect(
+            () => {
+                if (!this.state.loading && this.state.data) {
+                    requestAnimationFrame(() => this.renderCharts());
+                }
+                return () => this.destroyCharts();
+            },
+            () => [this.state.loading, this.state.data]
+        );
     }
 
     destroyCharts() {
@@ -91,24 +96,40 @@ export class LugEmailDashboard extends Component {
     }
 
     _decorateRegionData(data) {
-        const rows = data.by_region || [];
         const total = data.total || 0;
         const summary = data.region_summary || {};
-        const uncategorized = rows.find((row) => row.label === "Chưa phân loại");
-        const classifiedCount = summary.classified_count ?? (total - (uncategorized?.count || 0));
+        const serverRows = Array.isArray(data.by_region) ? data.by_region : [];
+        const hasServerRegion = serverRows.length > 0 || (summary.legend_rows || []).length > 0;
+        const uncategorizedRow = serverRows.find((row) => row.label === "Chưa phân loại");
+        const uncategorizedCount = hasServerRegion
+            ? (summary.uncategorized_count ?? uncategorizedRow?.count ?? 0)
+            : total;
+        const classifiedCount = hasServerRegion
+            ? (summary.classified_count ?? Math.max(total - uncategorizedCount, 0))
+            : 0;
         const classifiedTotal = classifiedCount || 1;
 
-        const decoratedRows = rows.map((row) => ({
+        const sourceRows = hasServerRegion
+            ? (
+                (summary.legend_rows || []).length
+                    ? summary.legend_rows
+                    : serverRows.filter((row) => row.label !== "Chưa phân loại")
+            )
+            : REGION_ORDER.map((label) => ({ label, count: 0 }));
+
+        const legendRows = sourceRows.map((row) => ({
             ...row,
-            color: this._colorForRegion(row.label),
+            color: row.color || this._colorForRegion(row.label),
+            share_percent:
+                row.share_percent ?? Math.round((row.count * 1000) / classifiedTotal) / 10,
         }));
-        const legendRows = (summary.legend_rows || decoratedRows.filter(
-            (row) => row.label !== "Chưa phân loại"
-        )).map((row) => ({
-            ...row,
-            color: this._colorForRegion(row.label),
-            share_percent: row.share_percent ?? Math.round((row.count * 1000) / classifiedTotal) / 10,
-        }));
+
+        const decoratedRows = serverRows.length
+            ? serverRows.map((row) => ({
+                ...row,
+                color: row.color || this._colorForRegion(row.label),
+            }))
+            : legendRows;
 
         return {
             ...data,
@@ -116,7 +137,7 @@ export class LugEmailDashboard extends Component {
             region_summary: {
                 total: summary.total ?? total,
                 classified_count: classifiedCount,
-                uncategorized_count: summary.uncategorized_count ?? (uncategorized?.count || 0),
+                uncategorized_count: uncategorizedCount,
                 legend_rows: legendRows,
             },
         };
@@ -300,6 +321,71 @@ export class LugEmailDashboard extends Component {
         });
     }
 
+    renderRegionChart() {
+        const canvas = this.regionChartRef.el;
+        if (!canvas || !window.Chart) {
+            return;
+        }
+        if (this.charts.region) {
+            this.charts.region.destroy();
+        }
+        const rows = (this.regionSummary.legend_rows || []).filter(
+            (row) => row.label !== "Chưa phân loại"
+        );
+        const chartRows = rows.length
+            ? rows
+            : REGION_ORDER.map((label) => ({
+                label,
+                count: 0,
+                color: this._colorForRegion(label),
+            }));
+        this.charts.region = new window.Chart(canvas, {
+            type: "bar",
+            data: {
+                labels: chartRows.map((row) => row.label),
+                datasets: [
+                    {
+                        label: "Số email",
+                        data: chartRows.map((row) => row.count),
+                        backgroundColor: chartRows.map(
+                            (row) => row.color || this._colorForRegion(row.label)
+                        ),
+                        borderRadius: 8,
+                        maxBarThickness: 48,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const row = chartRows[context.dataIndex];
+                                return `${row.label}: ${row.count}`;
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 },
+                    },
+                    x: {
+                        ticks: {
+                            font: { size: 11 },
+                            maxRotation: 0,
+                            minRotation: 0,
+                        },
+                    },
+                },
+            },
+        });
+    }
+
     renderMonthChart() {
         const canvas = this.monthChartRef.el;
         if (!canvas || !window.Chart) {
@@ -346,13 +432,7 @@ export class LugEmailDashboard extends Component {
             "Email theo phòng ban",
             { showLegend: false }
         );
-        this.renderDoughnutChart(
-            "regionChartRef",
-            "region",
-            data.by_region || [],
-            "Email theo miền",
-            { showLegend: false }
-        );
+        this.renderRegionChart();
         for (const card of KPI_STATUS_CHARTS) {
             this.renderStatusKpiChart(card);
         }

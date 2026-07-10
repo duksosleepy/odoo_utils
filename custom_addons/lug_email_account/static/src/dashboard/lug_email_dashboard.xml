@@ -168,12 +168,8 @@
                                 </div>
                             </div>
                             <div class="o_lug_email_department_layout">
-                                <div class="o_lug_email_chart_wrap o_lug_email_chart_wrap--donut">
+                                <div class="o_lug_email_chart_wrap o_lug_email_chart_wrap--region-bar">
                                     <canvas t-ref="regionChart"/>
-                                    <div class="o_lug_email_donut_center">
-                                        <strong t-esc="regionSummary.total"/>
-                                        <span>Email</span>
-                                    </div>
                                 </div>
                                 <div class="o_lug_email_department_table_wrap">
                                     <table class="table table-sm mb-0 o_lug_email_department_table">
