@@ -14,6 +14,8 @@ def _normalize_attachment_basename(name):
     if "." in base:
         base = base.rsplit(".", 1)[0]
     normalized = base.casefold()
+    # Vietnamese "đ" does not decompose under NFKD; map it before stripping accents.
+    normalized = normalized.replace("đ", "d")
     normalized = "".join(
         ch for ch in unicodedata.normalize("NFKD", normalized) if not unicodedata.combining(ch)
     )
@@ -95,8 +97,15 @@ class HrLeave(models.Model):
     def _attachment_ids_from_vals(self, vals):
         attachment_ids = []
         for field_name in ("supported_attachment_ids", "attachment_ids"):
-            commands = vals.get(field_name) or []
-            for command in commands:
+            raw = vals.get(field_name) or []
+            # OWL preview may send a plain id list instead of x2m commands.
+            if raw and all(isinstance(item, int) for item in raw):
+                attachment_ids.extend(raw)
+                continue
+            for command in raw:
+                if isinstance(command, int):
+                    attachment_ids.append(command)
+                    continue
                 if not isinstance(command, (list, tuple)) or not command:
                     continue
                 if command[0] == Command.SET:

@@ -3,6 +3,10 @@ from datetime import date
 from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
+from odoo.addons.hr_leave_dashboard_department.models.hr_leave import (
+    _normalize_attachment_basename,
+)
+
 
 @tagged("post_install", "-at_install")
 class TestLeaveFormAttachment(TransactionCase):
@@ -48,6 +52,12 @@ class TestLeaveFormAttachment(TransactionCase):
             }
         )
 
+    def test_normalize_vietnamese_d_stroke(self):
+        self.assertEqual(
+            _normalize_attachment_basename("Đơn xin nghỉ phép.pdf"),
+            "don xin nghi phep",
+        )
+
     def test_submit_requires_named_leave_form_attachment(self):
         leave_model = self.env["hr.leave"].with_context(leave_fast_create=True)
         leave = leave_model.create(self._base_vals())
@@ -56,7 +66,7 @@ class TestLeaveFormAttachment(TransactionCase):
         with self.assertRaises(ValidationError):
             leave.write({"supported_attachment_ids": [(4, wrong_attachment.id)]})
 
-        valid_attachment = self._create_attachment("Đơn xin nghỉ phép.docx")
+        valid_attachment = self._create_attachment("Đơn xin nghỉ phép.pdf")
         leave.write({"supported_attachment_ids": [(4, valid_attachment.id)]})
 
     def test_submit_blocks_when_attachment_missing(self):
