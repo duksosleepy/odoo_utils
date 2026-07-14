@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Right under Cửa hàng (seq 4); bump following items so order stays correct. -->
+        <menuitem
+            id="menu_hr_kho"
+            name="Mã Kho"
+            action="hr_kho_action"
+            parent="hr.menu_config_employee"
+            groups="hr.group_hr_manager"
+            sequence="5"/>
+
+        <record id="hr.menu_hr_work_location_tree" model="ir.ui.menu">
+            <field name="sequence">6</field>
+        </record>
+        <record id="hr.menu_resource_calendar_view" model="ir.ui.menu">
+            <field name="sequence">7</field>
+        </record>
+        <record id="hr.menu_hr_departure_reason_tree" model="ir.ui.menu">
+            <field name="sequence">8</field>
+        </record>
+    </data>
+</odoo>
