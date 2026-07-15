@@ -31,13 +31,27 @@
                 <attribute name="placeholder">Nhập lý do nghỉ phép...</attribute>
             </xpath>
             <xpath expr="//field[@name='supported_attachment_ids'][@widget='many2many_binary']" position="before">
-                <div class="alert alert-secondary mb-2" colspan="2" invisible="state != 'confirm'">
+                <div class="alert alert-secondary mb-2" colspan="2" role="status" invisible="state != 'confirm'">
                     <span>Bắt buộc đính kèm file </span>
                     <strong>Đơn xin nghỉ phép</strong>
                     <span> (tải mẫu </span>
                     <a href="/hr_leave/download_leave_form_template">tại đây</a>
                     <span>).</span>
                 </div>
+            </xpath>
+            <xpath expr="//field[@name='supported_attachment_ids'][@widget='many2many_binary']" position="attributes">
+                <attribute name="force_save">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_leave_view_form_attachment_force_save" model="ir.ui.view">
+        <field name="name">hr.leave.form.attachment.force.save</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='supported_attachment_ids'][@widget='many2many_binary']" position="attributes">
+                <attribute name="force_save">1</attribute>
             </xpath>
         </field>
     </record>

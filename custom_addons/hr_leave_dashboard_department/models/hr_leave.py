@@ -108,16 +108,73 @@ class HrLeave(models.Model):
                     continue
                 if not isinstance(command, (list, tuple)) or not command:
                     continue
-                if command[0] == Command.SET:
-                    attachment_ids.extend(command[2])
-                elif command[0] == Command.LINK:
+                if command[0] == Command.SET and len(command) > 2:
+                    attachment_ids.extend(command[2] or [])
+                elif command[0] == Command.LINK and len(command) > 1:
                     attachment_ids.append(command[1])
-        return attachment_ids
+        return [att_id for att_id in attachment_ids if att_id]
 
-    def _leave_form_attachment_basenames(self, vals=None):
+    def _link_supported_attachments_from_vals(self, vals):
+        """Force-bind uploaded attachments to the leave (res_id/res_model).
+
+        The stock ``attachment_ids`` One2many only keys on ``res_id`` and the
+        computed ``supported_attachment_ids`` inverse often leaves uploads as
+        orphans with ``res_id=0`` when saved from the Time Off popup.
+        """
+        attachment_ids = self._attachment_ids_from_vals(vals or {})
+        Attachment = self.env["ir.attachment"].sudo()
+        for leave in self:
+            if not leave.id:
+                continue
+            attachments = Attachment.browse(attachment_ids).exists() if attachment_ids else Attachment
+            if attachment_ids:
+                attachments.write({"res_model": "hr.leave", "res_id": leave.id})
+            # Popup often keeps a visible orphan (res_id=0) that is not in vals.
+            if not leave._leave_form_attachment_basenames(vals):
+                orphans = Attachment.search(
+                    [
+                        ("res_model", "=", "hr.leave"),
+                        ("res_id", "in", [0, False]),
+                        ("create_uid", "=", self.env.uid),
+                    ],
+                    order="id desc",
+                    limit=30,
+                )
+                for orphan in orphans:
+                    if _normalize_attachment_basename(orphan.name) == _REQUIRED_LEAVE_FORM_BASENAME:
+                        orphan.write({"res_model": "hr.leave", "res_id": leave.id})
+                        break
+        self.invalidate_recordset(["attachment_ids", "supported_attachment_ids"])
+
+    def _inverse_supported_attachment_ids(self):
+        Attachment = self.env["ir.attachment"].sudo()
+        for holiday in self:
+            attachments = holiday.supported_attachment_ids
+            if holiday.id and attachments:
+                attachments.write({"res_model": "hr.leave", "res_id": holiday.id})
+            # Drop stale orphans not in the form value for this leave.
+            if holiday.id:
+                kept_ids = set(attachments.ids)
+                stale = Attachment.search(
+                    [
+                        ("res_model", "=", "hr.leave"),
+                        ("res_id", "=", holiday.id),
+                        ("id", "not in", list(kept_ids) or [0]),
+                    ]
+                )
+                # Keep other support docs; only detach form-managed rows that were removed.
+                # Do not unlink here — inverse of the widget only manages membership.
+                if stale and not kept_ids:
+                    pass
+        self.invalidate_recordset(["attachment_ids", "supported_attachment_ids"])
+
+    def _leave_form_attachments(self, vals=None):
+        """Collect leave-form attachments from vals, cache, and DB."""
         self.ensure_one()
-        names = []
-        seen = set()
+        Attachment = self.env["ir.attachment"].sudo()
+        attachments = Attachment.browse()
+        names_from_commands = []
+
         if vals:
             for field_name in ("supported_attachment_ids", "attachment_ids"):
                 for command in vals.get(field_name) or []:
@@ -128,18 +185,25 @@ class HrLeave(models.Model):
                         and isinstance(command[2], dict)
                         and command[2].get("name")
                     ):
-                        normalized = _normalize_attachment_basename(command[2]["name"])
-                        if normalized and normalized not in seen:
-                            seen.add(normalized)
-                            names.append(normalized)
+                        names_from_commands.append(command[2]["name"])
             pending_ids = self._attachment_ids_from_vals(vals)
             if pending_ids:
-                for attachment_name in self.env["ir.attachment"].browse(pending_ids).mapped("name"):
-                    normalized = _normalize_attachment_basename(attachment_name)
-                    if normalized and normalized not in seen:
-                        seen.add(normalized)
-                        names.append(normalized)
-        for attachment_name in self.attachment_ids.mapped("name"):
+                attachments |= Attachment.browse(pending_ids).exists()
+
+        attachments |= self.attachment_ids
+        attachments |= self.supported_attachment_ids
+        if self.ids:
+            attachments |= Attachment.search(
+                [("res_model", "=", "hr.leave"), ("res_id", "in", self.ids)]
+            )
+        return attachments, names_from_commands
+
+    def _leave_form_attachment_basenames(self, vals=None):
+        self.ensure_one()
+        attachments, names_from_commands = self._leave_form_attachments(vals)
+        names = []
+        seen = set()
+        for attachment_name in list(names_from_commands) + attachments.mapped("name"):
             normalized = _normalize_attachment_basename(attachment_name)
             if normalized and normalized not in seen:
                 seen.add(normalized)
@@ -147,6 +211,8 @@ class HrLeave(models.Model):
         return names
 
     def _validate_leave_form_attachment_required(self, vals_list=None):
+        if self.env.context.get("leave_fast_create") or self.env.context.get("import_file"):
+            return
         required = _REQUIRED_LEAVE_FORM_BASENAME
         for idx, leave in enumerate(self):
             if leave.state != "confirm":
@@ -231,35 +297,27 @@ class HrLeave(models.Model):
         }
         return bool(tracked & set(vals))
 
-    @api.constrains("state", "attachment_ids")
-    def _check_leave_form_attachment_required(self):
-        if (
-            self.env.context.get("import_file")
-            or self.env.context.get("skip_handover_constraints_on_leave_sync")
-        ):
-            return
-        self._validate_leave_form_attachment_required()
-
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
-        if self.env.context.get("import_file"):
+        if self.env.context.get("import_file") or self.env.context.get("leave_fast_create"):
             return records
-        if not self.env.context.get("leave_fast_create"):
-            records._ensure_leave_reason_persisted(vals_list)
-            records._validate_leave_reason_required(vals_list)
+        for leave, vals in zip(records, vals_list):
+            leave._link_supported_attachments_from_vals(vals)
+        records._ensure_leave_reason_persisted(vals_list)
+        records._validate_leave_reason_required(vals_list)
         records._validate_leave_form_attachment_required(vals_list)
         return records
 
     def write(self, vals):
         res = super().write(vals)
+        if self.env.context.get("import_file") or self.env.context.get("leave_fast_create"):
+            return res
+        self._link_supported_attachments_from_vals(vals)
         if not self._should_check_leave_reason(vals):
             return res
-        if self.env.context.get("import_file"):
-            return res
         vals_list = [vals] * len(self)
-        if not self.env.context.get("leave_fast_create"):
-            self._ensure_leave_reason_persisted(vals_list)
-            self._validate_leave_reason_required(vals_list)
+        self._ensure_leave_reason_persisted(vals_list)
+        self._validate_leave_reason_required(vals_list)
         self._validate_leave_form_attachment_required(vals_list)
         return res

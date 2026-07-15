@@ -2542,13 +2542,6 @@ class HrLeaveHandover(models.Model):
 
     def web_save(self, vals, specification, next_id=None):
         """Keep the create/read boundary visible when relational reads fail."""
-        if hasattr(self, "_leave_form_attachment_block_preview") and not self.env.context.get("import_file"):
-            block_message = self._leave_form_attachment_block_preview(
-                res_id=self.id if self else False,
-                vals=vals,
-            )
-            if block_message:
-                raise ValidationError(block_message)
         try:
             if self:
                 self.write(vals)
@@ -2557,6 +2550,22 @@ class HrLeaveHandover(models.Model):
             # Odoo flushes immediately after the RPC method returns. Flush here
             # so deferred stored computes remain inside this diagnostic boundary.
             self.env.flush_all()
+            # Validate attachments AFTER write/create so orphan uploads
+            # (res_id=0) are linked before the required-file check runs.
+            if (
+                hasattr(self, "_leave_form_attachment_block_preview")
+                and not self.env.context.get("import_file")
+                and not self.env.context.get("leave_fast_create")
+            ):
+                if hasattr(self, "_link_supported_attachments_from_vals"):
+                    self._link_supported_attachments_from_vals(vals)
+                    self.env.flush_all()
+                block_message = self._leave_form_attachment_block_preview(
+                    res_id=self.id if self else False,
+                    vals=vals,
+                )
+                if block_message:
+                    raise ValidationError(block_message)
         except MissingError:
             _logger.exception(
                 "time_off_work_handover: MissingError during hr.leave web_save "

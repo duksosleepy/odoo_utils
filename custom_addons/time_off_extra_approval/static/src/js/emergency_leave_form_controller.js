@@ -22,6 +22,25 @@ const LEAVE_PREVIEW_FIELDS = [
 /**
  * RPC cần đủ ngày/nhân viên trên form; `changes` chỉ chứa field vừa sửa.
  */
+function serializeAttachmentValue(value) {
+    if (value === undefined || value === null || value === false) {
+        return value;
+    }
+    // OWL StaticList from many2many_binary
+    if (value.records && Array.isArray(value.records)) {
+        return value.records
+            .map((rec) => rec.resId)
+            .filter((id) => typeof id === "number");
+    }
+    if (Array.isArray(value)) {
+        if (value.every((item) => typeof item === "number")) {
+            return value;
+        }
+        return value;
+    }
+    return value;
+}
+
 function serializeFieldValue(value) {
     if (value === undefined || value === null || value === false) {
         return value;
@@ -44,8 +63,11 @@ function serializeFieldValue(value) {
 
 function buildLeavePreviewVals(record, changes) {
     const vals = {};
+    const attachmentFields = new Set(["supported_attachment_ids", "attachment_ids"]);
     for (const [key, value] of Object.entries(changes || {})) {
-        vals[key] = serializeFieldValue(value);
+        vals[key] = attachmentFields.has(key)
+            ? serializeAttachmentValue(value)
+            : serializeFieldValue(value);
     }
     const data = record.data || {};
     for (const fieldName of LEAVE_PREVIEW_FIELDS) {
@@ -55,7 +77,9 @@ function buildLeavePreviewVals(record, changes) {
         if (data[fieldName] === undefined || data[fieldName] === false) {
             continue;
         }
-        vals[fieldName] = serializeFieldValue(data[fieldName]);
+        vals[fieldName] = attachmentFields.has(fieldName)
+            ? serializeAttachmentValue(data[fieldName])
+            : serializeFieldValue(data[fieldName]);
     }
     return vals;
 }
