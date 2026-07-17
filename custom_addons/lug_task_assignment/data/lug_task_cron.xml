@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ir_cron_lug_task_sla" model="ir.cron">
+        <field name="name">LUG Task: Cảnh báo SLA</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_sla_alerts()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="ir_cron_lug_task_kpi" model="ir.cron">
+        <field name="name">LUG Task: Tính KPI tháng</field>
+        <field name="model_id" ref="model_lug_task_kpi_monthly"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_compute_monthly_kpi()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

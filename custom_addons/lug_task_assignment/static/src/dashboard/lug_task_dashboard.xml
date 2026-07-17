@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_task_assignment.LugTaskDashboard">
+        <div class="o_lug_task_dashboard o_action">
+            <div class="o_lug_task_header">
+                <h2 t-esc="dashboardTitle"/>
+                <div class="o_lug_task_filters d-flex flex-wrap gap-2 align-items-center">
+                    <select class="form-select form-select-sm" t-model.number="state.filterMonth" t-on-change="onFilterChange">
+                        <t t-foreach="[1,2,3,4,5,6,7,8,9,10,11,12]" t-as="m" t-key="m">
+                            <option t-att-value="m" t-esc="'Tháng ' + m"/>
+                        </t>
+                    </select>
+                    <input type="number" class="form-control form-control-sm" style="width:6rem"
+                           t-model.number="state.filterYear" t-on-change="onFilterChange"/>
+                    <select class="form-select form-select-sm" t-model.number="state.filterMienId" t-on-change="onFilterChange">
+                        <option value="0">Tất cả miền</option>
+                        <t t-foreach="state.filterOptions.miens || []" t-as="m" t-key="m.id">
+                            <option t-att-value="m.id" t-esc="m.name"/>
+                        </t>
+                    </select>
+                    <select class="form-select form-select-sm" t-model.number="state.filterDepartmentId" t-on-change="onFilterChange"
+                            t-if="state.data?.role !== 'employee'">
+                        <option value="0">Tất cả phòng ban</option>
+                        <t t-foreach="state.filterOptions.departments || []" t-as="d" t-key="d.id">
+                            <option t-att-value="d.id" t-esc="d.name"/>
+                        </t>
+                    </select>
+                    <select class="form-select form-select-sm" t-model.number="state.filterStoreId" t-on-change="onFilterChange"
+                            t-if="state.data?.role !== 'employee'">
+                        <option value="0">Tất cả chi nhánh</option>
+                        <t t-foreach="state.filterOptions.stores || []" t-as="s" t-key="s.id">
+                            <option t-att-value="s.id" t-esc="s.name"/>
+                        </t>
+                    </select>
+                </div>
+            </div>
+
+            <t t-if="state.loading">
+                <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+            </t>
+            <t t-else="">
+                <div class="o_lug_task_kpi_row">
+                    <t t-foreach="kpiCards" t-as="card" t-key="card.key">
+                        <div class="o_lug_task_kpi_card" t-att-style="'border-top: 4px solid ' + card.color">
+                            <div class="o_lug_task_kpi_value" t-esc="state.data.kpi[card.key] || 0"/>
+                            <div class="o_lug_task_kpi_label" t-esc="card.label"/>
+                        </div>
+                    </t>
+                    <div class="o_lug_task_kpi_card" style="border-top: 4px solid #14b8a6"
+                         t-if="state.data.role === 'employee'">
+                        <div class="o_lug_task_kpi_value" t-esc="state.data.kpi.my_kpi_score || 0"/>
+                        <div class="o_lug_task_kpi_label">Điểm KPI tháng</div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-lg-4">
+                        <div class="o_lug_task_panel">
+                            <h5>Trạng thái công việc</h5>
+                            <div class="o_lug_task_chart_wrap">
+                                <canvas t-ref="statusChart"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="o_lug_task_panel">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="mb-0">Top quá hạn</h5>
+                                <button class="btn btn-sm btn-outline-danger" t-on-click="openOverdue">Xem tất cả</button>
+                            </div>
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Mã</th>
+                                        <th>Tiêu đề</th>
+                                        <th>Người nhận</th>
+                                        <th>Hạn</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="!(state.data.top_overdue || []).length">
+                                        <tr><td colspan="4" class="text-muted">Không có việc quá hạn</td></tr>
+                                    </t>
+                                    <t t-foreach="state.data.top_overdue || []" t-as="row" t-key="row.id">
+                                        <tr class="o_lug_task_row_link" t-on-click="() => this.openTask(row.id)">
+                                            <td t-esc="row.task_code"/>
+                                            <td t-esc="row.title"/>
+                                            <td t-esc="row.assignee"/>
+                                            <td t-esc="row.due_date"/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2" t-if="state.data.role === 'board' or state.data.role === 'manager'">
+                    <div class="col-md-4" t-if="(state.data.by_mien || []).length">
+                        <div class="o_lug_task_panel">
+                            <h5>Theo miền</h5>
+                            <t t-foreach="state.data.by_mien" t-as="row" t-key="row.label">
+                                <div class="o_lug_task_bar_row">
+                                    <span t-esc="row.label"/>
+                                    <span class="badge bg-primary" t-esc="row.count"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                    <div class="col-md-4" t-if="(state.data.by_store || []).length">
+                        <div class="o_lug_task_panel">
+                            <h5>Theo chi nhánh</h5>
+                            <t t-foreach="state.data.by_store" t-as="row" t-key="row.label">
+                                <div class="o_lug_task_bar_row">
+                                    <span t-esc="row.label"/>
+                                    <span class="badge bg-secondary" t-esc="row.count"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                    <div class="col-md-4" t-if="(state.data.top_employees || []).length">
+                        <div class="o_lug_task_panel">
+                            <h5>Top nhân viên</h5>
+                            <t t-foreach="state.data.top_employees" t-as="row" t-key="row.name">
+                                <div class="o_lug_task_bar_row">
+                                    <span t-esc="row.name"/>
+                                    <span class="badge bg-success" t-esc="row.points + ' điểm'"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="o_lug_task_panel mt-3"
+                     t-if="(state.data.employee_performance || []).length and (state.data.role === 'manager' or state.data.role === 'team_lead')">
+                    <h5>Hiệu suất nhân viên</h5>
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nhân viên</th>
+                                <th>Đang làm</th>
+                                <th>Hoàn thành</th>
+                                <th>Quá hạn</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.data.employee_performance" t-as="row" t-key="row.name">
+                                <tr>
+                                    <td t-esc="row.name"/>
+                                    <td t-esc="row.open"/>
+                                    <td t-esc="row.done"/>
+                                    <td t-att-class="row.overdue ? 'text-danger fw-bold' : ''" t-esc="row.overdue"/>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_lug_task_dashboard" model="ir.actions.client">
+        <field name="name">Dashboard Giao việc</field>
+        <field name="tag">lug_task_dashboard</field>
+    </record>
+</odoo>

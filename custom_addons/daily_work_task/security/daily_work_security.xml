@@ -208,6 +208,29 @@
         <field name="perm_unlink" eval="True"/>
     </record>
 
+    <!-- Công việc lặp: nhân viên chỉ mẫu của mình -->
+    <record id="rule_daily_task_recurring_user_own" model="ir.rule">
+        <field name="name">CVHN: nhân viên — chỉ mẫu lặp của mình</field>
+        <field name="model_id" ref="model_daily_task_recurring"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="rule_daily_task_recurring_manager_all" model="ir.rule">
+        <field name="name">CVHN: quản lý — tất cả mẫu lặp</field>
+        <field name="model_id" ref="model_daily_task_recurring"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
     <!-- Phân quyền Báo cáo hiệu suất -->
     <record id="rule_daily_task_perf_access_own" model="ir.rule">
         <field name="name">CVHN: user — xem phân quyền BCHS của mình</field>

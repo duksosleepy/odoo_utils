@@ -120,6 +120,13 @@
               action="action_daily_task_work_group"
               sequence="15"/>
 
+    <menuitem id="menu_daily_work_recurring"
+              name="Công việc lặp lại"
+              parent="menu_daily_work_config"
+              action="action_daily_task_recurring"
+              sequence="18"
+              groups="daily_work_task.group_daily_work_manager"/>
+
     <!-- Ẩn khỏi navbar Odoo: các mục này mở từ trong Dashboard Tổng Quan -->
     <record id="menu_daily_work_tasks" model="ir.ui.menu">
         <field name="active" eval="False"/>
@@ -157,6 +164,11 @@
     <!-- Cấu hình + Phân quyền: chỉ mở từ Dashboard (sidebar Cấu hình hệ thống) -->
     <record id="menu_daily_work_config" model="ir.ui.menu">
         <field name="active" eval="False"/>
+    </record>
+    <record id="menu_daily_work_recurring" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+        <field name="parent_id" ref="menu_daily_work_config"/>
+        <field name="sequence" eval="18"/>
     </record>
     <record id="menu_daily_work_access" model="ir.ui.menu">
         <field name="active" eval="False"/>

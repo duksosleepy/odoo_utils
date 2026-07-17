@@ -117,6 +117,9 @@
                                     <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('config')">
                                         <i class="fa fa-sitemap"/><span>Phòng ban / Hạng mục</span>
                                     </button>
+                                    <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('recurring')">
+                                        <i class="fa fa-refresh"/><span>Công việc lặp lại</span>
+                                    </button>
                                     <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('employees')">
                                         <i class="fa fa-address-book-o"/><span>Danh sách nhân viên</span>
                                     </button>

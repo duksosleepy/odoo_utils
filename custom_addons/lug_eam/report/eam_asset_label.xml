@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_eam_asset_label" model="ir.actions.report">
+        <field name="name">Tem tài sản (QR)</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">lug_eam.report_asset_label</field>
+        <field name="report_file">lug_eam.report_asset_label</field>
+        <field name="binding_model_id" ref="maintenance.model_maintenance_equipment"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Tem_%s' % (object.asset_code or object.name)</field>
+    </record>
+
+    <template id="report_asset_label">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="o">
+                <div class="page" style="width: 50mm; padding: 4mm;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="text-align: center; vertical-align: middle; width: 45%;">
+                                <img t-if="o.qr_code"
+                                     t-att-src="'/report/barcode/?barcode_type=%s&amp;value=%s&amp;width=%s&amp;height=%s' % ('QR', o.qr_code, 120, 120)"
+                                     style="width: 28mm; height: 28mm;"/>
+                            </td>
+                            <td style="vertical-align: middle; padding-left: 3mm;">
+                                <div style="font-size: 12px; font-weight: bold;" t-esc="o.asset_code"/>
+                                <div style="font-size: 10px;" t-esc="o.name"/>
+                                <div style="font-size: 9px; color: #555;"
+                                     t-esc="o.eam_model_id.display_name or o.category_id.name or ''"/>
+                                <div t-if="o.serial_no" style="font-size: 9px; color: #555;">
+                                    SN: <t t-esc="o.serial_no"/>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

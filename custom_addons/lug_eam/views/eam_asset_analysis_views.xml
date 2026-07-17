@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============ GRAPH / PIVOT dùng cho Dashboard & Báo cáo ============ -->
+    <record id="view_eam_asset_graph" model="ir.ui.view">
+        <field name="name">eam.asset.graph</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <graph string="Tài sản" sample="1">
+                <field name="category_id"/>
+                <field name="state"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_eam_asset_pivot" model="ir.ui.view">
+        <field name="name">eam.asset.pivot</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <pivot string="Tài sản" sample="1">
+                <field name="category_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- ============ DASHBOARD ============ -->
+    <record id="action_eam_dashboard" model="ir.actions.act_window">
+        <field name="name">Dashboard tài sản</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">graph,pivot,kanban,list</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'graph', 'view_id': ref('view_eam_asset_graph')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'kanban', 'view_id': ref('view_eam_asset_kanban')}),
+            (0, 0, {'sequence': 4, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')})]"/>
+        <field name="context">{'search_default_group_state': 1}</field>
+    </record>
+
+    <!-- ============ QR CODE ============ -->
+    <record id="view_eam_qr_kanban" model="ir.ui.view">
+        <field name="name">eam.asset.qr.kanban</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <kanban string="QR Code" create="false">
+                <field name="qr_code"/>
+                <field name="asset_code"/>
+                <field name="name"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <img t-if="record.qr_code.raw_value" alt="QR"
+                                     t-att-src="'/report/barcode/?barcode_type=QR&amp;value=' + record.qr_code.raw_value + '&amp;width=110&amp;height=110'"
+                                     style="width: 84px; height: 84px;"/>
+                            </div>
+                            <div>
+                                <strong t-esc="record.name.value"/>
+                                <div class="text-muted small" t-esc="record.asset_code.value"/>
+                                <div class="small"><i class="fa fa-qrcode me-1"/><t t-esc="record.qr_code.value"/></div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_eam_qr" model="ir.actions.act_window">
+        <field name="name">QR Code</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">kanban,list</field>
+        <field name="domain">[('qr_code', '!=', False)]</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'kanban', 'view_id': ref('view_eam_qr_kanban')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có tài sản nào có mã QR</p>
+            <p>Mã QR được sinh tự động theo mã tài sản. Dùng nút "Tem tài sản (QR)" để in.</p>
+        </field>
+    </record>
+
+    <!-- ============ BÁO CÁO ============ -->
+    <record id="action_eam_report_stock" model="ir.actions.act_window">
+        <field name="name">Tồn kho</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">pivot,graph,list,kanban</field>
+        <field name="domain">[('state', '=', 'in_stock')]</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'graph', 'view_id': ref('view_eam_asset_graph')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')}),
+            (0, 0, {'sequence': 4, 'view_mode': 'kanban', 'view_id': ref('view_eam_asset_kanban')})]"/>
+        <field name="context">{'search_default_group_location': 1}</field>
+    </record>
+
+    <record id="action_eam_report_department" model="ir.actions.act_window">
+        <field name="name">Theo phòng ban</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'graph', 'view_id': ref('view_eam_asset_graph')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')})]"/>
+        <field name="context">{'search_default_group_department': 1}</field>
+    </record>
+
+    <record id="action_eam_report_store" model="ir.actions.act_window">
+        <field name="name">Theo cửa hàng / kho</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'graph', 'view_id': ref('view_eam_asset_graph')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')})]"/>
+        <field name="context">{'search_default_group_warehouse': 1}</field>
+    </record>
+
+    <record id="action_eam_report_brand" model="ir.actions.act_window">
+        <field name="name">Theo thương hiệu</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'graph', 'view_id': ref('view_eam_asset_graph')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')})]"/>
+        <field name="context">{'search_default_group_brand': 1}</field>
+    </record>
+
+    <record id="action_eam_report_year" model="ir.actions.act_window">
+        <field name="name">Theo năm mua</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'graph', 'view_id': ref('view_eam_asset_graph')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')})]"/>
+        <field name="context">{'search_default_group_year': 1}</field>
+    </record>
+</odoo>

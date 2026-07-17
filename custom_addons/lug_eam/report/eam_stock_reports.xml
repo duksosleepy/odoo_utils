@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- =================================================================== -->
+    <!-- PHIẾU XUẤT KHO                                                       -->
+    <!-- =================================================================== -->
+    <template id="report_phieu_xuat_kho">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <div class="page" style="font-family: 'Times New Roman', Times, serif; font-size: 13px; color: #000;">
+                        <t t-set="total" t-value="sum([(l.quantity or l.product_uom_qty) * (l.price_unit or l.product_id.standard_price) for l in o.move_ids])"/>
+                        <t t-set="total_qty" t-value="sum([(l.quantity or l.product_uom_qty) for l in o.move_ids])"/>
+
+                        <!-- Company header -->
+                        <div style="text-transform: uppercase; font-weight: bold;" t-esc="o.company_id.name"/>
+                        <div>
+                            <span t-esc="o.company_id.street or ''"/>
+                            <t t-if="o.company_id.street2">, <span t-esc="o.company_id.street2"/></t>
+                            <t t-if="o.company_id.city">, <span t-esc="o.company_id.city"/></t>
+                        </div>
+                        <div t-if="o.company_id.phone">Tel: <span t-esc="o.company_id.phone"/></div>
+
+                        <!-- Title + Nợ/Có -->
+                        <table style="width: 100%; margin-top: 4px;">
+                            <tr>
+                                <td style="width: 22%;"/>
+                                <td style="width: 50%; text-align: center; vertical-align: top;">
+                                    <div style="font-size: 22px; font-weight: bold;">PHIẾU XUẤT KHO</div>
+                                    <div style="font-style: italic;">Ngày:
+                                        <span t-out="o.date_done or o.scheduled_date" t-options="{'widget': 'date'}"/>
+                                    </div>
+                                    <div>
+                                        <span style="margin-right: 24px;">Mã CT: PX</span>
+                                        <span>Số CT: <span t-esc="o.name"/></span>
+                                    </div>
+                                </td>
+                                <td style="width: 28%; text-align: left; vertical-align: top;">
+                                    <div>Nợ: <span t-esc="o.eam_debit_account or ''"/>
+                                        <span style="float: right;" t-esc="o.eam_num_vn(total, 0)"/>
+                                    </div>
+                                    <div>Có: <span t-esc="o.eam_credit_account or ''"/>
+                                        <span style="float: right;" t-esc="o.eam_num_vn(total, 0)"/>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Info -->
+                        <div style="margin-top: 8px;">
+                            <div>- <strong>Xuất tại kho:</strong> <span t-esc="o.location_id.display_name"/></div>
+                            <div>- <strong>Nhập tại kho:</strong>
+                                <t t-if="o.location_dest_id.usage == 'internal'"><span t-esc="o.location_dest_id.display_name"/></t>
+                            </div>
+                            <div>- <strong>Họ tên người nhận hàng:</strong> <span t-esc="o.partner_id.name or ''"/>
+                                <span style="margin-left: 24px;">- Điện thoại: <span t-esc="o.partner_id.phone or ''"/></span>
+                            </div>
+                            <div>- <strong>Lý do xuất kho:</strong> <span t-out="o.note"/></div>
+                        </div>
+
+                        <!-- Table -->
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+                            <thead>
+                                <tr>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">STT</th>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">Mặt hàng</th>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">Mã số</th>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">Đvt</th>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">Số lượng</th>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">Đơn giá</th>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="o.move_ids" t-as="line">
+                                    <t t-set="qty" t-value="line.quantity or line.product_uom_qty"/>
+                                    <t t-set="price" t-value="line.price_unit or line.product_id.standard_price"/>
+                                    <tr>
+                                        <td style="border: 1px solid #000; text-align: center; padding: 3px;"><t t-esc="line_index + 1"/></td>
+                                        <td style="border: 1px solid #000; padding: 3px;"><t t-esc="line.product_id.name"/></td>
+                                        <td style="border: 1px solid #000; padding: 3px;"><t t-esc="line.product_id.default_code or ''"/></td>
+                                        <td style="border: 1px solid #000; text-align: center; padding: 3px;"><t t-esc="line.product_uom.name"/></td>
+                                        <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-esc="o.eam_num_vn(qty, 0)"/></td>
+                                        <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-esc="o.eam_num_vn(price, 0)"/></td>
+                                        <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-esc="o.eam_num_vn(qty * price, 0)"/></td>
+                                    </tr>
+                                </t>
+                                <tr>
+                                    <td colspan="4" style="border: 1px solid #000; text-align: center; font-weight: bold; padding: 3px;">Tổng cộng</td>
+                                    <td style="border: 1px solid #000; text-align: right; font-weight: bold; padding: 3px;"><t t-esc="o.eam_num_vn(total_qty, 0)"/></td>
+                                    <td style="border: 1px solid #000;"/>
+                                    <td style="border: 1px solid #000; text-align: right; font-weight: bold; padding: 3px;"><t t-esc="o.eam_num_vn(total, 0)"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Amount in words -->
+                        <div style="margin-top: 6px;">- <strong>Tổng số tiền (Viết bằng chữ):</strong>
+                            <span style="font-style: italic;" t-esc="o.company_id.currency_id.with_context(lang='vi_VN').amount_to_text(total)"/>
+                        </div>
+                        <div>- Số chứng từ gốc kèm theo: ...........</div>
+
+                        <div style="text-align: right; font-style: italic; margin-top: 10px;">Ngày...... tháng...... năm......</div>
+
+                        <!-- Signatures -->
+                        <table style="width: 100%; margin-top: 6px;">
+                            <tr>
+                                <td style="text-align: center; font-weight: bold;">Người lập phiếu</td>
+                                <td style="text-align: center; font-weight: bold;">Người nhận hàng</td>
+                                <td style="text-align: center; font-weight: bold;">Thủ kho</td>
+                                <td style="text-align: center; font-weight: bold;">Người giao hàng</td>
+                                <td style="text-align: center; font-weight: bold;">Người kiểm soát</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_phieu_xuat_kho" model="ir.actions.report">
+        <field name="name">Phiếu xuất kho</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">lug_eam.report_phieu_xuat_kho</field>
+        <field name="report_file">lug_eam.report_phieu_xuat_kho</field>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Phieu_xuat_kho_%s' % (object.name or '')</field>
+    </record>
+
+    <!-- =================================================================== -->
+    <!-- PHIẾU NHẬP MUA                                                       -->
+    <!-- =================================================================== -->
+    <template id="report_phieu_nhap_mua">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <div class="page" style="font-family: 'Times New Roman', Times, serif; font-size: 13px; color: #000;">
+                        <t t-set="total" t-value="sum([(l.quantity or l.product_uom_qty) * (l.price_unit or l.product_id.standard_price) for l in o.move_ids])"/>
+                        <t t-set="total_qty" t-value="sum([(l.quantity or l.product_uom_qty) for l in o.move_ids])"/>
+                        <t t-set="grand_total" t-value="total + (o.eam_import_tax or 0.0) + (o.eam_vat_amount or 0.0)"/>
+
+                        <!-- Header: company left, Mẫu số right -->
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="vertical-align: top;">
+                                    <div style="text-transform: uppercase; font-weight: bold;" t-esc="o.company_id.name"/>
+                                    <div>
+                                        <span t-esc="o.company_id.street or ''"/>
+                                        <t t-if="o.company_id.street2">, <span t-esc="o.company_id.street2"/></t>
+                                        <t t-if="o.company_id.city">, <span t-esc="o.company_id.city"/></t>
+                                    </div>
+                                </td>
+                                <td style="vertical-align: top; text-align: right; font-size: 11px; font-style: italic;">
+                                    <div style="font-weight: bold; font-style: normal;">Mẫu số: 02-TT</div>
+                                    <div>(Ban hành theo QĐ số: 15/2006/QĐ-BTC</div>
+                                    <div>Ngày 20 tháng 03 năm 2006</div>
+                                    <div>của Bộ trưởng BTC)</div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Title + Nợ/Có -->
+                        <table style="width: 100%; margin-top: 2px;">
+                            <tr>
+                                <td style="width: 22%;"/>
+                                <td style="width: 50%; text-align: center; vertical-align: top;">
+                                    <div style="font-size: 22px; font-weight: bold;">PHIẾU NHẬP MUA</div>
+                                    <div style="font-style: italic;">Ngày:
+                                        <span t-out="o.date_done or o.scheduled_date" t-options="{'widget': 'date'}"/>
+                                    </div>
+                                    <div>
+                                        <span style="margin-right: 24px;">Mã CT: NM</span>
+                                        <span>Số CT: <span t-esc="o.name"/></span>
+                                    </div>
+                                </td>
+                                <td style="width: 28%; text-align: left; vertical-align: top;">
+                                    <div>Nợ: <span t-esc="o.eam_debit_account or ''"/>
+                                        <span style="float: right;" t-esc="o.eam_num_vn(grand_total, 0)"/>
+                                    </div>
+                                    <div>Có: <span t-esc="o.eam_credit_account or ''"/>
+                                        <span style="float: right;" t-esc="o.eam_num_vn(grand_total, 0)"/>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Info -->
+                        <div style="margin-top: 8px;">
+                            <div>- <strong>Họ tên người giao hàng:</strong> <span t-esc="o.partner_id.name or ''"/></div>
+                            <div>- <strong>Nội dung:</strong> <span t-out="o.note"/></div>
+                            <div>- <strong>Nhập tại kho:</strong> <span t-esc="o.location_dest_id.display_name"/></div>
+                        </div>
+
+                        <!-- Table -->
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" style="border: 1px solid #000; text-align: center; padding: 3px;">ST</th>
+                                    <th rowspan="2" style="border: 1px solid #000; text-align: center; padding: 3px;">Mặt hàng</th>
+                                    <th rowspan="2" style="border: 1px solid #000; text-align: center; padding: 3px;">Mã số</th>
+                                    <th rowspan="2" style="border: 1px solid #000; text-align: center; padding: 3px;">Đvt</th>
+                                    <th colspan="2" style="border: 1px solid #000; text-align: center; padding: 3px;">Số lượng</th>
+                                    <th rowspan="2" style="border: 1px solid #000; text-align: center; padding: 3px;">Đơn giá</th>
+                                    <th rowspan="2" style="border: 1px solid #000; text-align: center; padding: 3px;">Thành tiền</th>
+                                </tr>
+                                <tr>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">Theo chứng từ</th>
+                                    <th style="border: 1px solid #000; text-align: center; padding: 3px;">Thực nhập</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="o.move_ids" t-as="line">
+                                    <t t-set="price" t-value="line.price_unit or line.product_id.standard_price"/>
+                                    <t t-set="qty" t-value="line.quantity or line.product_uom_qty"/>
+                                    <tr>
+                                        <td style="border: 1px solid #000; text-align: center; padding: 3px;"><t t-esc="line_index + 1"/></td>
+                                        <td style="border: 1px solid #000; padding: 3px;"><t t-esc="line.product_id.name"/></td>
+                                        <td style="border: 1px solid #000; padding: 3px;"><t t-esc="line.product_id.default_code or ''"/></td>
+                                        <td style="border: 1px solid #000; text-align: center; padding: 3px;"><t t-esc="line.product_uom.name"/></td>
+                                        <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-esc="o.eam_num_vn(line.product_uom_qty, 2)"/></td>
+                                        <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-esc="o.eam_num_vn(line.quantity, 2)"/></td>
+                                        <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-esc="o.eam_num_vn(price, 0)"/></td>
+                                        <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-esc="o.eam_num_vn(qty * price, 0)"/></td>
+                                    </tr>
+                                </t>
+                                <tr>
+                                    <td colspan="4" style="border: 1px solid #000; text-align: right; font-weight: bold; padding: 3px;">Cộng SL:</td>
+                                    <td colspan="2" style="border: 1px solid #000; text-align: right; font-weight: bold; padding: 3px;"><t t-esc="o.eam_num_vn(total_qty, 0)"/></td>
+                                    <td style="border: 1px solid #000; text-align: right; padding: 3px;">Cộng tiền hàng</td>
+                                    <td style="border: 1px solid #000; text-align: right; font-weight: bold; padding: 3px;"><t t-esc="o.eam_num_vn(total, 0)"/></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" style="border: 1px solid #000;"/>
+                                    <td style="border: 1px solid #000; text-align: right; padding: 3px;">Thuế nhập khẩu</td>
+                                    <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-if="o.eam_import_tax"><t t-esc="o.eam_num_vn(o.eam_import_tax, 0)"/></t></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" style="border: 1px solid #000;"/>
+                                    <td style="border: 1px solid #000; text-align: right; padding: 3px;">Thuế GTGT</td>
+                                    <td style="border: 1px solid #000; text-align: right; padding: 3px;"><t t-if="o.eam_vat_amount"><t t-esc="o.eam_num_vn(o.eam_vat_amount, 0)"/></t></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" style="border: 1px solid #000;"/>
+                                    <td style="border: 1px solid #000; text-align: right; font-weight: bold; padding: 3px;">Tổng tiền</td>
+                                    <td style="border: 1px solid #000; text-align: right; font-weight: bold; padding: 3px;"><t t-esc="o.eam_num_vn(grand_total, 0)"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Amount in words -->
+                        <div style="margin-top: 6px;">- <strong>Tổng số tiền (Viết bằng chữ):</strong>
+                            <span style="font-style: italic;" t-esc="o.company_id.currency_id.with_context(lang='vi_VN').amount_to_text(grand_total)"/>
+                        </div>
+                        <div>- Số chứng từ gốc kèm theo: ...........</div>
+
+                        <div style="text-align: right; font-style: italic; margin-top: 10px;">Ngày...... tháng...... năm......</div>
+
+                        <!-- Signatures -->
+                        <table style="width: 100%; margin-top: 6px;">
+                            <tr>
+                                <td style="text-align: center; font-weight: bold;">Người lập phiếu</td>
+                                <td style="text-align: center; font-weight: bold;">Người nhận hàng</td>
+                                <td style="text-align: center; font-weight: bold;">Thủ kho</td>
+                                <td style="text-align: center; font-weight: bold;">Người giao hàng</td>
+                                <td style="text-align: center; font-weight: bold;">Người kiểm soát</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                                <td style="text-align: center; font-style: italic;">(Ký, họ tên)</td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_phieu_nhap_mua" model="ir.actions.report">
+        <field name="name">Phiếu nhập mua</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">lug_eam.report_phieu_nhap_mua</field>
+        <field name="report_file">lug_eam.report_phieu_nhap_mua</field>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Phieu_nhap_mua_%s' % (object.name or '')</field>
+    </record>
+</odoo>

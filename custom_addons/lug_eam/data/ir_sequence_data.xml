@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_eam_asset" model="ir.sequence">
+        <field name="name">EAM Asset Code</field>
+        <field name="code">eam.asset</field>
+        <field name="prefix">AC-</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_eam_brand" model="ir.sequence">
+        <field name="name">EAM Brand Code</field>
+        <field name="code">eam.brand</field>
+        <field name="prefix">BR-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_eam_model" model="ir.sequence">
+        <field name="name">EAM Model Code</field>
+        <field name="code">eam.model</field>
+        <field name="prefix">MD-</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_eam_category" model="ir.sequence">
+        <field name="name">EAM Category Code</field>
+        <field name="code">eam.category</field>
+        <field name="prefix">CAT-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

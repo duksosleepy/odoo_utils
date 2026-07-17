@@ -120,6 +120,19 @@ class DailyTask(models.Model):
         store=True,
         help="Màu trên Calendar theo trạng thái: xanh=hoàn thành, vàng=đang xử lý, xám=chưa bắt đầu, đỏ=quá hạn.",
     )
+    recurring_id = fields.Many2one(
+        "daily.task.recurring",
+        string="Mẫu lặp",
+        index=True,
+        ondelete="set null",
+        copy=False,
+        help="Công việc được sinh tự động từ mẫu lặp (cron 5h00).",
+    )
+
+    _recurring_assign_date_uniq = models.Constraint(
+        "unique(recurring_id, assign_date)",
+        "Công việc lặp này đã được tạo cho ngày đó.",
+    )
 
     @api.depends("duration_minutes")
     def _compute_duration_hours(self):
@@ -592,6 +605,8 @@ class DailyTask(models.Model):
                 if active_overdue
                 else (self.state or "not_started")
             ),
+            "recurring_id": self.recurring_id.id if self.recurring_id else False,
+            "is_from_recurring": bool(self.recurring_id),
             "progress": int(self.completion_percent or 0)
             if self.state != "done"
             else max(int(self.completion_percent or 0), 100),

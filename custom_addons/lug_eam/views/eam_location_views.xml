@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_location_list" model="ir.ui.view">
+        <field name="name">eam.location.list</field>
+        <field name="model">stock.location</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Vị trí">
+                <field name="complete_name"/>
+                <field name="eam_loc_kind"/>
+                <field name="eam_code"/>
+                <field name="eam_department_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_location_form" model="ir.ui.view">
+        <field name="name">eam.location.form</field>
+        <field name="model">stock.location</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form string="Vị trí">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="VD: Ô B05"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="location_id" string="Vị trí cha"/>
+                            <field name="eam_loc_kind"/>
+                            <field name="eam_code" placeholder="VD: A-03-T2-B05"/>
+                        </group>
+                        <group>
+                            <field name="usage"/>
+                            <field name="eam_department_id"/>
+                            <field name="barcode"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_eam_location_search" model="ir.ui.view">
+        <field name="name">eam.location.search</field>
+        <field name="model">stock.location</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="complete_name"/>
+                <field name="eam_code"/>
+                <filter name="group_kind" string="Loại vị trí" context="{'group_by': 'eam_loc_kind'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_eam_location" model="ir.actions.act_window">
+        <field name="name">Vị trí (Location)</field>
+        <field name="res_model">stock.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_eam_location_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'list', 'view_id': ref('view_eam_location_list')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'form', 'view_id': ref('view_eam_location_form')})]"/>
+    </record>
+</odoo>

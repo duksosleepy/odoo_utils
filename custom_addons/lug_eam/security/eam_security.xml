@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="res.groups.privilege" id="res_groups_privilege_eam">
+        <field name="name">Quản lý tài sản (EAM)</field>
+        <field name="category_id" ref="base.module_category_operations"/>
+        <field name="sequence">45</field>
+    </record>
+
+    <record id="group_eam_employee" model="res.groups">
+        <field name="name">Nhân viên</field>
+        <field name="privilege_id" ref="res_groups_privilege_eam"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Xem tài sản mình giữ.</field>
+    </record>
+
+    <record id="group_eam_technician" model="res.groups">
+        <field name="name">Kỹ thuật viên</field>
+        <field name="privilege_id" ref="res_groups_privilege_eam"/>
+        <field name="implied_ids" eval="[(4, ref('group_eam_employee'))]"/>
+    </record>
+
+    <record id="group_eam_wh_staff" model="res.groups">
+        <field name="name">Nhân viên kho</field>
+        <field name="privilege_id" ref="res_groups_privilege_eam"/>
+        <field name="implied_ids" eval="[
+            (4, ref('group_eam_employee')),
+            (4, ref('stock.group_stock_user')),
+        ]"/>
+    </record>
+
+    <record id="group_eam_dept_manager" model="res.groups">
+        <field name="name">Trưởng phòng ban</field>
+        <field name="privilege_id" ref="res_groups_privilege_eam"/>
+        <field name="implied_ids" eval="[(4, ref('group_eam_employee'))]"/>
+    </record>
+
+    <record id="group_eam_maint_manager" model="res.groups">
+        <field name="name">Quản lý bảo trì</field>
+        <field name="privilege_id" ref="res_groups_privilege_eam"/>
+        <field name="implied_ids" eval="[(4, ref('group_eam_technician'))]"/>
+    </record>
+
+    <record id="group_eam_wh_manager" model="res.groups">
+        <field name="name">Quản lý kho</field>
+        <field name="privilege_id" ref="res_groups_privilege_eam"/>
+        <field name="implied_ids" eval="[(4, ref('group_eam_wh_staff'))]"/>
+    </record>
+
+    <record id="group_eam_asset_manager" model="res.groups">
+        <field name="name">Quản lý tài sản</field>
+        <field name="privilege_id" ref="res_groups_privilege_eam"/>
+        <field name="implied_ids" eval="[
+            (4, ref('group_eam_wh_manager')),
+            (4, ref('group_eam_maint_manager')),
+            (4, ref('group_eam_dept_manager')),
+            (4, ref('maintenance.group_equipment_manager')),
+        ]"/>
+    </record>
+
+    <record id="group_eam_admin" model="res.groups">
+        <field name="name">Quản trị EAM</field>
+        <field name="privilege_id" ref="res_groups_privilege_eam"/>
+        <field name="implied_ids" eval="[(4, ref('group_eam_asset_manager'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
+    </record>
+
+    <!-- ============ RECORD RULES (data scope) ============ -->
+    <record id="rule_eam_asset_employee" model="ir.rule">
+        <field name="name">EAM Asset: Nhân viên — tài sản mình giữ</field>
+        <field name="model_id" ref="maintenance.model_maintenance_equipment"/>
+        <field name="domain_force">[('owner_employee_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_eam_employee'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_eam_asset_dept_mgr" model="ir.rule">
+        <field name="name">EAM Asset: Trưởng phòng</field>
+        <field name="model_id" ref="maintenance.model_maintenance_equipment"/>
+        <field name="domain_force">[('department_id.manager_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_eam_dept_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_eam_asset_wh_staff" model="ir.rule">
+        <field name="name">EAM Asset: NV kho theo kho phân công</field>
+        <field name="model_id" ref="maintenance.model_maintenance_equipment"/>
+        <field name="domain_force">[('warehouse_id', 'in', user.eam_warehouse_ids.ids)]</field>
+        <field name="groups" eval="[(4, ref('group_eam_wh_staff'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_eam_asset_wh_manager" model="ir.rule">
+        <field name="name">EAM Asset: Quản lý kho — toàn công ty</field>
+        <field name="model_id" ref="maintenance.model_maintenance_equipment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_eam_wh_manager'))]"/>
+    </record>
+
+    <record id="rule_eam_asset_manager_all" model="ir.rule">
+        <field name="name">EAM Asset: Quản lý tài sản — toàn công ty</field>
+        <field name="model_id" ref="maintenance.model_maintenance_equipment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_eam_asset_manager')), (4, ref('group_eam_admin'))]"/>
+    </record>
+
+    <record id="rule_eam_txn_company" model="ir.rule">
+        <field name="name">EAM Transaction: theo công ty</field>
+        <field name="model_id" ref="model_eam_transaction"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_eam_wh_staff')), (4, ref('group_eam_asset_manager'))]"/>
+    </record>
+</odoo>

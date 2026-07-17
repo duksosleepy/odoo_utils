@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+lv = env["hr.leave"].browse(44)
+print("request_date_from", lv.request_date_from, "request_date_to", lv.request_date_to)
+print("stored cal", lv.resource_calendar_id.id)
+versions = env["hr.version"].search([("employee_id", "=", lv.employee_id.id)])
+for v in versions:
+    print(" version", v.id, "cal", v.resource_calendar_id.id, "start", v.date_start, "end", v.date_end)
+cal_map = lv.employee_id._get_calendars(lv.request_date_from)
+print("get_calendars", cal_map)
+env.add_to_compute(lv._fields["resource_calendar_id"], lv)
+lv._recompute_recordset(["resource_calendar_id"])
+print("recomputed cal", lv.resource_calendar_id.id)
+env.add_to_compute(lv._fields["number_of_days"], lv)
+lv._recompute_recordset(["number_of_days", "number_of_hours"])
+print("days", lv.number_of_days, "hours", lv.number_of_hours)

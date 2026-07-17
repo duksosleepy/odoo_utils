@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_lug_task_import_wizard_form" model="ir.ui.view">
+        <field name="name">lug.task.import.wizard.form</field>
+        <field name="model">lug.task.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import công việc">
+                <field name="state" invisible="1"/>
+                <group invisible="state != 'upload'">
+                    <field name="file_name" invisible="1"/>
+                    <field name="file_data" filename="file_name"/>
+                </group>
+                <group invisible="state != 'done'">
+                    <field name="created_count"/>
+                    <field name="result_message" nolabel="1"/>
+                </group>
+                <footer>
+                    <button name="action_download_template" type="object" string="Tải mẫu Excel"
+                            class="btn-secondary" invisible="state != 'upload'"/>
+                    <button name="action_import" type="object" string="Import" class="btn-primary"
+                            invisible="state != 'upload'"/>
+                    <button string="Đóng" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_lug_task_import" model="ir.actions.act_window">
+        <field name="name">Import Excel</field>
+        <field name="res_model">lug.task.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="view_lug_task_export_wizard_form" model="ir.ui.view">
+        <field name="name">lug.task.export.wizard.form</field>
+        <field name="model">lug.task.export.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Xuất Excel">
+                <field name="state" invisible="1"/>
+                <p invisible="state != 'ready'">Xuất danh sách công việc hiện tại ra file Excel.</p>
+                <group invisible="state != 'done'">
+                    <field name="file_name"/>
+                </group>
+                <footer>
+                    <button name="action_export_tasks" type="object" string="Xuất Excel"
+                            class="btn-primary" invisible="state != 'ready'"/>
+                    <button string="Đóng" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_lug_task_export" model="ir.actions.act_window">
+        <field name="name">Xuất Excel</field>
+        <field name="res_model">lug.task.export.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

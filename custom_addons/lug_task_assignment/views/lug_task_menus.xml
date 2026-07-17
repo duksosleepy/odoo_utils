@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_lug_task_root"
+              name="Giao việc IT"
+              sequence="35"
+              groups="lug_task_assignment.group_lug_task_user"/>
+
+    <menuitem id="menu_lug_task_dashboard"
+              name="Dashboard"
+              parent="menu_lug_task_root"
+              action="action_lug_task_dashboard"
+              sequence="5"/>
+
+    <menuitem id="menu_lug_task_tasks"
+              name="Công việc"
+              parent="menu_lug_task_root"
+              action="action_lug_task"
+              sequence="10"/>
+
+    <menuitem id="menu_lug_task_kpi"
+              name="KPI"
+              parent="menu_lug_task_root"
+              action="action_lug_task_kpi"
+              sequence="20"
+              groups="lug_task_assignment.group_lug_task_user"/>
+
+    <menuitem id="menu_lug_task_import"
+              name="Import Excel"
+              parent="menu_lug_task_root"
+              action="action_lug_task_import"
+              sequence="30"
+              groups="lug_task_assignment.group_lug_task_team_lead"/>
+
+    <menuitem id="menu_lug_task_export"
+              name="Xuất Excel"
+              parent="menu_lug_task_root"
+              action="action_lug_task_export"
+              sequence="35"
+              groups="lug_task_assignment.group_lug_task_team_lead"/>
+
+    <menuitem id="menu_lug_task_config"
+              name="Cấu hình"
+              parent="menu_lug_task_root"
+              sequence="90"
+              groups="lug_task_assignment.group_lug_task_admin"/>
+
+    <menuitem id="menu_lug_task_category"
+              name="Loại công việc"
+              parent="menu_lug_task_config"
+              action="action_lug_task_category"
+              sequence="10"/>
+
+    <menuitem id="menu_lug_task_priority"
+              name="Mức độ / SLA"
+              parent="menu_lug_task_config"
+              action="action_lug_task_priority"
+              sequence="20"/>
+</odoo>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="lug_task_category_support" model="lug.task.category">
+        <field name="name">Hỗ trợ người dùng</field>
+        <field name="code">support</field>
+        <field name="point">1</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="lug_task_category_install" model="lug.task.category">
+        <field name="name">Cài máy</field>
+        <field name="code">install</field>
+        <field name="point">2</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="lug_task_category_camera" model="lug.task.category">
+        <field name="name">Camera</field>
+        <field name="code">camera</field>
+        <field name="point">3</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="lug_task_category_server" model="lug.task.category">
+        <field name="name">Server</field>
+        <field name="code">server</field>
+        <field name="point">5</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="lug_task_category_erp" model="lug.task.category">
+        <field name="name">ERP</field>
+        <field name="code">erp</field>
+        <field name="point">8</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="lug_task_category_project" model="lug.task.category">
+        <field name="name">Dự án</field>
+        <field name="code">project</field>
+        <field name="point">10</field>
+        <field name="sequence">60</field>
+    </record>
+</odoo>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_history_list" model="ir.ui.view">
+        <field name="name">eam.asset.history.list</field>
+        <field name="model">eam.asset.history</field>
+        <field name="arch" type="xml">
+            <list string="Lịch sử tài sản" create="false" edit="false">
+                <field name="change_date"/>
+                <field name="asset_code"/>
+                <field name="asset_id"/>
+                <field name="event_type"/>
+                <field name="old_value"/>
+                <field name="new_value"/>
+                <field name="user_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_history_search" model="ir.ui.view">
+        <field name="name">eam.asset.history.search</field>
+        <field name="model">eam.asset.history</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="asset_id"/>
+                <field name="asset_code"/>
+                <field name="user_id"/>
+                <filter name="f_state" string="Đổi trạng thái" domain="[('event_type', '=', 'state')]"/>
+                <filter name="f_location" string="Đổi vị trí" domain="[('event_type', '=', 'location')]"/>
+                <filter name="f_owner" string="Đổi người giữ" domain="[('event_type', '=', 'owner')]"/>
+                <filter name="f_create" string="Tạo mới" domain="[('event_type', '=', 'create')]"/>
+                <group>
+                    <filter name="group_asset" string="Tài sản" context="{'group_by': 'asset_id'}"/>
+                    <filter name="group_event" string="Loại thay đổi" context="{'group_by': 'event_type'}"/>
+                    <filter name="group_date" string="Ngày" context="{'group_by': 'change_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_eam_history" model="ir.actions.act_window">
+        <field name="name">Lịch sử tài sản</field>
+        <field name="res_model">eam.asset.history</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_eam_history_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có lịch sử biến động</p>
+            <p>Hệ thống tự ghi nhận khi tài sản đổi trạng thái, vị trí hoặc người giữ.</p>
+        </field>
+    </record>
+</odoo>

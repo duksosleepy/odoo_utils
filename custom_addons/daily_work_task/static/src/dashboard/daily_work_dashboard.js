@@ -415,6 +415,10 @@ export class DailyWorkDashboard extends Component {
             await this.action.doAction("daily_work_task.action_daily_task_work_group");
             return;
         }
+        if (key === "recurring") {
+            await this.action.doAction("daily_work_task.action_daily_task_recurring");
+            return;
+        }
         if (key === "employees") {
             await this.action.doAction("daily_work_task.action_daily_task_employee");
             return;

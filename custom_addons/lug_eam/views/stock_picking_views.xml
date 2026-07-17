@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_picking_form" model="ir.ui.view">
+        <field name="name">stock.picking.form.eam.print</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Thông tin in phiếu" name="eam_print_info">
+                    <group>
+                        <group string="Hạch toán (in trên phiếu)">
+                            <field name="eam_debit_account" placeholder="VD: 14127 hoặc 242"/>
+                            <field name="eam_credit_account" placeholder="VD: 153 hoặc 3311"/>
+                        </group>
+                        <group string="Thuế (Phiếu nhập mua)">
+                            <field name="eam_import_tax"/>
+                            <field name="eam_vat_amount"/>
+                        </group>
+                    </group>
+                    <p class="text-muted">
+                        Các trường này chỉ dùng để in đúng mẫu Phiếu xuất kho / Phiếu nhập mua.
+                        "Lý do xuất kho / Nội dung" lấy từ ô Ghi chú (Note) của phiếu.
+                    </p>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

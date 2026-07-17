@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_eam" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.eam</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="Quản lý tài sản" name="lug_eam" groups="lug_eam.group_eam_admin">
+                    <block title="EAM">
+                        <setting string="Cảnh báo bảo hành">
+                            <field name="eam_warranty_alert_days"/> ngày trước khi hết hạn
+                        </setting>
+                        <setting string="SLA bảo trì">
+                            <field name="eam_sla_hours"/> giờ
+                        </setting>
+                        <setting string="Ngưỡng duyệt chi phí BT">
+                            <field name="eam_maintenance_approval_amount"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>

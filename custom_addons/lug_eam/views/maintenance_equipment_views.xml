@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_asset_list" model="ir.ui.view">
+        <field name="name">eam.asset.list</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Tài sản">
+                <field name="asset_code"/>
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="eam_brand_id"/>
+                <field name="eam_model_id"/>
+                <field name="serial_no"/>
+                <field name="current_location_id"/>
+                <field name="owner_employee_id"/>
+                <field name="warranty_state" widget="badge"
+                       decoration-success="warranty_state == 'valid'"
+                       decoration-warning="warranty_state == 'expiring'"
+                       decoration-danger="warranty_state == 'expired'"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'in_stock'"
+                       decoration-success="state == 'in_use'"
+                       decoration-warning="state == 'maintenance'"
+                       decoration-danger="state == 'broken'"
+                       decoration-muted="state == 'disposed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_asset_kanban" model="ir.ui.view">
+        <field name="name">eam.asset.kanban</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="asset_code"/>
+                <field name="name"/>
+                <field name="current_location_id"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <div>
+                            <strong t-esc="record.name.value"/>
+                            <div class="text-muted small" t-esc="record.asset_code.value"/>
+                            <div class="mt-1 small" t-if="record.current_location_id.value">
+                                <i class="fa fa-map-marker me-1"/>
+                                <t t-esc="record.current_location_id.value"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_eam_asset_form" model="ir.ui.view">
+        <field name="name">eam.asset.form</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form string="Tài sản">
+                <header>
+                    <button name="action_set_in_stock" string="Nhập kho" type="object"
+                            class="btn-primary"
+                            invisible="state in ('in_stock', 'disposed')"/>
+                    <button name="action_set_in_use" string="Cấp phát / Sử dụng" type="object"
+                            class="btn-primary"
+                            invisible="state not in ('in_stock', 'maintenance')"/>
+                    <button name="action_set_maintenance" string="Đưa đi bảo trì" type="object"
+                            invisible="state not in ('in_stock', 'in_use', 'broken')"/>
+                    <button name="action_report_broken" string="Báo hỏng" type="object"
+                            invisible="state in ('draft', 'broken', 'disposed')"/>
+                    <button name="action_create_corrective_request" string="Tạo phiếu sửa"
+                            type="object"
+                            invisible="state in ('draft', 'disposed')"/>
+                    <button name="action_dispose" string="Thanh lý" type="object"
+                            invisible="state == 'disposed'"
+                            groups="lug_eam.group_eam_asset_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,in_stock,in_use,maintenance,disposed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_maintenance" type="object"
+                                class="oe_stat_button" icon="fa-wrench">
+                            <field name="maintenance_count" widget="statinfo" string="Bảo trì"/>
+                        </button>
+                        <button name="action_view_transactions" type="object"
+                                class="oe_stat_button" icon="fa-exchange">
+                            <field name="transaction_count" widget="statinfo" string="Giao dịch"/>
+                        </button>
+                    </div>
+                    <field name="image_1920" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="VD: Máy lạnh phòng KT 03"/></h1>
+                        <label for="asset_code" class="text-muted"/>
+                        <field name="asset_code" class="text-muted"/>
+                    </div>
+                    <group>
+                        <group string="Định danh">
+                            <field name="eam_model_id"/>
+                            <field name="category_id"/>
+                            <field name="eam_brand_id"/>
+                            <field name="serial_no"/>
+                            <field name="qr_code"/>
+                        </group>
+                        <group string="Vị trí &amp; Người dùng">
+                            <field name="warehouse_id"/>
+                            <field name="current_location_id"/>
+                            <field name="department_id"/>
+                            <field name="owner_employee_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Mua &amp; Bảo hành">
+                            <group>
+                                <group>
+                                    <field name="partner_id"/>
+                                    <field name="purchase_date"/>
+                                    <field name="po_ref"/>
+                                    <field name="funding_source"/>
+                                </group>
+                                <group>
+                                    <field name="cost"/>
+                                    <field name="currency_id" invisible="1"/>
+                                    <field name="warranty_start"/>
+                                    <field name="warranty_date"/>
+                                    <field name="warranty_state"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Bảo trì">
+                            <group>
+                                <field name="maintenance_team_id"/>
+                                <field name="technician_user_id"/>
+                                <field name="next_maintenance_date"/>
+                                <field name="eam_maintenance_cost"/>
+                                <field name="assign_date"/>
+                                <field name="scrap_date"/>
+                            </group>
+                        </page>
+                        <page string="Ghi chú">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_eam_asset_search" model="ir.ui.view">
+        <field name="name">eam.asset.search</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="asset_code"/>
+                <field name="name"/>
+                <field name="serial_no"/>
+                <field name="eam_model_id"/>
+                <field name="category_id"/>
+                <field name="current_location_id"/>
+                <field name="owner_employee_id"/>
+                <separator/>
+                <filter name="f_in_stock" string="Trong kho" domain="[('state', '=', 'in_stock')]"/>
+                <filter name="f_in_use" string="Đang sử dụng" domain="[('state', '=', 'in_use')]"/>
+                <filter name="f_maintenance" string="Đang bảo trì" domain="[('state', '=', 'maintenance')]"/>
+                <filter name="f_broken" string="Hỏng" domain="[('state', '=', 'broken')]"/>
+                <filter name="f_disposed" string="Đã thanh lý" domain="[('state', '=', 'disposed')]"/>
+                <separator/>
+                <filter name="f_warranty_expiring" string="Bảo hành sắp hết"
+                        domain="[('warranty_state', '=', 'expiring')]"/>
+                <group>
+                    <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
+                    <filter name="group_category" string="Nhóm tài sản" context="{'group_by': 'category_id'}"/>
+                    <filter name="group_brand" string="Thương hiệu" context="{'group_by': 'eam_brand_id'}"/>
+                    <filter name="group_model" string="Model" context="{'group_by': 'eam_model_id'}"/>
+                    <filter name="group_location" string="Vị trí" context="{'group_by': 'current_location_id'}"/>
+                    <filter name="group_warehouse" string="Kho" context="{'group_by': 'warehouse_id'}"/>
+                    <filter name="group_department" string="Phòng ban" context="{'group_by': 'department_id'}"/>
+                    <filter name="group_year" string="Năm mua" context="{'group_by': 'purchase_date:year'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_eam_asset" model="ir.actions.act_window">
+        <field name="name">Tài sản</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'kanban', 'view_id': ref('view_eam_asset_kanban')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'form', 'view_id': ref('view_eam_asset_form')})]"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo tài sản đầu tiên</p>
+            <p>Mỗi tài sản có mã tự sinh (AS00001), gắn Model để suy ra Nhóm/Thương hiệu.</p>
+        </field>
+    </record>
+
+    <record id="action_eam_asset_by_category" model="ir.actions.act_window">
+        <field name="name">Tài sản theo nhóm</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="context">{'search_default_group_category': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'kanban', 'view_id': ref('view_eam_asset_kanban')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'form', 'view_id': ref('view_eam_asset_form')})]"/>
+    </record>
+
+    <record id="action_eam_asset_by_location" model="ir.actions.act_window">
+        <field name="name">Tài sản theo vị trí</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="view_eam_asset_search"/>
+        <field name="context">{'search_default_group_location': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'list', 'view_id': ref('view_eam_asset_list')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'kanban', 'view_id': ref('view_eam_asset_kanban')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'form', 'view_id': ref('view_eam_asset_form')})]"/>
+    </record>
+</odoo>

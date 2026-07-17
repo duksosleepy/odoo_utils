@@ -14,28 +14,28 @@
             </t>
             <t t-else="">
                 <header class="o_dpr_header">
-                    <div>
+                    <div class="o_dpr_title">
                         <h1>Đánh giá hiệu suất tháng</h1>
                         <p t-esc="state.data.month_label || ''"/>
                     </div>
-                    <div class="o_dpr_filters">
-                        <select class="form-select form-select-sm" t-model.number="state.month">
+                    <div class="o_dpr_filters" style="display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 0.5rem;">
+                        <select class="form-select form-select-sm o_dpr_filter_ctrl" t-model.number="state.month">
                             <t t-foreach="months" t-as="m" t-key="m">
                                 <option t-att-value="m" t-esc="'Tháng ' + m"/>
                             </t>
                         </select>
-                        <select class="form-select form-select-sm" t-model.number="state.year">
+                        <select class="form-select form-select-sm o_dpr_filter_ctrl" t-model.number="state.year">
                             <t t-foreach="years" t-as="y" t-key="y">
                                 <option t-att-value="y" t-esc="y"/>
                             </t>
                         </select>
-                        <select class="form-select form-select-sm" t-model.number="state.departmentId">
+                        <select class="form-select form-select-sm o_dpr_filter_ctrl o_dpr_filter_dept" t-model.number="state.departmentId">
                             <option value="0">Tất cả phòng ban</option>
                             <t t-foreach="state.data.departments or []" t-as="d" t-key="d.id">
                                 <option t-att-value="d.id" t-esc="d.name"/>
                             </t>
                         </select>
-                        <button type="button" class="btn btn-primary btn-sm" t-on-click="onFilter">
+                        <button type="button" class="btn btn-primary btn-sm o_dpr_filter_btn" t-on-click="onFilter">
                             <i class="fa fa-filter"/> Lọc
                         </button>
                     </div>
@@ -180,14 +180,34 @@
 
                             <div class="o_dpr_card">
                                 <h4>Điểm theo tiêu chí</h4>
-                                <div class="o_dpr_criteria">
-                                    <t t-foreach="detail.criteria or []" t-as="c" t-key="c.key">
-                                        <div class="o_dpr_crit_row">
-                                            <span t-esc="c.label"/>
-                                            <div class="bar"><i t-att-style="'width:' + c.score + '%'"/></div>
-                                            <strong t-esc="c.score + '%'"/>
-                                        </div>
-                                    </t>
+                                <div class="o_dpr_criteria_scroll">
+                                    <table class="o_dpr_criteria_table">
+                                        <thead>
+                                            <tr>
+                                                <th>STT</th>
+                                                <th>Tiêu chí</th>
+                                                <th>Điểm</th>
+                                                <th>Mức đạt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="detail.criteria or []" t-as="c" t-key="c.key">
+                                                <tr>
+                                                    <td class="col-stt" t-esc="c_index + 1"/>
+                                                    <td class="col-label" t-esc="c.label"/>
+                                                    <td class="col-score" t-esc="c.score + '%'"/>
+                                                    <td class="col-bar">
+                                                        <div class="bar"><i t-att-style="'width:' + c.score + '%'"/></div>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                            <t t-if="!(detail.criteria || []).length">
+                                                <tr>
+                                                    <td colspan="4" class="text-muted text-center">Chưa có dữ liệu tiêu chí.</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </t>

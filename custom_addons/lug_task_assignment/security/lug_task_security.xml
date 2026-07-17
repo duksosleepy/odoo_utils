@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="res.groups.privilege" id="res_groups_privilege_lug_task">
+        <field name="name">Giao việc IT</field>
+        <field name="category_id" ref="base.module_category_operations"/>
+        <field name="sequence">45</field>
+        <field name="placeholder">Không</field>
+    </record>
+
+    <record id="group_lug_task_user" model="res.groups">
+        <field name="name">Nhân viên</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_task"/>
+        <field name="comment">Xem/cập nhật việc cá nhân.</field>
+    </record>
+
+    <record id="group_lug_task_team_lead" model="res.groups">
+        <field name="name">Tổ trưởng</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_task"/>
+        <field name="implied_ids" eval="[(4, ref('group_lug_task_user'))]"/>
+    </record>
+
+    <record id="group_lug_task_manager" model="res.groups">
+        <field name="name">Trưởng phòng</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_task"/>
+        <field name="implied_ids" eval="[(4, ref('group_lug_task_team_lead'))]"/>
+    </record>
+
+    <record id="group_lug_task_director" model="res.groups">
+        <field name="name">Giám đốc khối</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_task"/>
+        <field name="implied_ids" eval="[(4, ref('group_lug_task_manager'))]"/>
+    </record>
+
+    <record id="group_lug_task_board" model="res.groups">
+        <field name="name">Ban Giám Đốc</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_task"/>
+        <field name="implied_ids" eval="[(4, ref('group_lug_task_director'))]"/>
+    </record>
+
+    <record id="group_lug_task_admin" model="res.groups">
+        <field name="name">Quản trị</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_task"/>
+        <field name="implied_ids" eval="[(4, ref('group_lug_task_board'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
+    </record>
+
+    <record id="rule_lug_task_employee_own" model="ir.rule">
+        <field name="name">LUG Task: nhân viên — việc của mình</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="domain_force">[
+            '|',
+            ('assigned_to_id.user_id', '=', user.id),
+            ('assigned_by_id.user_id', '=', user.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_lug_task_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_lug_task_team_lead_dept" model="ir.rule">
+        <field name="name">LUG Task: tổ trưởng — phòng ban</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="domain_force">[
+            '|',
+            ('department_id', 'child_of', user.employee_id.department_id.id),
+            ('assigned_by_id.user_id', '=', user.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_lug_task_team_lead'))]"/>
+    </record>
+
+    <record id="rule_lug_task_team_lead_store" model="ir.rule">
+        <field name="name">LUG Task: tổ trưởng — chi nhánh</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="domain_force">[
+            '|',
+            ('store_id', '=', user.employee_id.ma_bo_phan_id.store_id.id),
+            ('assigned_by_id.user_id', '=', user.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_lug_task_team_lead'))]"/>
+    </record>
+
+    <record id="rule_lug_task_manager_dept" model="ir.rule">
+        <field name="name">LUG Task: trưởng phòng — phòng ban</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="domain_force">[
+            ('department_id', 'child_of', user.employee_id.department_id.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_lug_task_manager'))]"/>
+    </record>
+
+    <record id="rule_lug_task_director_mien" model="ir.rule">
+        <field name="name">LUG Task: GĐ khối — theo miền</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="domain_force">[
+            ('mien_zone_id', 'child_of', user.employee_id.mien_zone_id.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_lug_task_director'))]"/>
+    </record>
+
+    <record id="rule_lug_task_board_company" model="ir.rule">
+        <field name="name">LUG Task: BGĐ — toàn công ty</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_lug_task_board'))]"/>
+    </record>
+
+    <record id="rule_lug_task_admin_all" model="ir.rule">
+        <field name="name">LUG Task: admin — toàn quyền</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_lug_task_admin'))]"/>
+    </record>
+
+    <record id="rule_lug_task_multi_company" model="ir.rule">
+        <field name="name">LUG Task: multi-company</field>
+        <field name="model_id" ref="model_lug_task"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+</odoo>

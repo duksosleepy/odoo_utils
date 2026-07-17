@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="partner_bot_task" model="res.partner">
+        <field name="name">OdooBot Giao việc</field>
+        <field name="email">odoo.bot.task@example.com</field>
+        <field name="company_type">person</field>
+    </record>
+
+    <record id="user_bot_task" model="res.users">
+        <field name="name">OdooBot Giao việc</field>
+        <field name="login">odoo.bot.task</field>
+        <field name="partner_id" ref="partner_bot_task"/>
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+    </record>
+</odoo>

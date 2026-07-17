@@ -61,6 +61,41 @@ export class DailyWorkEmployeeWs extends Component {
             totalDurationHours: 0,
             completionPercentAvg: 0,
             showMyList: true,
+            recurringItems: [],
+            recurringForm: this.emptyRecurringForm(),
+            editingRecurringId: false,
+            recurringSaving: false,
+            recurrenceTypes: [
+                { value: "daily", label: "Hằng ngày" },
+                { value: "weekly", label: "Theo tuần" },
+                { value: "monthly", label: "Theo tháng" },
+                { value: "yearly", label: "Cố định ngày" },
+            ],
+            recurringFilters: {
+                query: "",
+                work_group_id: "",
+                priority: "",
+                active: "",
+            },
+            recurringPage: 1,
+            recurringPageSize: 10,
+            recurringSectionOpen: true,
+            recurringListOpen: true,
+            recurringFormOpen: true,
+            workGroupFilterMenuOpen: false,
+            workGroupFormMenuOpen: false,
+            monthSectionOpen: true,
+            monthTableOpen: true,
+            monthCollapsedGroups: {},
+            weekdays: [
+                { value: 0, label: "Thứ 2" },
+                { value: 1, label: "Thứ 3" },
+                { value: 2, label: "Thứ 4" },
+                { value: 3, label: "Thứ 5" },
+                { value: 4, label: "Thứ 6" },
+                { value: 5, label: "Thứ 7" },
+                { value: 6, label: "Chủ nhật" },
+            ],
             years: this._buildYears(ym.year),
             months: [
                 { value: 1, label: "Tháng 1" },
@@ -79,6 +114,7 @@ export class DailyWorkEmployeeWs extends Component {
         });
         onWillStart(async () => {
             await this.load();
+            await this.loadRecurring();
             await this.loadMonthlySummary();
         });
         onMounted(() => {
@@ -93,11 +129,7 @@ export class DailyWorkEmployeeWs extends Component {
     }
 
     get layoutStyle() {
-        // Chỉ form thêm/sửa — danh sách việc ẩn để bảng tháng rộng hơn
-        if (!this.state.showMyList) {
-            return "grid-template-columns: minmax(260px, 360px);";
-        }
-        return `grid-template-columns: ${this.state.sidebarWidth}px 8px minmax(0, 1fr);`;
+        return "";
     }
 
     toggleMyList() {
@@ -106,6 +138,26 @@ export class DailyWorkEmployeeWs extends Component {
 
     get monthTitle() {
         return `Tổng công việc tháng ${String(this.state.monthMonth).padStart(2, "0")}/${this.state.monthYear}`;
+    }
+
+    toggleMonthSection() {
+        this.state.monthSectionOpen = !this.state.monthSectionOpen;
+    }
+
+    toggleMonthTable() {
+        this.state.monthTableOpen = !this.state.monthTableOpen;
+    }
+
+    isMonthGroupOpen(groupKey) {
+        return !this.state.monthCollapsedGroups[groupKey];
+    }
+
+    toggleMonthGroup(groupKey) {
+        const key = String(groupKey);
+        this.state.monthCollapsedGroups = {
+            ...this.state.monthCollapsedGroups,
+            [key]: !this.state.monthCollapsedGroups[key],
+        };
     }
 
     get satacoLogoUrl() {
@@ -253,6 +305,333 @@ export class DailyWorkEmployeeWs extends Component {
             duration_minutes: "",
             completion_percent: 0,
         };
+    }
+
+    emptyRecurringForm() {
+        return {
+            name: "",
+            work_group_id: "",
+            duration_minutes: "",
+            priority: "medium",
+            recurrence_type: "daily",
+            recurrence_weekdays: [0, 1, 2, 3, 4],
+            recurrence_day: 1,
+            recurrence_month: 1,
+            active: true,
+            note: "",
+            skip_saturday: false,
+            skip_sunday: false,
+            deadline_offset_days: 0,
+        };
+    }
+
+    get filteredRecurringItems() {
+        const filters = this.state.recurringFilters;
+        const query = (filters.query || "").trim().toLocaleLowerCase("vi");
+        return (this.state.recurringItems || []).filter((item) => {
+            const matchesQuery =
+                !query ||
+                (item.name || "").toLocaleLowerCase("vi").includes(query) ||
+                (item.note || "").toLocaleLowerCase("vi").includes(query);
+            const matchesGroup =
+                !filters.work_group_id ||
+                Number(item.work_group_id) === Number(filters.work_group_id);
+            const matchesPriority = !filters.priority || item.priority === filters.priority;
+            const matchesActive =
+                filters.active === "" || String(Boolean(item.active)) === filters.active;
+            return matchesQuery && matchesGroup && matchesPriority && matchesActive;
+        });
+    }
+
+    get recurringPageCount() {
+        return Math.max(
+            1,
+            Math.ceil(this.filteredRecurringItems.length / this.state.recurringPageSize)
+        );
+    }
+
+    get pagedRecurringItems() {
+        const page = Math.min(this.state.recurringPage, this.recurringPageCount);
+        const start = (page - 1) * this.state.recurringPageSize;
+        return this.filteredRecurringItems.slice(start, start + this.state.recurringPageSize);
+    }
+
+    get recurringPageNumbers() {
+        return Array.from({ length: this.recurringPageCount }, (_, index) => index + 1);
+    }
+
+    onRecurringFilter() {
+        this.state.recurringPage = 1;
+    }
+
+    onResetRecurringFilters() {
+        this.state.recurringFilters = {
+            query: "",
+            work_group_id: "",
+            priority: "",
+            active: "",
+        };
+        this.state.recurringPage = 1;
+        this.state.workGroupFilterMenuOpen = false;
+    }
+
+    toggleRecurringSection() {
+        this.state.recurringSectionOpen = !this.state.recurringSectionOpen;
+    }
+
+    toggleRecurringList() {
+        this.state.recurringListOpen = !this.state.recurringListOpen;
+    }
+
+    toggleRecurringFormPanel() {
+        this.state.recurringFormOpen = !this.state.recurringFormOpen;
+    }
+
+    get selectedWorkGroupFilterLabel() {
+        const id = this.state.recurringFilters.work_group_id;
+        if (!id) {
+            return "— Tất cả hạng mục —";
+        }
+        const group = (this.state.workGroups || []).find((g) => String(g.id) === String(id));
+        return group?.name || "— Tất cả hạng mục —";
+    }
+
+    get selectedWorkGroupFormLabel() {
+        const id = this.state.recurringForm.work_group_id;
+        if (!id) {
+            return "-- Chọn hạng mục --";
+        }
+        const group = (this.state.workGroups || []).find((g) => String(g.id) === String(id));
+        return group?.name || "-- Chọn hạng mục --";
+    }
+
+    toggleWorkGroupFilterMenu(ev) {
+        ev?.stopPropagation?.();
+        this.state.workGroupFilterMenuOpen = !this.state.workGroupFilterMenuOpen;
+        this.state.workGroupFormMenuOpen = false;
+    }
+
+    toggleWorkGroupFormMenu(ev) {
+        ev?.stopPropagation?.();
+        this.state.workGroupFormMenuOpen = !this.state.workGroupFormMenuOpen;
+        this.state.workGroupFilterMenuOpen = false;
+    }
+
+    selectWorkGroupFilter(id) {
+        this.state.recurringFilters.work_group_id = id ? String(id) : "";
+        this.state.workGroupFilterMenuOpen = false;
+        this.onRecurringFilter();
+    }
+
+    selectWorkGroupForm(id) {
+        this.state.recurringForm.work_group_id = id ? String(id) : "";
+        this.state.workGroupFormMenuOpen = false;
+    }
+
+    isSelectedWorkGroupFilter(id) {
+        return String(this.state.recurringFilters.work_group_id || "") === String(id || "");
+    }
+
+    isSelectedWorkGroupForm(id) {
+        return String(this.state.recurringForm.work_group_id || "") === String(id || "");
+    }
+
+    onRecurringPage(page) {
+        this.state.recurringPage = Math.max(1, Math.min(Number(page), this.recurringPageCount));
+    }
+
+    onToggleRecurringWeekday(day) {
+        const current = new Set(this.state.recurringForm.recurrence_weekdays || []);
+        if (current.has(day)) {
+            current.delete(day);
+        } else {
+            current.add(day);
+        }
+        this.state.recurringForm.recurrence_weekdays = [...current].sort((a, b) => a - b);
+    }
+
+    isRecurringWeekdaySelected(day) {
+        return (this.state.recurringForm.recurrence_weekdays || []).includes(day);
+    }
+
+    onEditRecurring(item) {
+        this.state.recurringSectionOpen = true;
+        this.state.recurringFormOpen = true;
+        this.state.recurringListOpen = true;
+        this.state.editingRecurringId = item.id;
+        this.state.recurringForm = {
+            name: item.name || "",
+            work_group_id: item.work_group_id ? String(item.work_group_id) : "",
+            duration_minutes:
+                item.duration_minutes === 0 || item.duration_minutes
+                    ? String(item.duration_minutes)
+                    : "",
+            priority: item.priority || "medium",
+            recurrence_type: item.recurrence_type || "daily",
+            recurrence_weekdays: [...(item.recurrence_weekdays || [])],
+            recurrence_day: Number(item.recurrence_day) || 1,
+            recurrence_month: Number(item.recurrence_month) || 1,
+            active: !!item.active,
+            note: item.note || "",
+            skip_saturday: !!item.skip_saturday,
+            skip_sunday: !!item.skip_sunday,
+            deadline_offset_days: Number(item.deadline_offset_days) || 0,
+        };
+        const panel = this.layoutRef.el?.closest(".o_ews_scroll")?.querySelector(".o_ews_recurring");
+        if (panel) {
+            panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+    }
+
+    onCancelRecurringEdit() {
+        this.state.editingRecurringId = false;
+        this.state.recurringForm = this.emptyRecurringForm();
+    }
+
+    async loadRecurring() {
+        try {
+            const data = await this.orm.call("daily.task.recurring", "get_my_recurring", []);
+            this.state.recurringItems = data.items || [];
+            if (data.work_groups?.length && !this.state.workGroups.length) {
+                this.state.workGroups = data.work_groups;
+            }
+            if (data.priorities?.length && !this.state.priorities.length) {
+                this.state.priorities = data.priorities;
+            }
+            if (data.recurrence_types?.length) {
+                this.state.recurrenceTypes = data.recurrence_types;
+            }
+        } catch (e) {
+            this.state.recurringItems = [];
+        }
+    }
+
+    async onSubmitRecurring(ev) {
+        ev.preventDefault();
+        const f = this.state.recurringForm;
+        if (!f.name?.trim()) {
+            this.notification.add(_t("Vui lòng nhập tên công việc lặp."), { type: "warning" });
+            return;
+        }
+        let durationMinutes = 0;
+        if (f.duration_minutes !== "" && f.duration_minutes !== null && f.duration_minutes !== undefined) {
+            durationMinutes = parseInt(f.duration_minutes, 10);
+            if (!Number.isFinite(durationMinutes) || durationMinutes < 0) {
+                this.notification.add(_t("Thời gian thực hiện phải là số phút nguyên (≥ 0)."), {
+                    type: "warning",
+                });
+                return;
+            }
+        }
+        const offset = parseInt(f.deadline_offset_days, 10);
+        if (!Number.isFinite(offset) || offset < 0) {
+            this.notification.add(_t("Số ngày cộng hạn phải ≥ 0."), { type: "warning" });
+            return;
+        }
+        this.state.recurringSaving = true;
+        try {
+            const payload = {
+                name: f.name.trim(),
+                work_group_id: f.work_group_id ? Number(f.work_group_id) : false,
+                duration_minutes: durationMinutes,
+                priority: f.priority || "medium",
+                recurrence_type: f.recurrence_type || "daily",
+                recurrence_weekdays: [...(f.recurrence_weekdays || [])],
+                recurrence_day: Number(f.recurrence_day) || 1,
+                recurrence_month: Number(f.recurrence_month) || 1,
+                note: f.note || "",
+                skip_saturday: !!f.skip_saturday,
+                skip_sunday: !!f.skip_sunday,
+                deadline_offset_days: offset,
+                active: !!f.active,
+            };
+            if (this.state.editingRecurringId) {
+                await this.orm.call("daily.task.recurring", "update_from_employee", [
+                    [this.state.editingRecurringId],
+                    payload,
+                ]);
+                this.notification.add(_t("Đã cập nhật mẫu công việc lặp."), { type: "success" });
+            } else {
+                await this.orm.call("daily.task.recurring", "create_from_employee", [payload]);
+                this.notification.add(
+                    _t("Đã lưu mẫu lặp. Việc hôm nay đã được tạo (nếu chưa có). Mỗi sáng ~5:00 sẽ tự tạo tiếp."),
+                    { type: "success" }
+                );
+            }
+            this.state.editingRecurringId = false;
+            this.state.recurringForm = this.emptyRecurringForm();
+            await this.loadRecurring();
+            await this.load();
+            await this.loadMonthlySummary();
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể lưu mẫu lặp."), {
+                type: "danger",
+            });
+        } finally {
+            this.state.recurringSaving = false;
+        }
+    }
+
+    async onToggleRecurring(item) {
+        try {
+            await this.orm.call("daily.task.recurring", "toggle_active_from_employee", [
+                [item.id],
+            ]);
+            await this.loadRecurring();
+            await this.load();
+            this.notification.add(
+                item.active ? _t("Đã tạm dừng lặp.") : _t("Đã bật lặp lại."),
+                { type: "success" }
+            );
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể bật/tắt mẫu."), {
+                type: "danger",
+            });
+        }
+    }
+
+    async onGenerateRecurringToday(item) {
+        try {
+            const result = await this.orm.call(
+                "daily.task.recurring",
+                "generate_today_from_employee",
+                [[item.id]]
+            );
+            await this.loadRecurring();
+            await this.load();
+            await this.loadMonthlySummary();
+            if (result?.created) {
+                this.notification.add(_t("Đã tạo công việc hôm nay từ mẫu."), {
+                    type: "success",
+                });
+            } else {
+                this.notification.add(_t("Hôm nay đã có việc từ mẫu này rồi."), {
+                    type: "info",
+                });
+            }
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể tạo việc hôm nay."), {
+                type: "danger",
+            });
+        }
+    }
+
+    async onDeleteRecurring(item) {
+        if (!window.confirm(_t("Xóa mẫu công việc lặp này? Việc đã tạo trước đó vẫn giữ."))) {
+            return;
+        }
+        try {
+            await this.orm.call("daily.task.recurring", "unlink_from_employee", [[item.id]]);
+            if (this.state.editingRecurringId === item.id) {
+                this.onCancelRecurringEdit();
+            }
+            await this.loadRecurring();
+            this.notification.add(_t("Đã xóa mẫu lặp."), { type: "success" });
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể xóa mẫu."), {
+                type: "danger",
+            });
+        }
     }
 
     onEditTask(task) {

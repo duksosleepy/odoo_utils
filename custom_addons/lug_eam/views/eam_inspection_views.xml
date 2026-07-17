@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_inspection_list" model="ir.ui.view">
+        <field name="name">eam.inspection.list</field>
+        <field name="model">eam.inspection</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="asset_id"/>
+                <field name="date"/>
+                <field name="inspector_id"/>
+                <field name="result" widget="badge"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_inspection_form" model="ir.ui.view">
+        <field name="name">eam.inspection.form</field>
+        <field name="model">eam.inspection</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_complete" string="Hoàn thành" type="object"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="asset_id"/>
+                            <field name="date"/>
+                            <field name="inspector_id"/>
+                        </group>
+                        <group>
+                            <field name="result" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="criteria"/>
+                            <field name="result"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                    <field name="note"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_eam_inspection" model="ir.actions.act_window">
+        <field name="name">Kiểm tra định kỳ</field>
+        <field name="res_model">eam.inspection</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- KPI Snapshot -->
+    <record id="view_eam_kpi_snapshot_list" model="ir.ui.view">
+        <field name="name">eam.kpi.snapshot.list</field>
+        <field name="model">eam.kpi.snapshot</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false">
+                <field name="snapshot_date"/>
+                <field name="total_asset"/>
+                <field name="in_use"/>
+                <field name="in_stock"/>
+                <field name="maintenance"/>
+                <field name="broken"/>
+                <field name="purchase_value"/>
+                <field name="maintenance_cost_mtd"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_kpi_snapshot_graph" model="ir.ui.view">
+        <field name="name">eam.kpi.snapshot.graph</field>
+        <field name="model">eam.kpi.snapshot</field>
+        <field name="arch" type="xml">
+            <graph string="Xu hướng KPI" type="line" sample="1">
+                <field name="snapshot_date" interval="day"/>
+                <field name="total_asset" type="measure"/>
+                <field name="maintenance_cost_mtd" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_eam_kpi_snapshot" model="ir.actions.act_window">
+        <field name="name">KPI theo thời gian</field>
+        <field name="res_model">eam.kpi.snapshot</field>
+        <field name="view_mode">graph,list</field>
+    </record>
+</odoo>

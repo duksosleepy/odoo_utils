@@ -9,9 +9,13 @@ LUG_APP_ODOO_GROUPS = {
         "view": ["spreadsheet_dashboard.group_dashboard_manager"],
     },
     "daily_work": {
+        # Nhân viên nhập / xem CV của mình
         "view": ["daily_work_task.group_daily_work_user"],
-        "create": ["daily_work_task.group_daily_work_assigner"],
-        "edit": ["daily_work_task.group_daily_work_assigner"],
+        "create": ["daily_work_task.group_daily_work_user"],
+        # Xem việc NV được phân quyền
+        "edit": ["daily_work_task.group_daily_work_viewer"],
+        # Menu Giao việc — chỉ khi tick Duyệt (approve), tránh NV VP bị hiện Giao việc
+        "approve": ["daily_work_task.group_daily_work_assigner"],
         "delete": ["daily_work_task.group_daily_work_manager"],
         "admin": ["daily_work_task.group_daily_work_manager"],
     },
@@ -130,6 +134,10 @@ ROLE_MANAGED_GROUP_XMLIDS = [
     "account.group_account_invoice",
     "hr_employee_hrm_detail.group_hr_employees_staff",
     "hr_employee_hrm_detail.group_hr_employees_supporter",
+    "daily_work_task.group_daily_work_user",
+    "daily_work_task.group_daily_work_viewer",
+    "daily_work_task.group_daily_work_assigner",
+    "daily_work_task.group_daily_work_manager",
 ]
 
 # Root menus always hidden for users under LUG enforcement (unless system).

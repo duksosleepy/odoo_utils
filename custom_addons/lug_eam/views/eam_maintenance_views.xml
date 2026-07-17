@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_maintenance_request_form" model="ir.ui.view">
+        <field name="name">eam.maintenance.request.form</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_form"/>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Chi phí EAM" groups="lug_eam.group_eam_maint_manager,lug_eam.group_eam_asset_manager">
+                    <group>
+                        <field name="eam_work_type"/>
+                        <field name="eam_labor_cost"/>
+                        <field name="eam_part_cost" readonly="1"/>
+                        <field name="eam_total_cost" readonly="1"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+                    <group>
+                        <field name="sla_deadline"/>
+                        <field name="sla_state" widget="badge"
+                               decoration-success="sla_state == 'ok'"
+                               decoration-danger="sla_state == 'breach'"/>
+                    </group>
+                </group>
+                <notebook>
+                    <page string="Linh kiện" groups="lug_eam.group_eam_technician">
+                        <field name="part_ids">
+                            <list editable="bottom">
+                                <field name="product_id"/>
+                                <field name="quantity"/>
+                                <field name="unit_cost"/>
+                                <field name="subtotal" readonly="1"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_eam_maintenance_request_list" model="ir.ui.view">
+        <field name="name">eam.maintenance.request.list</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_tree"/>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="eam_work_type" optional="show"/>
+                <field name="eam_total_cost" optional="show"
+                       groups="lug_eam.group_eam_maint_manager"/>
+                <field name="sla_state" widget="badge" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_eam_maint_cost_pivot" model="ir.ui.view">
+        <field name="name">eam.maint.cost.pivot</field>
+        <field name="model">maintenance.request</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <pivot string="Chi phí bảo trì" sample="1">
+                <field name="category_id" type="row"/>
+                <field name="maintenance_type" type="col"/>
+                <field name="eam_total_cost" type="measure"/>
+                <field name="eam_labor_cost" type="measure"/>
+                <field name="eam_part_cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_eam_maint_cost" model="ir.actions.act_window">
+        <field name="name">Chi phí bảo trì</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">pivot,graph,list,kanban</field>
+        <field name="domain">[('stage_id.done', '=', True)]</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_eam_maint_cost_pivot')})]"/>
+    </record>
+</odoo>
